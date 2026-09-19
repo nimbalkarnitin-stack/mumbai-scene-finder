@@ -165,3 +165,9 @@ export const PUBLIC_VISIBLE_STATES: VerificationState[] = ["VERIFIED", "PARTIALL
 export function isPubliclyListable(state: string | null | undefined): boolean {
   return PUBLIC_VISIBLE_STATES.includes((state ?? "UNVERIFIED") as VerificationState);
 }
+
+/**
+ * Time-critical surfaces (Now / Next 3 hours / Tonight / This weekend) are stricter than
+ * general browsing: only source-confirmed records appear, never ones still awaiting review.
+ */
+export const LIVE_WINDOW_STATES: VerificationState[] = ["VERIFIED", "PARTIALLY_VERIFIED"];

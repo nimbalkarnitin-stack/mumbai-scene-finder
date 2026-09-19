@@ -156,11 +156,17 @@ export async function runSource(db: DB, source: SourceRow, settings: Settings): 
 
       const authority = source.authority_level;
       const duplicateConfidence = 1;
+      // Events must carry a sourced start time; a venue/experience has no date to confirm,
+      // so its core fact is an identified place (same rule the catalogue re-verifier uses).
+      const coreConfirmed =
+        normalised.kind === "event"
+          ? normalised.confirmed.date
+          : normalised.confirmed.venue || normalised.confirmed.location || !!normalised.address;
       const score = computeQualityScore(
         {
           authorityLevel: authority,
           ageHours: 0,
-          dateConfirmed: normalised.confirmed.date,
+          dateConfirmed: coreConfirmed,
           priceConfirmed: normalised.confirmed.price,
           venueConfirmed: normalised.confirmed.venue,
           locationConfirmed: normalised.confirmed.location,
@@ -170,7 +176,7 @@ export async function runSource(db: DB, source: SourceRow, settings: Settings): 
         settings.weights,
         settings.gate,
       );
-      const state = verificationStateFor(score, { ageHours: 0, dateConfirmed: normalised.confirmed.date, duplicateConfidence }, settings.gate);
+      const state = verificationStateFor(score, { ageHours: 0, dateConfirmed: coreConfirmed, duplicateConfidence }, settings.gate);
       // Social signals and unclear classifications never auto-publish.
       const forceReview = source.source_type === "social_api" || source.source_type === "organiser_submission" || enrichment.needsReview;
 
@@ -248,6 +254,19 @@ async function resolveArea(db: DB, cityId: string, hint: string | null): Promise
   const slug = slugify(hint);
   const { data } = await db.from("areas").select("id,slug,name").eq("city_id", cityId);
   const match = (data ?? []).find((a) => a.slug === slug || slugify(a.name) === slug || slug.includes(a.slug));
+  return match?.id ?? null;
+}
+
+/**
+ * Link an event to a venue already in the catalogue when the source states that venue's name.
+ * Never creates a venue and never guesses: an unmatched name simply stays unlinked.
+ */
+async function resolveVenue(db: DB, cityId: string, venueName: string | null): Promise<string | null> {
+  if (!venueName) return null;
+  const slug = slugify(venueName);
+  if (!slug) return null;
+  const { data } = await db.from("venues").select("id,slug,name").eq("city_id", cityId).limit(500);
+  const match = (data ?? []).find((v) => v.slug === slug || slugify(v.name) === slug);
   return match?.id ?? null;
 }
 
@@ -337,6 +356,7 @@ export async function publishReadyRecords(db: DB, settings: Settings, limit = 50
         const lifecycle = publish ? "ACTIVE" : "PENDING_REVIEW";
         const payload = {
           ...shared,
+          venue_id: await resolveVenue(db, cityId, normalised.venueName),
           starts_at: normalised.startsAt,
           ends_at: normalised.endsAt,
           timezone: normalised.timezone,
