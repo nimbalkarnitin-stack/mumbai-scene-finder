@@ -156,11 +156,17 @@ export async function runSource(db: DB, source: SourceRow, settings: Settings): 
 
       const authority = source.authority_level;
       const duplicateConfidence = 1;
+      // Events must carry a sourced start time; a venue/experience has no date to confirm,
+      // so its core fact is an identified place (same rule the catalogue re-verifier uses).
+      const coreConfirmed =
+        normalised.kind === "event"
+          ? normalised.confirmed.date
+          : normalised.confirmed.venue || normalised.confirmed.location || !!normalised.address;
       const score = computeQualityScore(
         {
           authorityLevel: authority,
           ageHours: 0,
-          dateConfirmed: normalised.confirmed.date,
+          dateConfirmed: coreConfirmed,
           priceConfirmed: normalised.confirmed.price,
           venueConfirmed: normalised.confirmed.venue,
           locationConfirmed: normalised.confirmed.location,
@@ -170,7 +176,7 @@ export async function runSource(db: DB, source: SourceRow, settings: Settings): 
         settings.weights,
         settings.gate,
       );
-      const state = verificationStateFor(score, { ageHours: 0, dateConfirmed: normalised.confirmed.date, duplicateConfidence }, settings.gate);
+      const state = verificationStateFor(score, { ageHours: 0, dateConfirmed: coreConfirmed, duplicateConfidence }, settings.gate);
       // Social signals and unclear classifications never auto-publish.
       const forceReview = source.source_type === "social_api" || source.source_type === "organiser_submission" || enrichment.needsReview;
 
