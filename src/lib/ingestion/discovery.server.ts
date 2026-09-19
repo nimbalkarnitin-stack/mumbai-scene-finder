@@ -598,5 +598,57 @@ export async function promoteValidatedCandidates(
     }
   }
   if (promoted > 0) await track(db, "discovery_promoted_batch", { promoted, skipped });
+  const structured = await promoteStructuredSourcePages(db, Math.max(limit - promoted, 0));
+  return {
+    scanned: (rows ?? []).length + structured.scanned,
+    promoted: promoted + structured.promoted,
+    skipped: skipped + structured.skipped,
+    errors: [...errors, ...structured.errors].slice(0, 10),
+  };
+}
+
+/**
+ * Second promotion pass for candidates whose resolver found a first-party page carrying
+ * schema.org structured data but no dedicated "what's on" URL. The stored structured page
+ * itself becomes the authorised source page — still first-party, never an aggregator.
+ */
+export async function promoteStructuredSourcePages(
+  db: DB,
+  limit = 25,
+): Promise<{ scanned: number; promoted: number; skipped: number; errors: string[] }> {
+  if (limit <= 0) return { scanned: 0, promoted: 0, skipped: 0, errors: [] };
+  const { data: rows } = await db
+    .from("discovery_candidates")
+    .select("id,discovery_source_candidates!inner(url,confidence,has_structured_data)")
+    .is("linked_source_id", null)
+    .is("events_page_url", null)
+    .eq("discovery_source_candidates.has_structured_data", true)
+    .limit(limit);
+
+  let promoted = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+  for (const row of (rows ?? []) as unknown as { id: string; discovery_source_candidates: { url: string; confidence: number }[] }[]) {
+    const best = [...(row.discovery_source_candidates ?? [])]
+      .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))
+      .map((s) => sanitiseUrl(s.url))
+      .find((u): u is string => Boolean(u) && !isAggregatorDomain(u!));
+    if (!best) {
+      skipped += 1;
+      continue;
+    }
+    try {
+      // Record the chosen first-party page on the candidate, then reuse the single
+      // promotion path so host allowlisting and provenance stay identical.
+      await db.from("discovery_candidates").update({ events_page_url: best }).eq("id", row.id);
+      await promoteCandidateToSource(db, row.id);
+      promoted += 1;
+    } catch (error) {
+      skipped += 1;
+      const message = error instanceof Error ? error.message : String(error);
+      if (errors.length < 10) errors.push(`${row.id}: ${message}`);
+    }
+  }
+  if (promoted > 0) await track(db, "discovery_promoted_structured_batch", { promoted, skipped });
   return { scanned: (rows ?? []).length, promoted, skipped, errors };
 }
