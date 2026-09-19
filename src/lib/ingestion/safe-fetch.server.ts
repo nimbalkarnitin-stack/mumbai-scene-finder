@@ -126,6 +126,8 @@ export async function withRetry<T>(
     } catch (error) {
       lastError = error;
       if (error instanceof FetchBlockedError) throw error;
+      // Permanent upstream failures (4xx other than 429) must not be retried.
+      if ((error as { permanent?: boolean })?.permanent) throw error;
       if (i === attempts - 1) break;
       await new Promise((r) => setTimeout(r, baseMs * 2 ** i));
     }

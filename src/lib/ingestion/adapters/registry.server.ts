@@ -1,3 +1,4 @@
+import { apifyAdapter } from "./apify.server";
 import { bookMyShowAdapter } from "./bookmyshow.server";
 import { instagramAdapter } from "./instagram.server";
 import { officialSiteAdapter } from "./official-site.server";
@@ -11,6 +12,7 @@ export const ADAPTERS: Record<string, SourceAdapter> = {
   [partnerFeedAdapter.key]: partnerFeedAdapter,
   [bookMyShowAdapter.key]: bookMyShowAdapter,
   [instagramAdapter.key]: instagramAdapter,
+  [apifyAdapter.key]: apifyAdapter,
 };
 
 export function getAdapter(key: string): SourceAdapter | null {

@@ -20,3 +20,9 @@ Open (blocked on external input):
 - [ ] Official-site source needs real venue/organiser page URLs entered in /admin/sources
 - [ ] Admin screens not yet smoke-tested signed in: no user accounts exist yet, so no admin role could be granted
 - Do not publish. No fake listings. No secrets in frontend.
+
+## Apify integration
+- [x] Apify adapter (`src/lib/ingestion/adapters/apify.server.ts`) via Lovable connector gateway, registered in the adapter registry.
+- [x] Disabled source row "BookMyShow via Apify" (adapter `apify`), no Actor assumed.
+- [x] Admin Actor configuration/status panel on /admin/sources.
+- [ ] Blocked: link the Apify connector to this workspace/project, then set an authorised Actor ID + input JSON and enable the source.

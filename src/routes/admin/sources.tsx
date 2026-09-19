@@ -109,6 +109,14 @@ function Sources() {
                 </label>
               </div>
 
+              {s.adapter_key === "apify" && (
+                <ApifyConfig
+                  source={s}
+                  saving={save.isPending}
+                  onSave={(config) => save.mutate({ id: s.id, config: { ...(s.config as Record<string, unknown>), ...config } })}
+                />
+              )}
+
               {s.adapter_key === "official_site" && (
                 <div className="mt-3">
                   <span className="eyebrow">Official page URLs (one per line — first-party venue/organiser pages only)</span>
@@ -140,5 +148,92 @@ function Sources() {
         })}
       </div>
     </AdminShell>
+  );
+}
+
+interface ApifySourceRow {
+  config: unknown;
+  credentials_ready: boolean;
+  missing_credentials: string[];
+  last_run_at: string | null;
+  last_status: string | null;
+  last_error: string | null;
+  enabled: boolean;
+}
+
+/** Apify Actor configuration. Shows connector + actor readiness; never shows secret values. */
+function ApifyConfig({ source, saving, onSave }: { source: ApifySourceRow; saving: boolean; onSave: (config: Record<string, unknown>) => void }) {
+  const cfg = (source.config ?? {}) as { actor_id?: unknown; actor_input?: unknown; run_timeout_seconds?: unknown; max_items?: unknown; page_size?: unknown };
+  const [actorId, setActorId] = useState(typeof cfg.actor_id === "string" ? cfg.actor_id : "");
+  const [input, setInput] = useState(JSON.stringify(cfg.actor_input ?? {}, null, 2));
+  const [inputError, setInputError] = useState<string | null>(null);
+  const actorReady = typeof cfg.actor_id === "string" && cfg.actor_id.trim().length > 0;
+
+  const submit = () => {
+    let parsed: unknown = {};
+    try {
+      parsed = input.trim() ? JSON.parse(input) : {};
+    } catch {
+      setInputError("Actor input must be valid JSON.");
+      return;
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      setInputError("Actor input must be a JSON object.");
+      return;
+    }
+    if (!actorId.trim()) {
+      setInputError("Enter the Actor ID (owner~actor-name) you are authorised to run.");
+      return;
+    }
+    setInputError(null);
+    onSave({ actor_id: actorId.trim(), actor_input: parsed });
+  };
+
+  return (
+    <div className="mt-4 space-y-3 rounded-xl border border-border bg-background/60 p-3">
+      <div className="flex flex-wrap gap-2 font-mono text-[9px] uppercase tracking-wider">
+        <span className={`rounded-full border px-2 py-0.5 ${source.credentials_ready ? "border-teal/40 bg-teal/10 text-teal" : "border-saffron/40 bg-saffron/10 text-saffron"}`}>
+          Connector {source.credentials_ready ? "connected" : "not connected"}
+        </span>
+        <span className={`rounded-full border px-2 py-0.5 ${actorReady ? "border-teal/40 bg-teal/10 text-teal" : "border-saffron/40 bg-saffron/10 text-saffron"}`}>
+          Actor {actorReady ? "configured" : "not configured"}
+        </span>
+        <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">
+          Last run {source.last_run_at ? `${formatIst(source.last_run_at)} IST` : "never"} · {source.last_status ?? "—"}
+        </span>
+      </div>
+
+      {!source.credentials_ready && (
+        <p className="text-xs text-muted-foreground">
+          Link the Apify account to this project first. Credentials stay on the server and are never shown here.
+        </p>
+      )}
+
+      <label className="block">
+        <span className="eyebrow">Actor ID (owner~actor-name)</span>
+        <Input value={actorId} onChange={(e) => setActorId(e.target.value)} placeholder="owner~actor-name" className="mt-1 font-mono text-xs" />
+      </label>
+
+      <label className="block">
+        <span className="eyebrow">Actor input (JSON)</span>
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          rows={6}
+          className="mt-1 w-full rounded-xl border border-border bg-background p-3 font-mono text-xs"
+          placeholder={'{\n  "city": "mumbai"\n}'}
+        />
+      </label>
+
+      {inputError && <p className="text-xs text-destructive">{inputError}</p>}
+      {source.last_error && <p className="text-xs text-destructive">Last error: {source.last_error}</p>}
+
+      <Button size="sm" variant="glass" disabled={saving} onClick={submit}>
+        Save Actor configuration
+      </Button>
+      <p className="text-[11px] text-muted-foreground">
+        Only run Actors you are authorised to use. Nothing is fetched until this source is enabled and run.
+      </p>
+    </div>
   );
 }
