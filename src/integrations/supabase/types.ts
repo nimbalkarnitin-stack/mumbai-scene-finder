@@ -602,6 +602,8 @@ export type Database = {
       }
       discovery_candidates: {
         Row: {
+          area: string | null
+          category: string | null
           city_id: string | null
           confidence: number
           created_at: string
@@ -613,6 +615,8 @@ export type Database = {
           events_page_url: string | null
           evidence: Json
           external_ref: string | null
+          google_maps_uri: string | null
+          google_place_id: string | null
           id: string
           last_checked_at: string | null
           last_error: string | null
@@ -629,6 +633,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          area?: string | null
+          category?: string | null
           city_id?: string | null
           confidence?: number
           created_at?: string
@@ -640,6 +646,8 @@ export type Database = {
           events_page_url?: string | null
           evidence?: Json
           external_ref?: string | null
+          google_maps_uri?: string | null
+          google_place_id?: string | null
           id?: string
           last_checked_at?: string | null
           last_error?: string | null
@@ -656,6 +664,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          area?: string | null
+          category?: string | null
           city_id?: string | null
           confidence?: number
           created_at?: string
@@ -667,6 +677,8 @@ export type Database = {
           events_page_url?: string | null
           evidence?: Json
           external_ref?: string | null
+          google_maps_uri?: string | null
+          google_place_id?: string | null
           id?: string
           last_checked_at?: string | null
           last_error?: string | null
@@ -1233,6 +1245,86 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      google_api_requests: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error: string | null
+          http_status: number | null
+          id: string
+          place_count: number
+          query_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error?: string | null
+          http_status?: number | null
+          id?: string
+          place_count?: number
+          query_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error?: string | null
+          http_status?: number | null
+          id?: string
+          place_count?: number
+          query_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_api_requests_query_id_fkey"
+            columns: ["query_id"]
+            isOneToOne: false
+            referencedRelation: "google_discovery_queries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_discovery_queries: {
+        Row: {
+          area: string
+          category: string
+          created_at: string
+          enabled: boolean
+          id: string
+          last_error: string | null
+          last_result_count: number | null
+          last_run_at: string | null
+          priority: number
+          query_text: string
+          updated_at: string
+        }
+        Insert: {
+          area: string
+          category: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_error?: string | null
+          last_result_count?: number | null
+          last_run_at?: string | null
+          priority?: number
+          query_text: string
+          updated_at?: string
+        }
+        Update: {
+          area?: string
+          category?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_error?: string | null
+          last_result_count?: number | null
+          last_run_at?: string | null
+          priority?: number
+          query_text?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       guides: {
         Row: {

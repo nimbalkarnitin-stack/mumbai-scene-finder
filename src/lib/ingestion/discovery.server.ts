@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { DEFAULT_CITY_ID } from "../scene-constants";
 import { extractJsonLd, jsonLdType } from "./adapters/shared";
-import { AdapterDisabledError, missingEnv } from "./adapters/types";
+import { AdapterDisabledError } from "./adapters/types";
 import {
   candidateEventUrls,
   classifyLinkKind,
@@ -15,6 +15,15 @@ import {
   registrableDomain,
   type DiscoveryStatus,
 } from "./discovery";
+import {
+  backoffDelayMs,
+  GOOGLE_DISCOVERY_EVENTS,
+  GOOGLE_KEY_ENV_NAMES,
+  GOOGLE_SEARCH_FIELD_MASK,
+  isRetryableStatus,
+  MUMBAI_BIAS,
+  requestsRemaining,
+} from "./google-discovery";
 import { safeFetch, withRetry } from "./safe-fetch.server";
 import { sanitiseText, sanitiseUrl } from "./url-guard";
 
@@ -35,38 +44,59 @@ export interface DiscoveryCounters {
 
 const emptyDiscoveryCounters = (): DiscoveryCounters => ({ scanned: 0, candidates: 0, sources_found: 0, validated: 0, rejected: 0, failed: 0 });
 
-/** Record a discovery candidate. Idempotent on (method, name, domain). */
-export async function upsertCandidate(
-  db: DB,
-  input: {
-    name: string;
-    discoveryMethod: string;
-    discoveryQuery?: string | null;
-    entityType?: "venue" | "event" | "experience";
-    sourceUrl?: string | null;
-    officialWebsiteUrl?: string | null;
-    externalRef?: string | null;
-    evidence?: Record<string, unknown>;
-  },
-): Promise<string | null> {
+export interface CandidateInput {
+  name: string;
+  discoveryMethod: string;
+  discoveryQuery?: string | null;
+  entityType?: "venue" | "event" | "experience";
+  sourceUrl?: string | null;
+  officialWebsiteUrl?: string | null;
+  externalRef?: string | null;
+  googlePlaceId?: string | null;
+  googleMapsUri?: string | null;
+  area?: string | null;
+  category?: string | null;
+  evidence?: Record<string, unknown>;
+}
+
+/**
+ * Record a discovery candidate.
+ * Idempotent on the Google Place ID when present, otherwise on (method, name).
+ * Returns whether the row was newly created so callers can report new vs duplicate.
+ */
+export async function upsertCandidateDetailed(db: DB, input: CandidateInput): Promise<{ id: string | null; created: boolean }> {
   const name = sanitiseText(input.name, 160);
-  if (!name) return null;
+  if (!name) return { id: null, created: false };
   const website = sanitiseUrl(input.officialWebsiteUrl ?? null);
   const domain = registrableDomain(website ?? input.sourceUrl ?? null);
-  const { data: existing } = await db
-    .from("discovery_candidates")
-    .select("id")
-    .eq("discovery_method", input.discoveryMethod)
-    .ilike("name", name)
-    .limit(1)
-    .maybeSingle();
+  const placeId = input.googlePlaceId ? sanitiseText(input.googlePlaceId, 200) : null;
+
+  let existing: { id: string } | null = null;
+  if (placeId) {
+    const { data } = await db.from("discovery_candidates").select("id").eq("google_place_id", placeId).maybeSingle();
+    existing = data ?? null;
+  }
+  if (!existing) {
+    const { data } = await db
+      .from("discovery_candidates")
+      .select("id")
+      .eq("discovery_method", input.discoveryMethod)
+      .ilike("name", name)
+      .limit(1)
+      .maybeSingle();
+    existing = data ?? null;
+  }
 
   const patch = {
     name,
     entity_type: input.entityType ?? ("venue" as const),
     discovery_method: input.discoveryMethod,
     discovery_query: input.discoveryQuery ?? null,
-    external_ref: input.externalRef ?? null,
+    external_ref: input.externalRef ?? placeId,
+    google_place_id: placeId,
+    google_maps_uri: sanitiseUrl(input.googleMapsUri ?? null),
+    area: input.area ? sanitiseText(input.area, 80) : null,
+    category: input.category ? sanitiseText(input.category, 80) : null,
     source_url: sanitiseUrl(input.sourceUrl ?? null),
     domain,
     official_website_url: website && !isAggregatorDomain(website) ? website : null,
@@ -76,11 +106,15 @@ export async function upsertCandidate(
 
   if (existing) {
     await db.from("discovery_candidates").update(patch).eq("id", existing.id);
-    return existing.id;
+    return { id: existing.id, created: false };
   }
   const { data, error } = await db.from("discovery_candidates").insert(patch).select("id").single();
-  if (error) return null;
-  return data.id;
+  if (error) return { id: null, created: false };
+  return { id: data.id, created: true };
+}
+
+export async function upsertCandidate(db: DB, input: CandidateInput): Promise<string | null> {
+  return (await upsertCandidateDetailed(db, input)).id;
 }
 
 async function upsertSourceCandidate(
@@ -275,65 +309,233 @@ export async function runDiscoveryResolver(db: DB, limit = 10): Promise<Discover
   return counters;
 }
 
+/** Which Places credential is available, without ever revealing its value. */
+export function googleCredential(): { key: string | null; envName: string | null; missing: string[] } {
+  for (const name of GOOGLE_KEY_ENV_NAMES) {
+    const value = process.env[name];
+    if (value && value.trim().length > 10) return { key: value.trim(), envName: name, missing: [] };
+  }
+  return { key: null, envName: null, missing: [...GOOGLE_KEY_ENV_NAMES] };
+}
+
+/** Requests issued today / this calendar month, from the request log. */
+export async function googleRequestUsage(db: DB): Promise<{ requestsToday: number; requestsThisMonth: number }> {
+  const now = new Date();
+  const dayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  const [{ count: today }, { count: month }] = await Promise.all([
+    db.from("google_api_requests").select("id", { count: "exact", head: true }).gte("created_at", dayStart),
+    db.from("google_api_requests").select("id", { count: "exact", head: true }).gte("created_at", monthStart),
+  ]);
+  return { requestsToday: today ?? 0, requestsThisMonth: month ?? 0 };
+}
+
+export interface GoogleRunReport extends DiscoveryCounters {
+  run_id: string;
+  started_at: string;
+  finished_at: string;
+  queries_attempted: number;
+  queries_succeeded: number;
+  queries_failed: number;
+  api_requests: number;
+  new_candidates: number;
+  duplicate_candidates: number;
+  budget_remaining: number;
+  errors: string[];
+}
+
+interface GooglePlace {
+  id?: string;
+  displayName?: { text?: string };
+  formattedAddress?: string;
+  location?: { latitude?: number; longitude?: number };
+  types?: string[];
+  websiteUri?: string;
+  googleMapsUri?: string;
+  businessStatus?: string;
+}
+
+/** One Places Text Search request, logged and retried with exponential backoff on 429/5xx. */
+async function googleTextSearch(
+  db: DB,
+  key: string,
+  query: { id: string | null; text: string },
+  maxResults: number,
+): Promise<{ places: GooglePlace[]; requests: number }> {
+  let requests = 0;
+  let lastError = "";
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const res = await safeFetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      skipRobots: true,
+      timeoutMs: 12000,
+      headers: {
+        "content-type": "application/json",
+        "X-Goog-Api-Key": key,
+        // Explicit FieldMask: identity, address, geo, types and the business' own website only.
+        "X-Goog-FieldMask": GOOGLE_SEARCH_FIELD_MASK,
+      },
+      body: JSON.stringify({
+        textQuery: query.text,
+        maxResultCount: Math.min(maxResults, 20),
+        regionCode: "IN",
+        locationBias: {
+          circle: { center: { latitude: MUMBAI_BIAS.latitude, longitude: MUMBAI_BIAS.longitude }, radius: MUMBAI_BIAS.radiusMetres },
+        },
+      }),
+    });
+    requests += 1;
+    const ok = res.status >= 200 && res.status < 300;
+    const parsed = ok ? (JSON.parse(res.body) as { places?: GooglePlace[] }) : null;
+    const places = Array.isArray(parsed?.places) ? parsed!.places! : [];
+    await db.from("google_api_requests").insert({
+      endpoint: "places:searchText",
+      http_status: res.status,
+      query_id: query.id,
+      place_count: places.length,
+      error: ok ? null : sanitiseText(res.body, 400),
+    });
+    if (ok) return { places, requests };
+
+    lastError = `HTTP ${res.status}: ${sanitiseText(res.body, 300) ?? "no details"}`;
+    if (!isRetryableStatus(res.status)) {
+      // 403 / 400 are key, policy or request problems — retrying cannot fix them and would waste quota.
+      throw new AdapterDisabledError(`Google Places rejected the request (${lastError})`);
+    }
+    if (attempt < 3) await new Promise((r) => setTimeout(r, backoffDelayMs(attempt)));
+  }
+  throw new Error(`Google Places is rate limiting or unavailable (${lastError})`);
+}
+
 /**
  * Google discovery — candidate *identification only*.
- * Stores a candidate name plus the business' own website link so the official-source resolver
- * can take over. Google listing content (ratings, reviews, photos, editorial text) is never
- * copied into the catalogue, in line with Google's terms.
+ * Runs the enabled area × category queries from the registry, stores each Place ID with the
+ * business' own website link, and hands over to the official-source resolver.
+ * Google listing content (ratings, reviews, photos, editorial text) is never copied into the catalogue.
  */
-export async function runGoogleDiscovery(db: DB, config: Record<string, unknown>): Promise<DiscoveryCounters> {
+export async function runGoogleDiscovery(db: DB, config: Record<string, unknown>): Promise<GoogleRunReport> {
+  const startedAt = new Date();
+  const runId = crypto.randomUUID();
   const counters = emptyDiscoveryCounters();
-  const missing = missingEnv(["GOOGLE_PLACES_API_KEY"]);
-  if (missing.length > 0) {
-    throw new AdapterDisabledError(`Google discovery is not configured. Add ${missing.join(", ")} in Project Settings → Secrets.`);
-  }
-  const queries = Array.isArray(config["queries"]) ? (config["queries"] as unknown[]).filter((q): q is string => typeof q === "string" && q.trim().length > 2) : [];
-  if (queries.length === 0) throw new AdapterDisabledError("Google discovery has no search queries configured yet.");
+  const errors: string[] = [];
+  let queriesSucceeded = 0;
+  let queriesFailed = 0;
+  let apiRequests = 0;
+  let newCandidates = 0;
+  let duplicates = 0;
 
-  const key = process.env["GOOGLE_PLACES_API_KEY"]!;
-  const maxResults = Math.min(Number(config["max_results"] ?? 20) || 20, 60);
-  // Per-run query budget keeps Google quota predictable; configurable per source.
-  const perRun = Math.min(Math.max(Number(config["queries_per_run"] ?? 30) || 30, 1), 60);
-
-  for (const query of queries.slice(0, perRun)) {
-    const res = await withRetry(() =>
-      safeFetch("https://places.googleapis.com/v1/places:searchText", {
-        method: "POST",
-        skipRobots: true,
-        timeoutMs: 10000,
-        headers: {
-          "content-type": "application/json",
-          "X-Goog-Api-Key": key,
-          // Only identity + website fields are requested — no reviews, photos or editorial content.
-          "X-Goog-FieldMask": "places.id,places.displayName,places.websiteUri",
-        },
-        body: JSON.stringify({ textQuery: query, maxResultCount: Math.min(maxResults, 20), regionCode: "IN" }),
-      }),
+  const cred = googleCredential();
+  if (!cred.key) {
+    throw new AdapterDisabledError(
+      `Google discovery is NOT_CONFIGURED — the Places API credential is missing. Add ${cred.missing.join(" or ")} in Project Settings → Secrets. No Google requests were made.`,
     );
-    if (res.status < 200 || res.status >= 300) {
-      // Surface Google's own message (e.g. API_KEY_SERVICE_BLOCKED) instead of silently counting zero.
-      throw new AdapterDisabledError(`Google Places rejected the request (HTTP ${res.status}): ${sanitiseText(res.body, 300) ?? "no details"}`);
-    }
-    const json = JSON.parse(res.body) as { places?: { id?: string; displayName?: { text?: string }; websiteUri?: string }[] };
+  }
 
-    const places = Array.isArray(json.places) ? json.places : [];
-    counters.scanned += places.length;
-    for (const place of places) {
-      const name = place.displayName?.text;
-      if (!name) continue;
-      const id = await upsertCandidate(db, {
-        name,
-        discoveryMethod: "google_places",
-        discoveryQuery: query,
-        externalRef: place.id ?? null,
-        officialWebsiteUrl: place.websiteUri ?? null,
-        evidence: { note: "Google used only to identify a candidate and its own website link; no listing content stored." },
-      });
-      if (id) counters.candidates += 1;
+  const maxResults = Math.min(Math.max(Number(config["max_results"] ?? 20) || 20, 1), 20);
+  const perRun = Math.min(Math.max(Number(config["queries_per_run"] ?? 30) || 30, 1), 60);
+  const dailyLimit = Math.max(1, Number(config["daily_request_budget"] ?? 500) || 500);
+  const monthlyLimit = Math.max(1, Number(config["monthly_request_budget"] ?? 5000) || 5000);
+
+  const usage = await googleRequestUsage(db);
+  let remaining = requestsRemaining({ ...usage, dailyLimit, monthlyLimit });
+  if (remaining <= 0) {
+    throw new AdapterDisabledError(
+      `Google request budget reached (${usage.requestsToday}/${dailyLimit} today, ${usage.requestsThisMonth}/${monthlyLimit} this month). No requests were made.`,
+    );
+  }
+
+  // Least-recently-run enabled queries first, so coverage rotates across areas and categories.
+  const { data: rows } = await db
+    .from("google_discovery_queries")
+    .select("id,area,category,query_text")
+    .eq("enabled", true)
+    .order("priority", { ascending: true })
+    .order("last_run_at", { ascending: true, nullsFirst: true })
+    .limit(perRun);
+
+  const queries = rows ?? [];
+  if (queries.length === 0) {
+    throw new AdapterDisabledError("Google discovery has no enabled queries. Switch some on in Admin → Sources → Google Discovery.");
+  }
+
+  await track(db, GOOGLE_DISCOVERY_EVENTS.started, { run_id: runId, queries: queries.length, daily_limit: dailyLimit });
+
+  for (const row of queries) {
+    if (remaining <= 0) {
+      errors.push("Stopped early: Google request budget reached.");
+      break;
+    }
+    try {
+      const { places, requests } = await googleTextSearch(db, cred.key, { id: row.id, text: row.query_text }, maxResults);
+      apiRequests += requests;
+      remaining -= requests;
+      queriesSucceeded += 1;
+      counters.scanned += places.length;
+
+      for (const place of places) {
+        const name = place.displayName?.text;
+        if (!name) continue;
+        const { id, created } = await upsertCandidateDetailed(db, {
+          name,
+          discoveryMethod: "google_places",
+          discoveryQuery: row.query_text,
+          googlePlaceId: place.id ?? null,
+          googleMapsUri: place.googleMapsUri ?? null,
+          area: row.area,
+          category: row.category,
+          officialWebsiteUrl: place.websiteUri ?? null,
+          evidence: {
+            run_id: runId,
+            business_status: place.businessStatus ?? null,
+            types: (place.types ?? []).slice(0, 8),
+            note: "Google Places used only to identify a candidate and its own website link; no listing content stored.",
+          },
+        });
+        if (!id) continue;
+        counters.candidates += 1;
+        if (created) {
+          newCandidates += 1;
+          await track(db, GOOGLE_DISCOVERY_EVENTS.candidateFound, { run_id: runId, candidate: id, area: row.area, category: row.category });
+        } else {
+          duplicates += 1;
+          await track(db, GOOGLE_DISCOVERY_EVENTS.candidateDuplicate, { run_id: runId, candidate: id });
+        }
+      }
+
+      await db
+        .from("google_discovery_queries")
+        .update({ last_run_at: new Date().toISOString(), last_result_count: places.length, last_error: null })
+        .eq("id", row.id);
+      await track(db, GOOGLE_DISCOVERY_EVENTS.queryExecuted, { run_id: runId, query: row.query_text, results: places.length });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      queriesFailed += 1;
+      counters.failed += 1;
+      errors.push(`${row.query_text}: ${message}`);
+      apiRequests += 1;
+      remaining -= 1;
+      await db.from("google_discovery_queries").update({ last_run_at: new Date().toISOString(), last_error: message.slice(0, 500) }).eq("id", row.id);
+      await track(db, GOOGLE_DISCOVERY_EVENTS.error, { run_id: runId, query: row.query_text, message: message.slice(0, 300) });
+      if (error instanceof AdapterDisabledError) break; // key/policy problem — stop the whole run
     }
   }
-  await track(db, "discovery_run_completed", { method: "google_places", ...counters });
-  return counters;
+
+  const report: GoogleRunReport = {
+    ...counters,
+    run_id: runId,
+    started_at: startedAt.toISOString(),
+    finished_at: new Date().toISOString(),
+    queries_attempted: queriesSucceeded + queriesFailed,
+    queries_succeeded: queriesSucceeded,
+    queries_failed: queriesFailed,
+    api_requests: apiRequests,
+    new_candidates: newCandidates,
+    duplicate_candidates: duplicates,
+    budget_remaining: Math.max(0, remaining),
+    errors: errors.slice(0, 20),
+  };
+  await track(db, "discovery_run_completed", { method: "google_places", ...report });
+  return report;
 }
 
 /**

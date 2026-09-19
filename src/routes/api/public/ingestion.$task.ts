@@ -86,7 +86,11 @@ export const Route = createFileRoute("/api/public/ingestion/$task")({
               if (!source) return Response.json({ error: "google-discovery source not found" }, { status: 404 });
               if (!source.enabled) return Response.json({ ok: false, task, error: "google discovery source disabled" }, { status: 409 });
               const discovery = await import("@/lib/ingestion/discovery.server");
-              const result = await discovery.runGoogleDiscovery(supabaseAdmin, (source.config ?? {}) as Record<string, unknown>);
+              // Allow the caller to shrink the per-run query batch; budgets still apply.
+              const perRun = Number(body["queries_per_run"]);
+              const config = { ...((source.config ?? {}) as Record<string, unknown>) };
+              if (Number.isFinite(perRun)) config["queries_per_run"] = Math.min(Math.max(Math.trunc(perRun), 1), 60);
+              const result = await discovery.runGoogleDiscovery(supabaseAdmin, config);
               return Response.json({ ok: true, task, ...result });
             }
             case "resolve-sources": {
