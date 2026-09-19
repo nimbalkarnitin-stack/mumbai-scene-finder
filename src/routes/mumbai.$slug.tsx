@@ -75,11 +75,7 @@ function SeoPage() {
       <PageHeader eyebrow="Mumbai guide" title={page.h1} description={page.description} />
       <div className="grid gap-4 px-4 sm:grid-cols-2 md:px-6 lg:grid-cols-3">
         {items.map((item, i) => <SceneCard key={item.id} item={item} index={i} />)}
-        {items.length === 0 && (
-          <div className="col-span-full rounded-3xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-            No verified listings match yet. SceneAI never fabricates events or prices — check back soon or <Link to="/concierge" className="text-primary-glow underline">ask the concierge</Link>.
-          </div>
-        )}
+        {items.length === 0 && <CatalogueEmptyState className="col-span-full" filtered />}
       </div>
       <section className="px-4 pt-14 md:px-6">
         <p className="eyebrow mb-3">More Mumbai guides</p>
