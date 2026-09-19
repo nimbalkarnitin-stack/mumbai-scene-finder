@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const TASKS = ["orchestrate", "ingest-source", "normalise-record", "deduplicate-records", "verify-catalogue", "expire-events", "health"] as const;
+const TASKS = ["orchestrate", "ingest-source", "normalise-record", "deduplicate-records", "verify-catalogue", "expire-events", "health", "google-discovery"] as const;
 type Task = (typeof TASKS)[number];
 
 /**
@@ -80,6 +80,14 @@ export const Route = createFileRoute("/api/public/ingestion/$task")({
                 failed_records: rows.reduce((n, j) => n + j.records_failed, 0),
                 review_queue: reviewQueue ?? 0,
               });
+            }
+            case "google-discovery": {
+              const { data: source } = await supabaseAdmin.from("ingestion_sources").select("config,enabled").eq("slug", "google-discovery").maybeSingle();
+              if (!source) return Response.json({ error: "google-discovery source not found" }, { status: 404 });
+              if (!source.enabled) return Response.json({ ok: false, task, error: "google discovery source disabled" }, { status: 409 });
+              const discovery = await import("@/lib/ingestion/discovery.server");
+              const result = await discovery.runGoogleDiscovery(supabaseAdmin, (source.config ?? {}) as Record<string, unknown>);
+              return Response.json({ ok: true, task, ...result });
             }
           }
         } catch (error) {
