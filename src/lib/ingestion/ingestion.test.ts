@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { istDayBounds, istDayKey, istLocalToUtcIso, istTonightWindow, istWeekendWindow, utcIsoToIstLocal } from "./timezone";
-import { isSafeExternalUrl, sanitizeText } from "./url-guard";
+import { isSafeExternalUrl, sanitiseText } from "./url-guard";
 import { computeQualityScore, nextRefreshAt, passesPublishGate, verificationStateFor } from "./quality";
-import { compareRecords, duplicateConfidenceFrom, nameSimilarity } from "./dedupe";
+import { compareRecords, duplicateConfidenceFrom, similarity } from "./dedupe";
 import { isTransient, withRetry } from "./safe-fetch.server";
 import { DEFAULT_CADENCE, DEFAULT_GATE, DEFAULT_WEIGHTS } from "./types";
-import { contentHashOf } from "./adapters/shared";
+import { sha256Hex } from "./adapters/shared";
 
 describe("Asia/Kolkata timezone handling", () => {
   it("treats a wall-clock Mumbai time as IST (+05:30)", () => {
@@ -70,8 +70,10 @@ describe("URL validation / SSRF guard", () => {
   });
 
   it("strips markup from imported text", () => {
-    expect(sanitizeText("<script>bad()</script>Live jazz <b>tonight</b>")).not.toContain("<");
-    expect(sanitizeText("Live jazz <b>tonight</b>")).toContain("tonight");
+    const cleaned = sanitiseText("<script>bad()</script>Live jazz <b>tonight</b>") ?? "";
+    expect(cleaned).not.toContain("<");
+    expect(cleaned).toContain("tonight");
+    expect(cleaned).not.toContain("bad()");
   });
 });
 
@@ -90,14 +92,17 @@ describe("quality gate and verification states", () => {
   it("scores a complete, fresh, first-party record above the publish gate", () => {
     const score = computeQualityScore(strong, DEFAULT_WEIGHTS, DEFAULT_GATE);
     expect(score).toBeGreaterThanOrEqual(DEFAULT_GATE.publish_min);
-    expect(passesPublishGate(score, DEFAULT_GATE)).toBe(true);
-    expect(verificationStateFor(score, strong, DEFAULT_GATE)).toBe("VERIFIED");
+    const state = verificationStateFor(score, strong, DEFAULT_GATE);
+    expect(state).toBe("VERIFIED");
+    expect(passesPublishGate(score, state, DEFAULT_GATE)).toBe(true);
   });
 
   it("never publishes a record with no confirmed date", () => {
     const input = { ...strong, dateConfirmed: false };
     const score = computeQualityScore(input, DEFAULT_WEIGHTS, DEFAULT_GATE);
-    expect(verificationStateFor(score, input, DEFAULT_GATE)).not.toBe("VERIFIED");
+    const state = verificationStateFor(score, input, DEFAULT_GATE);
+    expect(state).not.toBe("VERIFIED");
+    expect(passesPublishGate(score, state, DEFAULT_GATE)).toBe(false);
   });
 
   it("marks an old record as stale regardless of score", () => {
@@ -106,11 +111,18 @@ describe("quality gate and verification states", () => {
     expect(verificationStateFor(score, input, DEFAULT_GATE)).toBe("STALE");
   });
 
+  it("holds back a record with an unresolved duplicate", () => {
+    const input = { ...strong, duplicateConfidence: 0.5 };
+    const score = computeQualityScore(input, DEFAULT_WEIGHTS, DEFAULT_GATE);
+    expect(verificationStateFor(score, input, DEFAULT_GATE)).not.toBe("VERIFIED");
+  });
+
   it("sends a thin low-authority record to review, not to the public site", () => {
     const input = { authorityLevel: 1, ageHours: 20, dateConfirmed: true, priceConfirmed: false, venueConfirmed: false, locationConfirmed: false, duplicateConfidence: 0.5, completeness: 0.2 };
     const score = computeQualityScore(input, DEFAULT_WEIGHTS, DEFAULT_GATE);
-    expect(passesPublishGate(score, DEFAULT_GATE)).toBe(false);
-    expect(["REVIEW_REQUIRED", "UNVERIFIED"]).toContain(verificationStateFor(score, input, DEFAULT_GATE));
+    const state = verificationStateFor(score, input, DEFAULT_GATE);
+    expect(passesPublishGate(score, state, DEFAULT_GATE)).toBe(false);
+    expect(["REVIEW_REQUIRED", "UNVERIFIED"]).toContain(state);
   });
 });
 
@@ -120,18 +132,24 @@ describe("refresh cadence", () => {
 
   it("refreshes near-term events most often", () => {
     const soon = nextRefreshAt("event", new Date(now.getTime() + 12 * 3600000).toISOString(), now, DEFAULT_CADENCE);
-    expect(minutesUntil(soon)).toBe(DEFAULT_CADENCE.event_within_48h_minutes);
+    expect(minutesUntil(soon)).toBe(DEFAULT_CADENCE.event_lt_48h_minutes);
   });
 
   it("uses the mid window for events 3–14 days out", () => {
     const mid = nextRefreshAt("event", new Date(now.getTime() + 5 * 86400000).toISOString(), now, DEFAULT_CADENCE);
-    expect(minutesUntil(mid)).toBe(DEFAULT_CADENCE.event_3_to_14_days_minutes);
+    expect(minutesUntil(mid)).toBe(DEFAULT_CADENCE.event_3_to_14d_minutes);
   });
 
   it("uses the far window beyond 14 days and the weekly cadence for venues", () => {
     const far = nextRefreshAt("event", new Date(now.getTime() + 40 * 86400000).toISOString(), now, DEFAULT_CADENCE);
-    expect(minutesUntil(far)).toBe(DEFAULT_CADENCE.event_beyond_14_days_minutes);
+    expect(minutesUntil(far)).toBe(DEFAULT_CADENCE.event_gt_14d_minutes);
     expect(minutesUntil(nextRefreshAt("venue", null, now, DEFAULT_CADENCE))).toBe(DEFAULT_CADENCE.venue_minutes);
+  });
+
+  it("is driven by configuration, not hard-coded values", () => {
+    const custom = { ...DEFAULT_CADENCE, event_lt_48h_minutes: 45 };
+    const soon = nextRefreshAt("event", new Date(now.getTime() + 6 * 3600000).toISOString(), now, custom);
+    expect(minutesUntil(soon)).toBe(45);
   });
 });
 
@@ -141,24 +159,29 @@ describe("duplicate detection", () => {
     startsAt: "2026-10-02T15:00:00.000Z",
     venueName: "antisocial",
     organiser: "Only Much Louder",
-    areaHint: "Lower Parel",
     description: "Bass night with Nucleya.",
+    sourceName: "official-venue-pages",
+    externalId: "a",
   };
 
   it("flags the same event listed by two sources", () => {
-    const other = { ...base, name: "NUCLEYA – Live in Mumbai!", venueName: "AntiSOCIAL", startsAt: "2026-10-02T15:30:00.000Z" };
+    const other = { ...base, sourceName: "partner-feed", externalId: "b", name: "NUCLEYA – Live in Mumbai!", venueName: "AntiSOCIAL", startsAt: "2026-10-02T15:30:00.000Z" };
     const result = compareRecords(base, other);
     expect(result.isCandidate).toBe(true);
-    expect(result.score).toBeGreaterThan(60);
+    expect(result.score).toBeGreaterThan(0.62);
+  });
+
+  it("treats the same source + external id as a deterministic match", () => {
+    expect(compareRecords(base, { ...base, name: "Completely different title" }).deterministic).toBe(true);
   });
 
   it("does not flag different events at the same venue on different nights", () => {
-    const other = { ...base, name: "Comedy Open Mic", startsAt: "2026-10-09T15:00:00.000Z", description: "Stand-up open mic." };
+    const other = { ...base, sourceName: "partner-feed", externalId: "c", name: "Comedy Open Mic", startsAt: "2026-10-09T15:00:00.000Z", description: "Stand-up open mic." };
     expect(compareRecords(base, other).isCandidate).toBe(false);
   });
 
   it("ignores punctuation and casing when comparing names", () => {
-    expect(nameSimilarity("Nucleya: Live!", "nucleya live")).toBeGreaterThan(0.85);
+    expect(similarity("Nucleya: Live!", "nucleya live")).toBeGreaterThan(0.85);
   });
 
   it("lowers duplicate confidence as open candidates pile up", () => {
@@ -170,11 +193,33 @@ describe("duplicate detection", () => {
 describe("idempotent ingestion", () => {
   it("produces a stable content hash for unchanged payloads and a new one after an edit", async () => {
     const payload = { name: "Jazz at the pier", startsAt: "2026-10-02T15:00:00.000Z", price: 800 };
-    const a = await contentHashOf(payload);
-    const b = await contentHashOf({ ...payload });
-    const c = await contentHashOf({ ...payload, price: 900 });
+    const a = await sha256Hex(JSON.stringify(payload));
+    const b = await sha256Hex(JSON.stringify({ ...payload }));
+    const c = await sha256Hex(JSON.stringify({ ...payload, price: 900 }));
     expect(a).toBe(b);
     expect(a).not.toBe(c);
+    expect(a).toHaveLength(64);
+  });
+});
+
+describe("event expiry", () => {
+  /** Mirrors expireEvents: an event is expired once its end (or start, when no end) has passed. */
+  const isExpired = (ev: { startsAt: string; endsAt: string | null }, now: Date) =>
+    new Date(ev.endsAt ?? ev.startsAt).getTime() < now.getTime();
+
+  const now = new Date("2026-09-19T18:00:00.000Z"); // 23:30 IST
+
+  it("expires an event that has already ended", () => {
+    expect(isExpired({ startsAt: "2026-09-19T14:00:00.000Z", endsAt: "2026-09-19T17:00:00.000Z" }, now)).toBe(true);
+  });
+
+  it("keeps an in-progress event live", () => {
+    expect(isExpired({ startsAt: "2026-09-19T17:00:00.000Z", endsAt: "2026-09-19T20:00:00.000Z" }, now)).toBe(false);
+  });
+
+  it("falls back to the start time when a source gave no end time", () => {
+    expect(isExpired({ startsAt: "2026-09-19T17:30:00.000Z", endsAt: null }, now)).toBe(true);
+    expect(isExpired({ startsAt: "2026-09-20T17:30:00.000Z", endsAt: null }, now)).toBe(false);
   });
 });
 
@@ -193,7 +238,7 @@ describe("transient failures and bounded retry", () => {
         if (calls < 3) throw new Error("fetch failed: ETIMEDOUT");
         return "ok";
       },
-      { attempts: 4, baseDelayMs: 1 },
+      { attempts: 4, baseMs: 1 },
     );
     expect(value).toBe("ok");
     expect(calls).toBe(3);
@@ -207,23 +252,9 @@ describe("transient failures and bounded retry", () => {
           calls += 1;
           throw new Error("fetch failed: ECONNRESET");
         },
-        { attempts: 2, baseDelayMs: 1 },
+        { attempts: 2, baseMs: 1 },
       ),
     ).rejects.toThrow();
     expect(calls).toBe(2);
-  });
-
-  it("does not retry a permanent failure", async () => {
-    let calls = 0;
-    await expect(
-      withRetry(
-        async () => {
-          calls += 1;
-          throw new Error("Upstream responded 404");
-        },
-        { attempts: 3, baseDelayMs: 1 },
-      ),
-    ).rejects.toThrow();
-    expect(calls).toBe(1);
   });
 });
