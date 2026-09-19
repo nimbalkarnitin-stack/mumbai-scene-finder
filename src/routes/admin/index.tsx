@@ -31,6 +31,7 @@ function Overview() {
       {q.data && q.data.unverified > 0 && (
         <p className="mt-6 rounded-2xl border border-saffron/30 bg-saffron/10 px-4 py-3 text-sm text-saffron">{q.data.unverified} venue{q.data.unverified === 1 ? "" : "s"} still unverified — confirm hours and prices before promoting them.</p>
       )}
+      <DataHealth />
       <div className="mt-6 rounded-2xl border border-border bg-card p-4">
         <h2 className="mb-3 font-semibold">Recent activity</h2>
         {q.data?.recent.length === 0 && <p className="text-xs text-muted-foreground">No activity yet.</p>}
