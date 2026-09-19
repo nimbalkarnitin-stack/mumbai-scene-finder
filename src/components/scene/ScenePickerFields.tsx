@@ -5,11 +5,11 @@ import { BUDGETS, GROUPS, MOODS, TIMINGS } from "@/lib/scene-constants";
 import { getCityMeta } from "@/lib/scene.functions";
 
 export interface SceneSelection {
-  mood?: string;
-  group?: string;
-  budget?: number;
-  timing?: string;
-  area?: string;
+  mood?: string | undefined;
+  group?: string | undefined;
+  budget?: number | undefined;
+  timing?: string | undefined;
+  area?: string | undefined;
 }
 
 function Step({ n, label, children }: { n: number; label: string; children: ReactNode }) {
