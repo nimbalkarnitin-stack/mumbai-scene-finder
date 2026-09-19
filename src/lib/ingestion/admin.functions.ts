@@ -404,3 +404,125 @@ export const getIngestionHealth = createServerFn({ method: "GET" })
     };
 
   });
+
+/** Discovery candidates with their resolved source candidates (admin-only, read). */
+export const listDiscovery = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ status: z.enum(["all", "DISCOVERED", "SOURCE_FOUND", "VALIDATED", "INGESTED", "REJECTED"]).optional() }).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let q = supabaseAdmin
+      .from("discovery_candidates")
+      .select("id,name,status,discovery_method,discovery_query,domain,source_url,official_website_url,events_page_url,confidence,evidence,notes,last_error,discovered_at,last_checked_at,next_check_at")
+      .order("confidence", { ascending: false })
+      .limit(100);
+    if (data.status && data.status !== "all") q = q.eq("status", data.status);
+    const { data: candidates } = await q;
+    const ids = (candidates ?? []).map((c) => c.id);
+    const { data: pages } = ids.length
+      ? await supabaseAdmin
+          .from("discovery_source_candidates")
+          .select("id,candidate_id,url,kind,confidence,status,has_structured_data,structured_kinds,validation_notes,http_status,last_checked_at")
+          .in("candidate_id", ids)
+      : { data: [] };
+    const { data: socials } = ids.length
+      ? await supabaseAdmin.from("social_profiles").select("id,candidate_id,platform,handle,profile_url,verification_state,authorised_api,last_checked_at").in("candidate_id", ids)
+      : { data: [] };
+    const { count: googleReady } = { count: !!process.env["GOOGLE_PLACES_API_KEY"] };
+    return {
+      candidates: candidates ?? [],
+      pages: pages ?? [],
+      socials: socials ?? [],
+      googleConfigured: googleReady,
+    };
+  });
+
+/** Safe manual discovery actions: re-check a candidate, promote it to the official source, or reject it. */
+export const discoveryAction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        action: z.enum(["recheck", "promote", "reject", "reopen", "add_candidate", "run_google"]),
+        id: z.string().uuid().optional(),
+        name: z.string().min(2).max(160).optional(),
+        url: z.string().max(500).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const discovery = await import("@/lib/ingestion/discovery.server");
+
+    if (data.action === "add_candidate") {
+      const { isSafeExternalUrl } = await import("@/lib/ingestion/url-guard");
+      if (!data.name) throw new Error("A venue or organiser name is required");
+      if (data.url && !isSafeExternalUrl(data.url)) throw new Error("The website must be a public http(s) URL");
+      const id = await discovery.upsertCandidate(supabaseAdmin, {
+        name: data.name,
+        discoveryMethod: "manual",
+        officialWebsiteUrl: data.url ?? null,
+        sourceUrl: data.url ?? null,
+      });
+      if (!id) throw new Error("Candidate could not be stored");
+      return { ok: true, id };
+    }
+
+    if (data.action === "run_google") {
+      const { data: source } = await supabaseAdmin.from("ingestion_sources").select("config,enabled").eq("slug", "google-discovery").maybeSingle();
+      if (!source?.enabled) throw new Error("Google discovery is switched off. Enable it in Sources once the Google API key and search queries are configured.");
+      return { ok: true, result: await discovery.runGoogleDiscovery(supabaseAdmin, (source.config ?? {}) as Record<string, unknown>) };
+    }
+
+    if (!data.id) throw new Error("A candidate is required");
+    if (data.action === "recheck") return { ok: true, result: await discovery.resolveCandidate(supabaseAdmin, data.id) };
+    if (data.action === "promote") return { ok: true, result: await discovery.promoteCandidateToSource(supabaseAdmin, data.id) };
+    const status = data.action === "reject" ? "REJECTED" : "DISCOVERED";
+    const { error } = await supabaseAdmin.from("discovery_candidates").update({ status }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Field-by-field source evidence for one catalogue row, plus any open conflicts. */
+export const getSourceEvidence = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ entityType: z.enum(["event", "venue", "experience"]), entityId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [{ data: fields }, { data: conflicts }] = await Promise.all([
+      supabaseAdmin
+        .from("field_provenance")
+        .select("field,value_text,source_name,source_type,source_url,authority_level,confidence,observed_at")
+        .eq("entity_type", data.entityType)
+        .eq("entity_id", data.entityId)
+        .order("field", { ascending: true }),
+      supabaseAdmin
+        .from("field_conflicts")
+        .select("id,field,conflicting_values,status,detected_at")
+        .eq("entity_type", data.entityType)
+        .eq("entity_id", data.entityId)
+        .eq("status", "open"),
+    ]);
+    return { fields: fields ?? [], conflicts: conflicts ?? [] };
+  });
+
+/** Re-run discovery resolution / cross-source verification on demand. */
+export const runDiscoveryNow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ task: z.enum(["resolve", "cross-verify"]) }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.task === "resolve") {
+      const { runDiscoveryResolver } = await import("@/lib/ingestion/discovery.server");
+      return { ok: true, result: await runDiscoveryResolver(supabaseAdmin, 10) };
+    }
+    const pipeline = await import("@/lib/ingestion/pipeline.server");
+    const settings = await pipeline.loadSettings(supabaseAdmin);
+    return { ok: true, result: await pipeline.crossVerify(supabaseAdmin, settings) };
+  });
