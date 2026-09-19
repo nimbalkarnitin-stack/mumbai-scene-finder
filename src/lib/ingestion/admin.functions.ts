@@ -401,6 +401,6 @@ export const getIngestionHealth = createServerFn({ method: "GET" })
       },
       sources: (sources ?? []).map((s) => ({ ...s, stats: bySource.get(s.slug) ?? null })),
       recentJobs: (jobs ?? []).slice(0, 15),
-      unusedCounter: await countOf("events", (q) => q.select("id", { count: "exact", head: true })),
+      };
     };
   });

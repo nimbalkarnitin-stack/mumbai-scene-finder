@@ -49,7 +49,7 @@ export async function loadSettings(db: DB): Promise<Settings> {
 
 /** Ingestion funnel analytics reuse the existing interactions table. */
 async function trackIngestion(db: DB, eventType: string, metadata: Record<string, unknown>) {
-  await db.from("interactions").insert({ event_type: eventType, city_id: DEFAULT_CITY_ID, metadata });
+  await db.from("interactions").insert({ event_type: eventType, city_id: DEFAULT_CITY_ID, metadata: metadata as never });
 }
 
 async function startJob(db: DB, source: { id?: string | null; name: string } | null, jobType: string) {
@@ -81,7 +81,7 @@ async function finishJob(
       records_skipped: counters.skipped,
       records_failed: counters.failed,
       error_summary: errorSummary,
-      details,
+      details: details as never,
     })
     .eq("id", jobId);
 }
