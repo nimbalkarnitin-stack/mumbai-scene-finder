@@ -22,6 +22,9 @@ import { Route as PlanRouteImport } from './routes/plan'
 import { Route as RestaurantsRouteImport } from './routes/restaurants'
 import { Route as SceneRouteImport } from './routes/scene'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ESlugRouteImport } from './routes/e.$slug'
+import { Route as VSlugRouteImport } from './routes/v.$slug'
+import { Route as XSlugRouteImport } from './routes/x.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -88,6 +91,21 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ESlugRoute = ESlugRouteImport.update({
+  id: '/e/$slug',
+  path: '/e/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VSlugRoute = VSlugRouteImport.update({
+  id: '/v/$slug',
+  path: '/v/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const XSlugRoute = XSlugRouteImport.update({
+  id: '/x/$slug',
+  path: '/x/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -103,6 +121,9 @@ export interface FileRoutesByFullPath {
   '/restaurants': typeof RestaurantsRoute
   '/scene': typeof SceneRoute
   '/api/chat': typeof ApiChatRoute
+  '/e/$slug': typeof ESlugRoute
+  '/v/$slug': typeof VSlugRoute
+  '/x/$slug': typeof XSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,6 +139,9 @@ export interface FileRoutesByTo {
   '/restaurants': typeof RestaurantsRoute
   '/scene': typeof SceneRoute
   '/api/chat': typeof ApiChatRoute
+  '/e/$slug': typeof ESlugRoute
+  '/v/$slug': typeof VSlugRoute
+  '/x/$slug': typeof XSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,6 +158,9 @@ export interface FileRoutesById {
   '/restaurants': typeof RestaurantsRoute
   '/scene': typeof SceneRoute
   '/api/chat': typeof ApiChatRoute
+  '/e/$slug': typeof ESlugRoute
+  '/v/$slug': typeof VSlugRoute
+  '/x/$slug': typeof XSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +178,9 @@ export interface FileRouteTypes {
     | '/restaurants'
     | '/scene'
     | '/api/chat'
+    | '/e/$slug'
+    | '/v/$slug'
+    | '/x/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,6 +196,9 @@ export interface FileRouteTypes {
     | '/restaurants'
     | '/scene'
     | '/api/chat'
+    | '/e/$slug'
+    | '/v/$slug'
+    | '/x/$slug'
   id:
     | '__root__'
     | '/'
@@ -181,6 +214,9 @@ export interface FileRouteTypes {
     | '/restaurants'
     | '/scene'
     | '/api/chat'
+    | '/e/$slug'
+    | '/v/$slug'
+    | '/x/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -197,6 +233,9 @@ export interface RootRouteChildren {
   RestaurantsRoute: typeof RestaurantsRoute
   SceneRoute: typeof SceneRoute
   ApiChatRoute: typeof ApiChatRoute
+  ESlugRoute: typeof ESlugRoute
+  VSlugRoute: typeof VSlugRoute
+  XSlugRoute: typeof XSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -292,6 +331,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/e/$slug': {
+      id: '/e/$slug'
+      path: '/e/$slug'
+      fullPath: '/e/$slug'
+      preLoaderRoute: typeof ESlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v/$slug': {
+      id: '/v/$slug'
+      path: '/v/$slug'
+      fullPath: '/v/$slug'
+      preLoaderRoute: typeof VSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/x/$slug': {
+      id: '/x/$slug'
+      path: '/x/$slug'
+      fullPath: '/x/$slug'
+      preLoaderRoute: typeof XSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -309,6 +369,9 @@ const rootRouteChildren: RootRouteChildren = {
   RestaurantsRoute: RestaurantsRoute,
   SceneRoute: SceneRoute,
   ApiChatRoute: ApiChatRoute,
+  ESlugRoute: ESlugRoute,
+  VSlugRoute: VSlugRoute,
+  XSlugRoute: XSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
