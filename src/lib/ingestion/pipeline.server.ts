@@ -356,6 +356,7 @@ export async function publishReadyRecords(db: DB, settings: Settings, limit = 50
         const lifecycle = publish ? "ACTIVE" : "PENDING_REVIEW";
         const payload = {
           ...shared,
+          venue_id: await resolveVenue(db, cityId, normalised.venueName),
           starts_at: normalised.startsAt,
           ends_at: normalised.endsAt,
           timezone: normalised.timezone,
