@@ -49,7 +49,7 @@ export const listMonetisationSetup = createServerFn({ method: "GET" })
           notes: p.notes,
           default_commission_model: p.default_commission_model,
           default_commission_rate: p.default_commission_rate,
-          config: record.config,
+          config: record.config as Record<string, string | number | boolean | null>,
           credential_env_keys: p.credential_env_keys,
           setup_ready: setup.ready,
           missing_secrets: setup.missingSecrets,
@@ -480,5 +480,5 @@ export const updateMonetisationSetting = createServerFn({ method: "POST" })
       .from("monetisation_settings")
       .upsert({ key: data.key, value: value as never, updated_by: context.userId } as never, { onConflict: "key" });
     if (error) throw new Error(error.message);
-    return { ok: true, value };
+    return { ok: true, value: value as Record<string, string | number | boolean | null> };
   });
