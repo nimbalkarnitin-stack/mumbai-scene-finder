@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { DataHealth } from "@/components/admin/DataHealth";
 import { ENTITIES } from "@/lib/admin-entities";
 import { supabase } from "@/integrations/supabase/client";
 

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { AppShell, PageHeader } from "@/components/scene/AppShell";
 import { Chip } from "@/components/scene/Chip";
 import { SceneCard, SceneCardSkeleton } from "@/components/scene/SceneCard";
+import { CatalogueEmptyState } from "@/components/scene/CatalogueEmptyState";
 import { CATEGORY_NAV } from "@/lib/scene-constants";
 import { CATEGORY_IMAGES } from "@/lib/scene-images";
 import { getCityMeta, listItems } from "@/lib/scene.functions";
@@ -53,7 +54,7 @@ function ExplorePage() {
       <div className="mt-5 grid gap-4 px-4 sm:grid-cols-2 md:px-6 lg:grid-cols-3">
         {isLoading && Array.from({ length: 6 }).map((_, i) => <SceneCardSkeleton key={i} />)}
         {data?.map((item, i) => <SceneCard key={item.id} item={item} index={i} />)}
-        {data && data.length === 0 && <p className="col-span-full py-10 text-center text-sm text-muted-foreground">No verified listings match yet.</p>}
+        {data && data.length === 0 && <CatalogueEmptyState className="col-span-full" filtered={!!search.area || !!search.category} />}
       </div>
     </AppShell>
   );
