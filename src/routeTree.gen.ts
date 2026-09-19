@@ -10,12 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ConciergeRouteImport } from './routes/concierge'
+import { Route as PlanRouteImport } from './routes/plan'
 import { Route as SceneRouteImport } from './routes/scene'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConciergeRoute = ConciergeRouteImport.update({
+  id: '/concierge',
+  path: '/concierge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanRoute = PlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SceneRoute = SceneRouteImport.update({
@@ -31,30 +43,38 @@ const ApiChatRoute = ApiChatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/concierge': typeof ConciergeRoute
+  '/plan': typeof PlanRoute
   '/scene': typeof SceneRoute
   '/api/chat': typeof ApiChatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/concierge': typeof ConciergeRoute
+  '/plan': typeof PlanRoute
   '/scene': typeof SceneRoute
   '/api/chat': typeof ApiChatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/concierge': typeof ConciergeRoute
+  '/plan': typeof PlanRoute
   '/scene': typeof SceneRoute
   '/api/chat': typeof ApiChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/scene' | '/api/chat'
+  fullPaths: '/' | '/concierge' | '/plan' | '/scene' | '/api/chat'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/scene' | '/api/chat'
-  id: '__root__' | '/' | '/scene' | '/api/chat'
+  to: '/' | '/concierge' | '/plan' | '/scene' | '/api/chat'
+  id: '__root__' | '/' | '/concierge' | '/plan' | '/scene' | '/api/chat'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ConciergeRoute: typeof ConciergeRoute
+  PlanRoute: typeof PlanRoute
   SceneRoute: typeof SceneRoute
   ApiChatRoute: typeof ApiChatRoute
 }
@@ -66,6 +86,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/concierge': {
+      id: '/concierge'
+      path: '/concierge'
+      fullPath: '/concierge'
+      preLoaderRoute: typeof ConciergeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plan': {
+      id: '/plan'
+      path: '/plan'
+      fullPath: '/plan'
+      preLoaderRoute: typeof PlanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/scene': {
@@ -87,6 +121,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ConciergeRoute: ConciergeRoute,
+  PlanRoute: PlanRoute,
   SceneRoute: SceneRoute,
   ApiChatRoute: ApiChatRoute,
 }

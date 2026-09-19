@@ -3,7 +3,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { AppShell, PageHeader } from "@/components/scene/AppShell";
 import { Concierge } from "@/components/scene/Concierge";
-import { ScenePicker, type SceneSelection } from "@/components/scene/ScenePicker";
+import { ScenePickerFields, type SceneSelection } from "@/components/scene/ScenePickerFields";
 import { Button } from "@/components/ui/button";
 import { BUDGETS, GROUPS, MOODS, TIMINGS } from "@/lib/scene-constants";
 
@@ -33,6 +33,7 @@ function PlanPage() {
   const search = Route.useSearch();
   const hasParams = Object.values(search).some(Boolean);
   const [sel, setSel] = useState<SceneSelection | null>(hasParams ? search : null);
+  const [draft, setDraft] = useState<SceneSelection>({});
 
   return (
     <AppShell>
@@ -44,8 +45,9 @@ function PlanPage() {
       />
       <div className="px-4 md:px-6">
         {!sel ? (
-          <div className="rounded-[1.75rem] border border-border bg-card/70 p-4 md:p-8">
-            <PlanPicker onDone={setSel} />
+          <div className="space-y-5 rounded-[1.75rem] border border-border bg-card/70 p-4 md:p-8">
+            <ScenePickerFields sel={draft} setSel={(u) => setDraft(u)} />
+            <Button variant="ember" size="xl" className="w-full sm:w-auto" onClick={() => setSel(draft)}>Plan My Weekend</Button>
           </div>
         ) : (
           <Concierge
@@ -60,21 +62,3 @@ function PlanPage() {
     </AppShell>
   );
 }
-
-function PlanPicker({ onDone }: { onDone: (s: SceneSelection) => void }) {
-  // Reuse ScenePicker's UI but intercept navigation by rendering it inside a form-like wrapper.
-  // ScenePicker navigates to /scene; here we want to stay, so we mirror its selection via a lightweight local picker.
-  return <ScenePickerLocal onDone={onDone} />;
-}
-
-function ScenePickerLocal({ onDone }: { onDone: (s: SceneSelection) => void }) {
-  const [sel, setSel] = useState<SceneSelection>({});
-  return (
-    <div className="space-y-5">
-      <ScenePickerFields sel={sel} setSel={setSel} />
-      <Button variant="ember" size="xl" className="w-full sm:w-auto" onClick={() => onDone(sel)}>Plan My Weekend</Button>
-    </div>
-  );
-}
-
-import { ScenePickerFields } from "@/components/scene/ScenePickerFields";
