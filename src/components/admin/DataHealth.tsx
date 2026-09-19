@@ -20,9 +20,9 @@ export function DataHealth() {
       const rows: Health[] = await Promise.all(
         TABLES.map(async (t) => {
           const [total, verified, active] = await Promise.all([
-            countOf(t, (x) => x),
-            countOf(t, (x) => x.eq("is_verified", true)),
-            countOf(t, (x) => x.eq("is_active", true)),
+            countOf(t),
+            countOf(t, "is_verified"),
+            countOf(t, "is_active"),
           ]);
           return { table: t, total, verified, unverified: total - verified, active, inactive: total - active };
         }),
