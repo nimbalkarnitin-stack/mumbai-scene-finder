@@ -14,16 +14,22 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CafesRouteImport } from './routes/cafes'
 import { Route as ComedyRouteImport } from './routes/comedy'
 import { Route as ConciergeRouteImport } from './routes/concierge'
+import { Route as DealsRouteImport } from './routes/deals'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as ExperiencesRouteImport } from './routes/experiences'
 import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as GuidesRouteImport } from './routes/guides'
 import { Route as LiveMusicRouteImport } from './routes/live-music'
 import { Route as NightlifeRouteImport } from './routes/nightlife'
 import { Route as PlanRouteImport } from './routes/plan'
+import { Route as PlusRouteImport } from './routes/plus'
 import { Route as RestaurantsRouteImport } from './routes/restaurants'
+import { Route as SavedRouteImport } from './routes/saved'
 import { Route as SceneRouteImport } from './routes/scene'
+import { Route as TrendingRouteImport } from './routes/trending'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ESlugRouteImport } from './routes/e.$slug'
+import { Route as GuidesSlugRouteImport } from './routes/guides.$slug'
 import { Route as MumbaiSlugRouteImport } from './routes/mumbai.$slug'
 import { Route as VSlugRouteImport } from './routes/v.$slug'
 import { Route as XSlugRouteImport } from './routes/x.$slug'
@@ -53,6 +59,11 @@ const ConciergeRoute = ConciergeRouteImport.update({
   path: '/concierge',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DealsRoute = DealsRouteImport.update({
+  id: '/deals',
+  path: '/deals',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EventsRoute = EventsRouteImport.update({
   id: '/events',
   path: '/events',
@@ -66,6 +77,11 @@ const ExperiencesRoute = ExperiencesRouteImport.update({
 const ExploreRoute = ExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesRoute = GuidesRouteImport.update({
+  id: '/guides',
+  path: '/guides',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LiveMusicRoute = LiveMusicRouteImport.update({
@@ -83,14 +99,29 @@ const PlanRoute = PlanRouteImport.update({
   path: '/plan',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlusRoute = PlusRouteImport.update({
+  id: '/plus',
+  path: '/plus',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RestaurantsRoute = RestaurantsRouteImport.update({
   id: '/restaurants',
   path: '/restaurants',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SavedRoute = SavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SceneRoute = SceneRouteImport.update({
   id: '/scene',
   path: '/scene',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrendingRoute = TrendingRouteImport.update({
+  id: '/trending',
+  path: '/trending',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -102,6 +133,11 @@ const ESlugRoute = ESlugRouteImport.update({
   id: '/e/$slug',
   path: '/e/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesSlugRoute = GuidesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => GuidesRoute,
 } as any)
 const MumbaiSlugRoute = MumbaiSlugRouteImport.update({
   id: '/mumbai/$slug',
@@ -125,16 +161,22 @@ export interface FileRoutesByFullPath {
   '/cafes': typeof CafesRoute
   '/comedy': typeof ComedyRoute
   '/concierge': typeof ConciergeRoute
+  '/deals': typeof DealsRoute
   '/events': typeof EventsRoute
   '/experiences': typeof ExperiencesRoute
   '/explore': typeof ExploreRoute
+  '/guides': typeof GuidesRouteWithChildren
   '/live-music': typeof LiveMusicRoute
   '/nightlife': typeof NightlifeRoute
   '/plan': typeof PlanRoute
+  '/plus': typeof PlusRoute
   '/restaurants': typeof RestaurantsRoute
+  '/saved': typeof SavedRoute
   '/scene': typeof SceneRoute
+  '/trending': typeof TrendingRoute
   '/api/chat': typeof ApiChatRoute
   '/e/$slug': typeof ESlugRoute
+  '/guides/$slug': typeof GuidesSlugRoute
   '/mumbai/$slug': typeof MumbaiSlugRoute
   '/v/$slug': typeof VSlugRoute
   '/x/$slug': typeof XSlugRoute
@@ -145,16 +187,22 @@ export interface FileRoutesByTo {
   '/cafes': typeof CafesRoute
   '/comedy': typeof ComedyRoute
   '/concierge': typeof ConciergeRoute
+  '/deals': typeof DealsRoute
   '/events': typeof EventsRoute
   '/experiences': typeof ExperiencesRoute
   '/explore': typeof ExploreRoute
+  '/guides': typeof GuidesRouteWithChildren
   '/live-music': typeof LiveMusicRoute
   '/nightlife': typeof NightlifeRoute
   '/plan': typeof PlanRoute
+  '/plus': typeof PlusRoute
   '/restaurants': typeof RestaurantsRoute
+  '/saved': typeof SavedRoute
   '/scene': typeof SceneRoute
+  '/trending': typeof TrendingRoute
   '/api/chat': typeof ApiChatRoute
   '/e/$slug': typeof ESlugRoute
+  '/guides/$slug': typeof GuidesSlugRoute
   '/mumbai/$slug': typeof MumbaiSlugRoute
   '/v/$slug': typeof VSlugRoute
   '/x/$slug': typeof XSlugRoute
@@ -166,16 +214,22 @@ export interface FileRoutesById {
   '/cafes': typeof CafesRoute
   '/comedy': typeof ComedyRoute
   '/concierge': typeof ConciergeRoute
+  '/deals': typeof DealsRoute
   '/events': typeof EventsRoute
   '/experiences': typeof ExperiencesRoute
   '/explore': typeof ExploreRoute
+  '/guides': typeof GuidesRouteWithChildren
   '/live-music': typeof LiveMusicRoute
   '/nightlife': typeof NightlifeRoute
   '/plan': typeof PlanRoute
+  '/plus': typeof PlusRoute
   '/restaurants': typeof RestaurantsRoute
+  '/saved': typeof SavedRoute
   '/scene': typeof SceneRoute
+  '/trending': typeof TrendingRoute
   '/api/chat': typeof ApiChatRoute
   '/e/$slug': typeof ESlugRoute
+  '/guides/$slug': typeof GuidesSlugRoute
   '/mumbai/$slug': typeof MumbaiSlugRoute
   '/v/$slug': typeof VSlugRoute
   '/x/$slug': typeof XSlugRoute
@@ -188,16 +242,22 @@ export interface FileRouteTypes {
     | '/cafes'
     | '/comedy'
     | '/concierge'
+    | '/deals'
     | '/events'
     | '/experiences'
     | '/explore'
+    | '/guides'
     | '/live-music'
     | '/nightlife'
     | '/plan'
+    | '/plus'
     | '/restaurants'
+    | '/saved'
     | '/scene'
+    | '/trending'
     | '/api/chat'
     | '/e/$slug'
+    | '/guides/$slug'
     | '/mumbai/$slug'
     | '/v/$slug'
     | '/x/$slug'
@@ -208,16 +268,22 @@ export interface FileRouteTypes {
     | '/cafes'
     | '/comedy'
     | '/concierge'
+    | '/deals'
     | '/events'
     | '/experiences'
     | '/explore'
+    | '/guides'
     | '/live-music'
     | '/nightlife'
     | '/plan'
+    | '/plus'
     | '/restaurants'
+    | '/saved'
     | '/scene'
+    | '/trending'
     | '/api/chat'
     | '/e/$slug'
+    | '/guides/$slug'
     | '/mumbai/$slug'
     | '/v/$slug'
     | '/x/$slug'
@@ -228,16 +294,22 @@ export interface FileRouteTypes {
     | '/cafes'
     | '/comedy'
     | '/concierge'
+    | '/deals'
     | '/events'
     | '/experiences'
     | '/explore'
+    | '/guides'
     | '/live-music'
     | '/nightlife'
     | '/plan'
+    | '/plus'
     | '/restaurants'
+    | '/saved'
     | '/scene'
+    | '/trending'
     | '/api/chat'
     | '/e/$slug'
+    | '/guides/$slug'
     | '/mumbai/$slug'
     | '/v/$slug'
     | '/x/$slug'
@@ -249,14 +321,19 @@ export interface RootRouteChildren {
   CafesRoute: typeof CafesRoute
   ComedyRoute: typeof ComedyRoute
   ConciergeRoute: typeof ConciergeRoute
+  DealsRoute: typeof DealsRoute
   EventsRoute: typeof EventsRoute
   ExperiencesRoute: typeof ExperiencesRoute
   ExploreRoute: typeof ExploreRoute
+  GuidesRoute: typeof GuidesRouteWithChildren
   LiveMusicRoute: typeof LiveMusicRoute
   NightlifeRoute: typeof NightlifeRoute
   PlanRoute: typeof PlanRoute
+  PlusRoute: typeof PlusRoute
   RestaurantsRoute: typeof RestaurantsRoute
+  SavedRoute: typeof SavedRoute
   SceneRoute: typeof SceneRoute
+  TrendingRoute: typeof TrendingRoute
   ApiChatRoute: typeof ApiChatRoute
   ESlugRoute: typeof ESlugRoute
   MumbaiSlugRoute: typeof MumbaiSlugRoute
@@ -301,6 +378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConciergeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/deals': {
+      id: '/deals'
+      path: '/deals'
+      fullPath: '/deals'
+      preLoaderRoute: typeof DealsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/events': {
       id: '/events'
       path: '/events'
@@ -320,6 +404,13 @@ declare module '@tanstack/react-router' {
       path: '/explore'
       fullPath: '/explore'
       preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides': {
+      id: '/guides'
+      path: '/guides'
+      fullPath: '/guides'
+      preLoaderRoute: typeof GuidesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/live-music': {
@@ -343,6 +434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlanRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/plus': {
+      id: '/plus'
+      path: '/plus'
+      fullPath: '/plus'
+      preLoaderRoute: typeof PlusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/restaurants': {
       id: '/restaurants'
       path: '/restaurants'
@@ -350,11 +448,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RestaurantsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/saved': {
+      id: '/saved'
+      path: '/saved'
+      fullPath: '/saved'
+      preLoaderRoute: typeof SavedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/scene': {
       id: '/scene'
       path: '/scene'
       fullPath: '/scene'
       preLoaderRoute: typeof SceneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trending': {
+      id: '/trending'
+      path: '/trending'
+      fullPath: '/trending'
+      preLoaderRoute: typeof TrendingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -370,6 +482,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/e/$slug'
       preLoaderRoute: typeof ESlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/guides/$slug': {
+      id: '/guides/$slug'
+      path: '/$slug'
+      fullPath: '/guides/$slug'
+      preLoaderRoute: typeof GuidesSlugRouteImport
+      parentRoute: typeof GuidesRoute
     }
     '/mumbai/$slug': {
       id: '/mumbai/$slug'
@@ -395,20 +514,36 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface GuidesRouteChildren {
+  GuidesSlugRoute: typeof GuidesSlugRoute
+}
+
+const GuidesRouteChildren: GuidesRouteChildren = {
+  GuidesSlugRoute: GuidesSlugRoute,
+}
+
+const GuidesRouteWithChildren =
+  GuidesRoute._addFileChildren(GuidesRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   CafesRoute: CafesRoute,
   ComedyRoute: ComedyRoute,
   ConciergeRoute: ConciergeRoute,
+  DealsRoute: DealsRoute,
   EventsRoute: EventsRoute,
   ExperiencesRoute: ExperiencesRoute,
   ExploreRoute: ExploreRoute,
+  GuidesRoute: GuidesRouteWithChildren,
   LiveMusicRoute: LiveMusicRoute,
   NightlifeRoute: NightlifeRoute,
   PlanRoute: PlanRoute,
+  PlusRoute: PlusRoute,
   RestaurantsRoute: RestaurantsRoute,
+  SavedRoute: SavedRoute,
   SceneRoute: SceneRoute,
+  TrendingRoute: TrendingRoute,
   ApiChatRoute: ApiChatRoute,
   ESlugRoute: ESlugRoute,
   MumbaiSlugRoute: MumbaiSlugRoute,
