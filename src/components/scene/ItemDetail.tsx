@@ -8,17 +8,15 @@ import { Button } from "@/components/ui/button";
 import { useSaved } from "@/hooks/useSaved";
 import { itemImage } from "@/lib/scene-images";
 import type { SceneItem } from "@/lib/scene-types";
-import { buildBookingUrl, formatPrice, formatWhen, track } from "@/lib/track";
+import { formatPrice, formatWhen, openOutbound, resolveOutboundLink, track } from "@/lib/track";
 import { cn } from "@/lib/utils";
 
 export function ItemDetail({ item, related }: { item: SceneItem; related: SceneItem[] }) {
   const { isSaved, toggle } = useSaved();
   const saved = isSaved(item.type, item.id);
 
-  const book = () => {
-    track("booking_click", { itemType: item.type, itemId: item.id, metadata: { affiliate: item.affiliateLinkId, sponsored: item.isSponsored, source: "detail" } });
-    window.open(buildBookingUrl(item), "_blank", "noopener,noreferrer");
-  };
+  const link = resolveOutboundLink(item);
+  const book = () => openOutbound(item, { source: "detail" });
   const share = async () => {
     track("share", { itemType: item.type, itemId: item.id });
     const url = window.location.href;
