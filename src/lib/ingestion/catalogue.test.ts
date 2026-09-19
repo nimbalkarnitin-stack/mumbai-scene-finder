@@ -15,7 +15,7 @@ const venueHtml = `<html><head>
 
 function parseAndNormalise(html: string, pageUrl: string) {
   const node = extractJsonLd(html)[0]!;
-  const parsed = officialSiteAdapter.parse!({ raw: { ...node, __page: pageUrl }, sourceUrl: pageUrl })!;
+  const parsed = officialSiteAdapter.parse!({ raw: { ...node, __page: pageUrl }, sourceUrl: pageUrl }, {} as never)!;
   return officialSiteAdapter.normalise(parsed, {} as never)!;
 }
 
@@ -57,7 +57,7 @@ describe("JSON-LD extraction from official pages", () => {
 
   it("skips a node with no name", () => {
     const raw = { "@type": "Event", startDate: "2026-10-02" };
-    const parsed = officialSiteAdapter.parse!({ raw, sourceUrl: "https://x.example.com" });
+    const parsed = officialSiteAdapter.parse!({ raw, sourceUrl: "https://x.example.com" }, {} as never);
     expect(parsed).toBeNull();
   });
 
