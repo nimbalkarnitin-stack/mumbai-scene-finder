@@ -13,14 +13,21 @@ export const officialSiteAdapter: SourceAdapter = {
   requiredEnv: [],
 
   async fetch(ctx: AdapterContext): Promise<RawItem[]> {
-    const cfg = ctx.source.config as { pages?: unknown; allow_hosts?: unknown; max_bytes?: unknown; timeout_ms?: unknown };
-    const pages = Array.isArray(cfg.pages) ? cfg.pages.filter((p): p is string => typeof p === "string") : [];
-    if (pages.length === 0) {
+    const cfg = ctx.source.config as { pages?: unknown; allow_hosts?: unknown; max_bytes?: unknown; timeout_ms?: unknown; pages_per_run?: unknown; page_cursor?: unknown };
+    const all = Array.isArray(cfg.pages) ? cfg.pages.filter((p): p is string => typeof p === "string") : [];
+    if (all.length === 0) {
       throw new AdapterDisabledError("No official page URLs configured (config.pages is empty).");
     }
+    // Large page lists are read in bounded, rotating batches so every promoted venue
+    // gets re-checked over successive runs instead of only the first few.
+    const perRun = Math.min(Math.max(numberOrNull(cfg.pages_per_run) ?? 20, 1), 40);
+    const cursorRaw = numberOrNull(cfg.page_cursor) ?? 0;
+    const cursor = ((Math.trunc(cursorRaw) % all.length) + all.length) % all.length;
+    const pages = all.length <= perRun ? all : [...all.slice(cursor), ...all.slice(0, cursor)].slice(0, perRun);
     const allowHosts = Array.isArray(cfg.allow_hosts) ? cfg.allow_hosts.filter((h): h is string => typeof h === "string") : [];
     const items: RawItem[] = [];
-    for (const page of pages.slice(0, 30)) {
+    let failures = 0;
+    for (const page of pages) {
       try {
         const res = await withRetry(() =>
           safeFetch(page, {
@@ -35,10 +42,12 @@ export const officialSiteAdapter: SourceAdapter = {
           items.push({ raw: { ...node, __page: res.url, __lastModified: res.lastModified }, sourceUrl: res.url });
         }
       } catch (error) {
+        // One unreachable venue page must not abandon the rest of the batch.
+        failures += 1;
         ctx.log(`Fetch failed for ${page}: ${error instanceof Error ? error.message : String(error)}`);
-        throw error;
       }
     }
+    if (failures === pages.length) throw new Error(`All ${pages.length} official page(s) failed to fetch.`);
     return items;
   },
 
