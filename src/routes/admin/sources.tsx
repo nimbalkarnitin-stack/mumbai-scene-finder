@@ -246,3 +246,76 @@ function ApifyConfig({ source, saving, onSave }: { source: ApifySourceRow; savin
     </div>
   );
 }
+
+interface GoogleSourceRow {
+  config: unknown;
+  credentials_ready: boolean;
+  missing_credentials: string[];
+  last_run_at: string | null;
+  last_status: string | null;
+  last_error: string | null;
+  enabled: boolean;
+}
+
+/**
+ * Google discovery configuration: search phrases only.
+ * Google is a discovery signal — it identifies candidate places and their own website links.
+ * No Google listing content is stored, and the source cannot run without GOOGLE_PLACES_API_KEY.
+ */
+function GoogleDiscoveryConfig({ source, saving, onSave }: { source: GoogleSourceRow; saving: boolean; onSave: (config: Record<string, unknown>) => void }) {
+  const cfg = (source.config ?? {}) as { queries?: unknown; max_results?: unknown };
+  const configured = Array.isArray(cfg.queries) ? (cfg.queries as unknown[]).filter((q): q is string => typeof q === "string") : [];
+  const [draft, setDraft] = useState(configured.join("\n"));
+  const [error, setError] = useState<string | null>(null);
+  const lines = draft.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+
+  const submit = () => {
+    if (lines.length === 0) {
+      setError("Add at least one search phrase.");
+      return;
+    }
+    setError(null);
+    onSave({ queries: [...new Set(lines)].slice(0, 200) });
+  };
+
+  return (
+    <div className="mt-4 space-y-3 rounded-xl border border-border bg-background/60 p-3">
+      <div className="flex flex-wrap gap-2 font-mono text-[9px] uppercase tracking-wider">
+        <span className={`rounded-full border px-2 py-0.5 ${source.credentials_ready ? "border-teal/40 bg-teal/10 text-teal" : "border-saffron/40 bg-saffron/10 text-saffron"}`}>
+          API key {source.credentials_ready ? "configured" : "not configured"}
+        </span>
+        <span className={`rounded-full border px-2 py-0.5 ${configured.length > 0 ? "border-teal/40 bg-teal/10 text-teal" : "border-saffron/40 bg-saffron/10 text-saffron"}`}>
+          {configured.length} search {configured.length === 1 ? "phrase" : "phrases"}
+        </span>
+        <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">
+          Last run {source.last_run_at ? `${formatIst(source.last_run_at)} IST` : "never"} · {source.last_status ?? "—"}
+        </span>
+      </div>
+
+      {!source.credentials_ready && (
+        <p className="text-xs text-muted-foreground">
+          Add {source.missing_credentials.join(", ")} in Project Settings → Secrets. The source stays switched off until the key exists, and the key is never shown here.
+        </p>
+      )}
+
+      <label className="block">
+        <span className="eyebrow">Search phrases (one per line)</span>
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          rows={10}
+          className="mt-1 w-full rounded-xl border border-border bg-background p-3 font-mono text-xs"
+          placeholder="live music venues in Bandra Mumbai"
+        />
+      </label>
+
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      {source.last_error && <p className="text-xs text-destructive">Last error: {source.last_error}</p>}
+
+      <Button size="sm" variant="glass" disabled={saving} onClick={submit}>Save search phrases ({lines.length})</Button>
+      <p className="text-[11px] text-muted-foreground">
+        Only candidate names and their own website links are stored. Event facts always come from the official or authorised source, never from Google listings.
+      </p>
+    </div>
+  );
+}
