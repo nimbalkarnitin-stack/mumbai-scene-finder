@@ -109,6 +109,14 @@ function Sources() {
                 </label>
               </div>
 
+              {s.adapter_key === "apify" && (
+                <ApifyConfig
+                  source={s}
+                  saving={save.isPending}
+                  onSave={(config) => save.mutate({ id: s.id, config: { ...(s.config as Record<string, unknown>), ...config } })}
+                />
+              )}
+
               {s.adapter_key === "official_site" && (
                 <div className="mt-3">
                   <span className="eyebrow">Official page URLs (one per line — first-party venue/organiser pages only)</span>
