@@ -81,6 +81,14 @@ export const Route = createFileRoute("/api/public/ingestion/$task")({
                 review_queue: reviewQueue ?? 0,
               });
             }
+            case "google-discovery": {
+              const { data: source } = await supabaseAdmin.from("ingestion_sources").select("config,enabled").eq("slug", "google-discovery").maybeSingle();
+              if (!source) return Response.json({ error: "google-discovery source not found" }, { status: 404 });
+              if (!source.enabled) return Response.json({ ok: false, task, error: "google discovery source disabled" }, { status: 409 });
+              const discovery = await import("@/lib/ingestion/discovery.server");
+              const result = await discovery.runGoogleDiscovery(supabaseAdmin, (source.config ?? {}) as Record<string, unknown>);
+              return Response.json({ ok: true, task, ...result });
+            }
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
