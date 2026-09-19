@@ -5,11 +5,11 @@ import type { ItemType, Recommendation, SceneItem, SceneQuery, ScoreBreakdown } 
 type DB = SupabaseClient<Database>;
 
 const SELECT_VENUE =
-  "id,slug,name,description,image_url,price_min,price_max,moods,group_types,tags,best_times,opening_hours,booking_url,website_url,affiliate_link_id,is_sponsored,popularity_score,is_verified,created_at,categories(slug,name),areas(slug,name),sponsors(name)";
+  "id,slug,name,description,image_url,price_min,price_max,moods,group_types,tags,best_times,opening_hours,booking_url,website_url,source_url,affiliate_link_id,is_sponsored,popularity_score,is_verified,created_at,updated_at,categories(slug,name),areas(slug,name),sponsors(name)";
 const SELECT_EVENT =
-  "id,slug,name,description,image_url,price_min,price_max,moods,group_types,tags,starts_at,ends_at,booking_url,affiliate_link_id,is_sponsored,popularity_score,is_verified,created_at,categories(slug,name),areas(slug,name),sponsors(name)";
+  "id,slug,name,description,image_url,price_min,price_max,moods,group_types,tags,starts_at,ends_at,booking_url,source_url,affiliate_link_id,is_sponsored,popularity_score,is_verified,created_at,updated_at,categories(slug,name),areas(slug,name),sponsors(name)";
 const SELECT_EXPERIENCE =
-  "id,slug,name,description,image_url,price_min,price_max,moods,group_types,tags,best_times,schedule_note,booking_url,affiliate_link_id,is_sponsored,popularity_score,is_verified,created_at,categories(slug,name),areas(slug,name),sponsors(name)";
+  "id,slug,name,description,image_url,price_min,price_max,moods,group_types,tags,best_times,schedule_note,booking_url,source_url,affiliate_link_id,is_sponsored,popularity_score,is_verified,created_at,updated_at,categories(slug,name),areas(slug,name),sponsors(name)";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function normalize(row: any, type: ItemType): SceneItem {
@@ -41,6 +41,8 @@ function normalize(row: any, type: ItemType): SceneItem {
     sponsorName: row.sponsors?.name ?? null,
     popularity: Number(row.popularity_score ?? 0),
     isVerified: !!row.is_verified,
+    sourceUrl: row.source_url ?? null,
+    updatedAt: row.updated_at ?? null,
     createdAt: row.created_at,
   };
 }
