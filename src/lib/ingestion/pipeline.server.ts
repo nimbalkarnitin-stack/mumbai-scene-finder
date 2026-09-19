@@ -692,7 +692,7 @@ export async function orchestrate(db: DB, options: OrchestrateOptions = {}) {
   const jobId = await startJob(db, null, `orchestrate:${mode}`);
   const nowIso = new Date().toISOString();
 
-  let query = db.from("ingestion_sources").select("*").eq("enabled", true);
+  let query = db.from("ingestion_sources").select("*").eq("enabled", true).neq("source_type", "discovery");
   if (options.sourceSlug) query = query.eq("slug", options.sourceSlug);
   else if (mode === "near") query = query.or(`next_run_at.is.null,next_run_at.lte.${nowIso}`);
   const { data: sources } = await query.limit(options.maxSources ?? 10);
@@ -709,9 +709,12 @@ export async function orchestrate(db: DB, options: OrchestrateOptions = {}) {
     totals.failed += result.counters.failed;
   }
 
+  // Full runs also re-check discovered candidates for their official / what's-on pages.
+  const discovery = mode === "full" && !options.sourceSlug ? await runDiscoveryResolver(db, 10) : null;
   const published = await publishReadyRecords(db, settings);
   const dupes = await scanDuplicates(db);
   const verified = mode === "full" ? await verifyCatalogue(db, settings) : emptyCounters();
+  const crossVerified = await crossVerify(db, settings);
   const expired = await expireEvents(db);
 
   await finishJob(db, jobId, totals, totals.failed ? "partial" : "success", null, {
@@ -720,8 +723,10 @@ export async function orchestrate(db: DB, options: OrchestrateOptions = {}) {
     published,
     duplicate_candidates: dupes.created,
     verified: verified.updated,
+    cross_verified: crossVerified.updated,
+    discovery,
     expired: expired.updated,
   });
 
-  return { mode, sources: perSource, totals, published, duplicates: dupes, verified, expired };
+  return { mode, sources: perSource, totals, published, duplicates: dupes, verified, crossVerified, discovery, expired };
 }
