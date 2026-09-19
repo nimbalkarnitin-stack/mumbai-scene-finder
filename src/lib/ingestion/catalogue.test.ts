@@ -16,7 +16,7 @@ const venueHtml = `<html><head>
 function parseAndNormalise(html: string, pageUrl: string) {
   const node = extractJsonLd(html)[0]!;
   const parsed = officialSiteAdapter.parse!({ raw: { ...node, __page: pageUrl }, sourceUrl: pageUrl })!;
-  return officialSiteAdapter.normalise(parsed, { raw: parsed, sourceUrl: pageUrl });
+  return officialSiteAdapter.normalise(parsed, {} as never)!;
 }
 
 describe("JSON-LD extraction from official pages", () => {
