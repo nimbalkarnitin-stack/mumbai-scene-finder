@@ -38,6 +38,7 @@ import { Route as GuidesSlugRouteImport } from './routes/guides.$slug'
 import { Route as MumbaiSlugRouteImport } from './routes/mumbai.$slug'
 import { Route as VSlugRouteImport } from './routes/v.$slug'
 import { Route as XSlugRouteImport } from './routes/x.$slug'
+import { Route as ApiPublicIngestionTaskRouteImport } from './routes/api/public/ingestion.$task'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -184,6 +185,11 @@ const XSlugRoute = XSlugRouteImport.update({
   path: '/x/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicIngestionTaskRoute = ApiPublicIngestionTaskRouteImport.update({
+  id: '/api/public/ingestion/$task',
+  path: '/api/public/ingestion/$task',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -215,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/v/$slug': typeof VSlugRoute
   '/x/$slug': typeof XSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/ingestion/$task': typeof ApiPublicIngestionTaskRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -245,6 +252,7 @@ export interface FileRoutesByTo {
   '/v/$slug': typeof VSlugRoute
   '/x/$slug': typeof XSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/api/public/ingestion/$task': typeof ApiPublicIngestionTaskRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -277,6 +285,7 @@ export interface FileRoutesById {
   '/v/$slug': typeof VSlugRoute
   '/x/$slug': typeof XSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/public/ingestion/$task': typeof ApiPublicIngestionTaskRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
     | '/v/$slug'
     | '/x/$slug'
     | '/admin/'
+    | '/api/public/ingestion/$task'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -340,6 +350,7 @@ export interface FileRouteTypes {
     | '/v/$slug'
     | '/x/$slug'
     | '/admin'
+    | '/api/public/ingestion/$task'
   id:
     | '__root__'
     | '/'
@@ -371,6 +382,7 @@ export interface FileRouteTypes {
     | '/v/$slug'
     | '/x/$slug'
     | '/admin/'
+    | '/api/public/ingestion/$task'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -398,6 +410,7 @@ export interface RootRouteChildren {
   MumbaiSlugRoute: typeof MumbaiSlugRoute
   VSlugRoute: typeof VSlugRoute
   XSlugRoute: typeof XSlugRoute
+  ApiPublicIngestionTaskRoute: typeof ApiPublicIngestionTaskRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -605,6 +618,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof XSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ingestion/$task': {
+      id: '/api/public/ingestion/$task'
+      path: '/api/public/ingestion/$task'
+      fullPath: '/api/public/ingestion/$task'
+      preLoaderRoute: typeof ApiPublicIngestionTaskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -662,6 +682,7 @@ const rootRouteChildren: RootRouteChildren = {
   MumbaiSlugRoute: MumbaiSlugRoute,
   VSlugRoute: VSlugRoute,
   XSlugRoute: XSlugRoute,
+  ApiPublicIngestionTaskRoute: ApiPublicIngestionTaskRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
