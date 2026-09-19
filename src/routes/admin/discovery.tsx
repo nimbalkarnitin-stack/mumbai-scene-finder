@@ -91,7 +91,7 @@ function Discovery() {
             size="sm"
             variant="glass"
             disabled={act.isPending || name.trim().length < 2}
-            onClick={() => act.mutate({ action: "add_candidate", name: name.trim(), url: url.trim() || undefined }, { onSuccess: () => { setName(""); setUrl(""); } })}
+            onClick={() => act.mutate({ action: "add_candidate", name: name.trim(), ...(url.trim() ? { url: url.trim() } : {}) }, { onSuccess: () => { setName(""); setUrl(""); } })}
           >
             Add
           </Button>
