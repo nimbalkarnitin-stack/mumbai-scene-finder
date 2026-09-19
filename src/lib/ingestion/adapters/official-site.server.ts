@@ -61,14 +61,15 @@ export const officialSiteAdapter: SourceAdapter = {
   normalise(parsed) {
     const type = jsonLdType(parsed);
     const isEvent = ["Event", "MusicEvent", "TheaterEvent", "ComedyEvent", "FoodEvent", "Festival"].includes(type);
-    const location = (parsed["location"] ?? {}) as Record<string, unknown>;
+    // An Event carries its place under `location`; a business node describes itself.
+    const location = (isEvent ? parsed["location"] : parsed) as Record<string, unknown> | undefined ?? {};
     const address = (location["address"] ?? {}) as Record<string, unknown>;
     const geo = (location["geo"] ?? {}) as Record<string, unknown>;
     const offers = Array.isArray(parsed["offers"]) ? (parsed["offers"] as Record<string, unknown>[]) : parsed["offers"] ? [parsed["offers"] as Record<string, unknown>] : [];
     const prices = offers.map((o) => numberOrNull(o["price"])).filter((p): p is number => p !== null);
     const startsAt = isoOrNull(parsed["startDate"]);
     const venueName = firstString(location["name"]);
-    const addressText = firstString(address["streetAddress"], (parsed["location"] as Record<string, unknown>)?.["address"] as string);
+    const addressText = firstString(address["streetAddress"], typeof location["address"] === "string" ? (location["address"] as string) : undefined);
 
     return buildNormalised({
       kind: isEvent ? "event" : "venue",
