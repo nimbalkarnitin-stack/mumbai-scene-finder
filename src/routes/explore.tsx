@@ -10,7 +10,7 @@ import { CATEGORY_IMAGES } from "@/lib/scene-images";
 import { getCityMeta, listItems } from "@/lib/scene.functions";
 
 const TITLE = "Explore Mumbai — SceneAI";
-const DESC = "Browse every verified venue, event and experience on SceneAI by neighbourhood and category.";
+const DESC = "Browse every venue, event and experience listed on SceneAI by neighbourhood and category — editor-verified entries are badged.";
 
 export const Route = createFileRoute("/explore")({
   validateSearch: z.object({ area: z.string().optional(), sort: z.enum(["popular", "newest", "soonest"]).optional(), category: z.string().optional() }),
@@ -30,7 +30,7 @@ function ExplorePage() {
 
   return (
     <AppShell>
-      <PageHeader eyebrow="Explore" title="The whole city, sorted" description="Every verified listing on SceneAI. Filter by neighbourhood or jump into a category." />
+      <PageHeader eyebrow="Explore" title="The whole city, sorted" description="Every listing on SceneAI — verified entries carry a badge, unverified ones say so. Filter by neighbourhood or category." />
       <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-2 md:grid md:grid-cols-7 md:px-6">
         {CATEGORY_NAV.map((c) => (
           <Link key={c.slug} to={c.path} className="group relative aspect-square w-28 shrink-0 overflow-hidden rounded-2xl md:w-auto">

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AppShell } from "./AppShell";
 import { Chip } from "./Chip";
 import { SceneCard, SceneCardSkeleton } from "./SceneCard";
-import { Button } from "@/components/ui/button";
+import { CatalogueEmptyState } from "./CatalogueEmptyState";
 import { CATEGORY_IMAGES } from "@/lib/scene-images";
 import { getCityMeta, listItems } from "@/lib/scene.functions";
 import type { ItemType } from "@/lib/scene-types";
@@ -41,16 +41,7 @@ export function CategoryPage({ slug, title, description, category, type, sort = 
       <div className="mt-5 grid gap-4 px-4 sm:grid-cols-2 md:px-6 lg:grid-cols-3">
         {isLoading && Array.from({ length: 6 }).map((_, i) => <SceneCardSkeleton key={i} />)}
         {data?.map((item, i) => <SceneCard key={item.id} item={item} index={i} />)}
-        {data && data.length === 0 && (
-          <div className="col-span-full rounded-3xl border border-dashed border-border p-10 text-center">
-            <h2 className="text-xl font-semibold">No verified listings yet</h2>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">SceneAI never fabricates events, prices or venues. New listings appear here as they're verified.</p>
-            <div className="mt-4 flex justify-center gap-2">
-              <Button asChild variant="glass" size="sm"><Link to="/explore">Explore all</Link></Button>
-              <Button asChild size="sm"><Link to="/concierge">Ask concierge</Link></Button>
-            </div>
-          </div>
-        )}
+        {data && data.length === 0 && <CatalogueEmptyState className="col-span-full" filtered={!!area} />}
       </div>
     </AppShell>
   );

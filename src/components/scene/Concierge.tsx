@@ -62,7 +62,7 @@ export function Concierge({ context, initialPrompt, suggestions = CONCIERGE_SUGG
           <div className="flex flex-col items-center py-10 text-center">
             <span className="grid size-12 place-items-center rounded-2xl bg-teal/15 text-teal"><Sparkles className="size-5" /></span>
             <h2 className="mt-4 text-2xl font-semibold">Your Mumbai concierge</h2>
-            <p className="mt-1 max-w-xs text-sm text-muted-foreground">Ask for a plan, a place, or a change. I only suggest listings SceneAI can verify.</p>
+            <p className="mt-1 max-w-xs text-sm text-muted-foreground">Ask for a plan, a place, or a change. I only suggest listings stored on SceneAI, and I flag any whose details aren't verified yet.</p>
           </div>
         )}
         {messages.map((m) => <MessageBubble key={m.id} message={m} />)}
