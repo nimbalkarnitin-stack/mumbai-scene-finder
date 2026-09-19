@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { AppShell, PageHeader } from "@/components/scene/AppShell";
 import { SceneCard } from "@/components/scene/SceneCard";
+import { CatalogueEmptyState } from "@/components/scene/CatalogueEmptyState";
 import { BUDGETS, SEO_PAGES } from "@/lib/scene-constants";
 import { getCityMeta, getRecommendations } from "@/lib/scene.functions";
 import type { ItemType } from "@/lib/scene-types";
