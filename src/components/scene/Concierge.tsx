@@ -16,19 +16,19 @@ interface ToolItem {
 }
 
 export function Concierge({ context, initialPrompt, suggestions = CONCIERGE_SUGGESTIONS, className, autoStart = false, placeholder = "Ask the concierge anything about Mumbai…" }: {
-  context?: Record<string, unknown>;
-  initialPrompt?: string;
-  suggestions?: string[];
-  className?: string;
-  autoStart?: boolean;
-  placeholder?: string;
+  context?: Record<string, unknown> | undefined;
+  initialPrompt?: string | undefined;
+  suggestions?: string[] | undefined;
+  className?: string | undefined;
+  autoStart?: boolean | undefined;
+  placeholder?: string | undefined;
 }) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
 
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/chat", body: { context } }),
+    () => new DefaultChatTransport({ api: "/api/chat", body: { context: context ?? {} } }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [JSON.stringify(context)],
   );
