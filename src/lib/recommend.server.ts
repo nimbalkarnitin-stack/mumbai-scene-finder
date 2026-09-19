@@ -291,6 +291,14 @@ export function scoreItems(items: SceneItem[], q: SceneQuery): Recommendation[] 
       b.popularity * WEIGHTS.popularity +
       b.history * WEIGHTS.history;
 
+    // Verified listings are preferred, unverified ones are still shown (and flagged in the UI).
+    if (item.isVerified) {
+      score *= 1.08;
+      if (item.sourceUrl) reasons.push("Details checked against a source");
+    } else {
+      score *= 0.9;
+    }
+
     // Hard filters
     if (q.type && item.type !== q.type) score = 0;
     if (window && item.type === "event" && time === 0) score = 0;
