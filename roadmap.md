@@ -44,3 +44,5 @@ Open (blocked on external input):
   parameter, commission model + rate, API token and postback signing secret
   (Project Settings -> Secrets), then set the partner live in /admin/monetization.
 - Sponsored placements need a real campaign row pointing at an existing catalogue listing.
+
+- [x] Discovery -> recommendation loop connected: verified candidates auto-promote to official-pages source (rotating batches), ingest -> publish -> NOW/NEXT. 8 upcoming Mumbai events live.
