@@ -79,7 +79,7 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
             <Button variant="glass" className="flex-1" onClick={() => toggle(item.type, item.id)}><Bookmark className={cn("size-4", saved && "fill-primary-glow text-primary-glow")} />{saved ? "Saved" : "Save"}</Button>
             <Button variant="glass" className="flex-1" onClick={share}><Share2 className="size-4" />Share</Button>
           </div>
-          {item.affiliateLinkId && <p className="pt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground">SceneAI may earn a commission on bookings</p>}
+          {link.kind !== "map" && <AffiliateDisclosure className="mt-2" />}
           <div className="space-y-1 border-t border-border pt-3 text-[11px] text-muted-foreground">
             <p>{item.isVerified ? "Checked by a SceneAI editor" : "Not yet checked by a SceneAI editor"}</p>
             {item.updatedAt && <p>Record last updated {new Date(item.updatedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })}</p>}
