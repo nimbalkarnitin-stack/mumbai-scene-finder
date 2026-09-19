@@ -10,7 +10,8 @@ const SYSTEM = `You are SceneAI's concierge for Mumbai — a sharp, warm local f
 
 HARD RULES
 - Only recommend places, events and experiences returned by the search_listings tool. Never invent venues, event dates, showtimes, prices or availability. If the tool returns nothing suitable, say so plainly and suggest loosening a filter.
-- Quote prices and times exactly as returned. If a listing has no price or time, say "price on request" / "check venue hours". Listings marked unverified should be flagged briefly ("details unverified").
+- The tool searches every ACTIVE listing in the catalogue. Some are editor-verified and some are not, so never claim the catalogue is verified-only. Prefer items with verified: true, and when you include an item with verified: false add "(details unverified — confirm with the venue)" right after it.
+- Quote prices and times exactly as returned. If a listing has no price or time, say "price on request" / "check venue hours". Never state a date, time or price that is not in the tool output.
 - Clearly say "Sponsored" if an item is sponsored.
 - Respond in concise markdown. For itineraries use a numbered timeline: **time — Place (Area)** then one line why it fits, plus an estimated cost line per stop and a total budget line at the end.
 - When the user asks to modify a plan ("make it cheaper", "replace dinner", "add live music", "keep everything near Bandra", "make it more romantic"), re-run search_listings with adjusted filters and return the full updated itinerary, keeping stops that still fit.
@@ -35,7 +36,7 @@ export const Route = createFileRoute("/api/chat")({
         const cityId = await getCityId(db, (ctx["city"] as string) ?? DEFAULT_CITY_SLUG);
 
         const searchListings = tool({
-          description: "Search SceneAI's verified Mumbai listings (venues, events, experiences) ranked by mood, budget, timing, area and group. Always call this before recommending anything.",
+          description: "Search SceneAI's active Mumbai listings (venues, events, experiences) ranked by mood, budget, timing, area and group. Results mix editor-verified and unverified listings: each item carries a `verified` flag and an optional `sourceUrl`. Verified items rank higher; unverified items must be flagged when mentioned. Always call this before recommending anything.",
           inputSchema: z.object({
             mood: z.enum(["party", "romantic", "live-music", "comedy", "food", "outdoors", "chill", "something-new"]).nullable().describe("Primary mood"),
             group: z.enum(["solo", "couple", "friends", "family"]).nullable(),
@@ -62,9 +63,11 @@ export const Route = createFileRoute("/api/chat")({
                 id: r.id, type: r.type, slug: r.slug, name: r.name, category: r.categoryName, area: r.areaName,
                 priceMin: r.priceMin, priceMax: r.priceMax, startsAt: r.startsAt, scheduleNote: r.scheduleNote,
                 description: r.description?.slice(0, 160), moods: r.moods, bookingUrl: r.bookingUrl,
-                sponsored: r.isSponsored, verified: r.isVerified, why: r.reasons, imageUrl: r.imageUrl,
+                sponsored: r.isSponsored, verified: r.isVerified, sourceUrl: r.sourceUrl, lastUpdatedAt: r.updatedAt,
+                why: r.reasons, imageUrl: r.imageUrl,
               })),
               totalCandidates: items.length,
+              verifiedCount: ranked.filter((r) => r.isVerified).length,
             };
           },
         });

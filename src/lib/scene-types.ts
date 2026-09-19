@@ -28,6 +28,10 @@ export interface SceneItem {
   sponsorName: string | null;
   popularity: number;
   isVerified: boolean;
+  /** Where the listing details were checked, when an editor supplied one. */
+  sourceUrl: string | null;
+  /** Last time the stored record was edited (stand-in for last-checked). */
+  updatedAt: string | null;
   createdAt: string;
 }
 

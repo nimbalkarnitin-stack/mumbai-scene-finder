@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Tag } from "./Chip";
 import { Button } from "@/components/ui/button";
 import type { Recommendation, SceneItem } from "@/lib/scene-types";
-import { buildBookingUrl, formatPrice, formatWhen, track } from "@/lib/track";
+import { formatPrice, formatWhen, openOutbound, resolveOutboundLink, track } from "@/lib/track";
 import { itemImage } from "@/lib/scene-images";
 import { useSaved } from "@/hooks/useSaved";
 
@@ -35,10 +35,8 @@ export function SceneCard({ item, index = 0, compact = false }: { item: Item; in
     }
   };
 
-  const book = () => {
-    track("booking_click", { itemType: item.type, itemId: item.id, metadata: { affiliate: item.affiliateLinkId, sponsored: item.isSponsored } });
-    window.open(buildBookingUrl(item), "_blank", "noopener,noreferrer");
-  };
+  const link = resolveOutboundLink(item);
+  const book = () => openOutbound(item, { source: "card" });
 
   const detailProps = item.type === "venue" ? { to: "/v/$slug" as const } : item.type === "event" ? { to: "/e/$slug" as const } : { to: "/x/$slug" as const };
 
@@ -93,11 +91,11 @@ export function SceneCard({ item, index = 0, compact = false }: { item: Item; in
           </div>
         )}
         {!item.isVerified && (
-          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Details unverified · confirm with venue</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-saffron">Details unverified · confirm with venue</p>
         )}
         <div className="flex gap-2">
           <Button variant="ember" className="flex-1" onClick={book}>
-            {item.bookingUrl ? "Book" : "Find it"} <ExternalLink className="size-3.5" />
+            {link.label} <ExternalLink className="size-3.5" />
           </Button>
           <Button variant="glass" size="icon" aria-label={saved ? "Remove from saved" : "Save"} onClick={() => toggle(item.type, item.id)}>
             <Bookmark className={cn("size-4", saved && "fill-primary-glow text-primary-glow")} />

@@ -16,7 +16,7 @@ function ConciergePage() {
   const { q } = Route.useSearch();
   return (
     <AppShell>
-      <PageHeader eyebrow="AI Concierge" title="Ask Mumbai anything" description="Plans, places, swaps. Grounded in verified listings only." />
+      <PageHeader eyebrow="AI Concierge" title="Ask Mumbai anything" description="Plans, places, swaps — grounded only in listings stored on SceneAI, with unverified ones flagged." />
       <div className="px-4 md:px-6">
         <Concierge initialPrompt={q} autoStart={!!q} />
       </div>

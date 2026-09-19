@@ -32,7 +32,7 @@ function Field({ f, value, onChange }: { f: FieldDef; value: unknown; onChange: 
     case "textarea": return <Textarea value={(value as string) ?? ""} onChange={(e) => onChange(e.target.value || null)} rows={f.key === "body" ? 10 : 3} className="rounded-xl bg-background/60" />;
     case "number": return <Input type="number" step="any" value={value == null ? "" : String(value)} onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))} className={cls} />;
     case "boolean": return <label className="flex h-10 items-center gap-2 text-sm"><input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} className="size-4 accent-primary" />{value ? "Yes" : "No"}</label>;
-    case "datetime": return <Input type="datetime-local" value={value ? new Date(value as string).toISOString().slice(0, 16) : ""} onChange={(e) => onChange(e.target.value ? new Date(e.target.value).toISOString() : null)} className={cls} />;
+    case "datetime": return <Input type="datetime-local" value={toIstInput(value as string | null)} onChange={(e) => onChange(fromIstInput(e.target.value))} className={cls} />;
     case "list": return <Input value={Array.isArray(value) ? (value as string[]).join(", ") : ""} onChange={(e) => onChange(e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} placeholder="comma, separated" className={cls} />;
     case "json": return <Textarea value={value ? JSON.stringify(value, null, 2) : ""} onChange={(e) => { try { onChange(e.target.value ? JSON.parse(e.target.value) : null); } catch { /* keep typing */ } }} rows={4} className="rounded-xl bg-background/60 font-mono text-xs" />;
     case "select":
@@ -51,6 +51,28 @@ function Field({ f, value, onChange }: { f: FieldDef; value: unknown; onChange: 
   }
 }
 
+const IST_OFFSET = "+05:30";
+
+/** Datetime inputs are always entered and shown in Mumbai time (Asia/Kolkata). */
+function toIstInput(iso: string | null) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })
+    .formatToParts(d)
+    .reduce<Record<string, string>>((acc, x) => { acc[x.type] = x.value; return acc; }, {});
+  return `${p["year"]}-${p["month"]}-${p["day"]}T${p["hour"] === "24" ? "00" : p["hour"]}:${p["minute"]}`;
+}
+function fromIstInput(local: string) {
+  if (!local) return null;
+  const d = new Date(`${local}:00${IST_OFFSET}`);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+function isEmpty(v: unknown) {
+  return v === null || v === undefined || v === "" || (Array.isArray(v) && v.length === 0);
+}
+
 function cell(v: unknown) {
   if (v === null || v === undefined) return <span className="text-muted-foreground">—</span>;
   if (typeof v === "boolean") return <span className={v ? "text-teal" : "text-muted-foreground"}>{v ? "Yes" : "No"}</span>;
@@ -61,6 +83,7 @@ function cell(v: unknown) {
 export function EntityTable({ def }: { def: EntityDef }) {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Row | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const list = useQuery({
     queryKey: ["admin", def.table],
@@ -78,9 +101,34 @@ export function EntityTable({ def }: { def: EntityDef }) {
       const res = id ? await table(def.table).update(payload).eq("id", id) : await table(def.table).insert(payload);
       if (res.error) throw res.error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin", def.table] }); setEditing(null); toast.success("Saved"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin", def.table] }); setEditing(null); setErrors({}); toast.success("Saved"); },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const validate = (row: Row) => {
+    const errs: Record<string, string> = {};
+    for (const f of def.fields) {
+      const v = row[f.key];
+      if (f.required && isEmpty(v)) errs[f.key] = `${f.label} is required`;
+      if (f.key === "slug" && typeof v === "string" && v && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(v)) errs[f.key] = "Use lowercase letters, numbers and dashes only";
+      if (f.kind === "number" && v != null && Number.isNaN(Number(v))) errs[f.key] = `${f.label} must be a number`;
+    }
+    const min = row["price_min"] as number | null, max = row["price_max"] as number | null;
+    if (min != null && max != null && Number(max) < Number(min)) errs["price_max"] = "Price max cannot be lower than price min";
+    const starts = row["starts_at"] as string | null, ends = row["ends_at"] as string | null;
+    if (starts && ends && new Date(ends) <= new Date(starts)) errs["ends_at"] = "End time must be after the start time";
+    return errs;
+  };
+
+  const submit = (row: Row) => {
+    const errs = validate(row);
+    setErrors(errs);
+    if (Object.keys(errs).length) {
+      toast.error(`Fix ${Object.keys(errs).length} field${Object.keys(errs).length === 1 ? "" : "s"} before saving`);
+      return;
+    }
+    save.mutate(row);
+  };
   const remove = useMutation({
     mutationFn: async (id: string) => { const { error } = await table(def.table).delete().eq("id", id); if (error) throw error; },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin", def.table] }); toast.success("Deleted"); },
@@ -117,15 +165,20 @@ export function EntityTable({ def }: { def: EntityDef }) {
         </table>
       </div>
 
-      <Sheet open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+      <Sheet open={!!editing} onOpenChange={(o) => { if (!o) { setEditing(null); setErrors({}); } }}>
         <SheetContent className="w-full overflow-y-auto border-border bg-background sm:max-w-lg">
           <SheetHeader><SheetTitle>{editing?.id ? `Edit ${def.singular.toLowerCase()}` : `New ${def.singular.toLowerCase()}`}</SheetTitle></SheetHeader>
           {editing && (
-            <form className="space-y-4 px-4 pb-8" onSubmit={(e) => { e.preventDefault(); save.mutate(editing); }}>
+            <form className="space-y-4 px-4 pb-8" onSubmit={(e) => { e.preventDefault(); submit(editing); }} noValidate>
+              {Object.keys(errors).length > 0 && (
+                <p className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">Please fix the highlighted fields.</p>
+              )}
               {def.fields.map((f) => (
                 <div key={f.key}>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">{f.label}{f.required && " *"}</label>
-                  <Field f={f} value={editing[f.key]} onChange={(v) => setEditing({ ...editing, [f.key]: v })} />
+                  <Field f={f} value={editing[f.key]} onChange={(v) => { setEditing({ ...editing, [f.key]: v }); setErrors((e) => { const { [f.key]: _drop, ...rest } = e; return rest; }); }} />
+                  {errors[f.key] && <p className="mt-1 text-[11px] text-destructive">{errors[f.key]}</p>}
+                  {f.kind === "datetime" && <p className="mt-1 text-[11px] text-muted-foreground">Entered and shown in Mumbai time (IST).</p>}
                   {f.help && <p className="mt-1 text-[11px] text-muted-foreground">{f.help}</p>}
                 </div>
               ))}

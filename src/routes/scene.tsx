@@ -6,9 +6,11 @@ import { z } from "zod";
 import { AppShell } from "@/components/scene/AppShell";
 import { ScenePicker } from "@/components/scene/ScenePicker";
 import { SceneCard, SceneCardSkeleton } from "@/components/scene/SceneCard";
+import { CatalogueEmptyState } from "@/components/scene/CatalogueEmptyState";
 import { Button } from "@/components/ui/button";
 import { getRecommendations } from "@/lib/scene.functions";
 import { BUDGETS, GROUPS, MOODS, TIMINGS } from "@/lib/scene-constants";
+import { getHistorySignal, recordHistory } from "@/lib/history";
 import { track } from "@/lib/track";
 
 const searchSchema = z.object({
@@ -34,14 +36,24 @@ export const Route = createFileRoute("/scene")({
 function ScenePage() {
   const search = Route.useSearch();
   const [editing, setEditing] = useState(false);
+  // Anonymous, device-local interest signal — slugs only, no personal data.
+  const [history, setHistory] = useState<ReturnType<typeof getHistorySignal>>(undefined);
+
+  useEffect(() => {
+    recordHistory({ mood: search.mood ?? null, area: search.area ?? null });
+    setHistory(getHistorySignal());
+    track("search", { metadata: { ...search, surface: "scene" } });
+  }, [search]);
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["recs", search],
-    queryFn: () => getRecommendations({ data: { ...search, limit: 10 } }),
+    queryKey: ["recs", search, history],
+    queryFn: () => getRecommendations({ data: { ...search, ...(history ? { history } : {}), limit: 10 } }),
   });
 
   useEffect(() => {
-    if (data?.items.length) track("recommendation_view", { metadata: { ...search, count: data.items.length } });
-  }, [data, search]);
+    if (!data) return;
+    track("recommendation_view", { metadata: { ...search, count: data.items.length, candidates: data.total, personalised: !!history } });
+  }, [data, search, history]);
 
   const summary = [
     MOODS.find((m) => m.id === search.mood)?.label,
@@ -82,16 +94,7 @@ function ScenePage() {
         {isError && <p className="col-span-full text-sm text-destructive">Couldn't load recommendations. Please try again.</p>}
         {data?.items.map((item, i) => <SceneCard key={item.id} item={item} index={i} />)}
         {data && data.items.length === 0 && (
-          <div className="col-span-full rounded-3xl border border-dashed border-border p-10 text-center">
-            <h2 className="text-xl font-semibold">Nothing verified matches yet</h2>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-              SceneAI never invents events or prices. Loosen a filter, or ask the concierge for ideas.
-            </p>
-            <div className="mt-4 flex justify-center gap-2">
-              <Button variant="glass" size="sm" onClick={() => setEditing(true)}>Change filters</Button>
-              <Button asChild size="sm"><Link to="/concierge">Ask concierge</Link></Button>
-            </div>
-          </div>
+          <CatalogueEmptyState className="col-span-full" filtered={data.total > 0} onChangeFilters={() => setEditing(true)} />
         )}
       </div>
       {data && data.items.length > 0 && (

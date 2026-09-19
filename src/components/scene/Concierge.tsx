@@ -62,7 +62,7 @@ export function Concierge({ context, initialPrompt, suggestions = CONCIERGE_SUGG
           <div className="flex flex-col items-center py-10 text-center">
             <span className="grid size-12 place-items-center rounded-2xl bg-teal/15 text-teal"><Sparkles className="size-5" /></span>
             <h2 className="mt-4 text-2xl font-semibold">Your Mumbai concierge</h2>
-            <p className="mt-1 max-w-xs text-sm text-muted-foreground">Ask for a plan, a place, or a change. I only suggest listings SceneAI can verify.</p>
+            <p className="mt-1 max-w-xs text-sm text-muted-foreground">Ask for a plan, a place, or a change. I only suggest listings stored on SceneAI, and I flag any whose details aren't verified yet.</p>
           </div>
         )}
         {messages.map((m) => <MessageBubble key={m.id} message={m} />)}
@@ -155,6 +155,7 @@ function MessageBubble({ message }: { message: UIMessage }) {
                 <img src={itemImage({ imageUrl: it.imageUrl, categorySlug: null })} alt="" loading="lazy" width={512} height={384} className="aspect-[4/3] w-full object-cover" />
                 <div className="image-fade absolute inset-0" />
                 {it.sponsored && <span className="absolute left-2 top-2 rounded-full bg-saffron px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider text-saffron-foreground">Sponsored</span>}
+                {!it.verified && <span className="absolute right-2 top-2 rounded-full bg-background/80 px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider text-saffron">Unverified</span>}
                 <div className="absolute inset-x-2 bottom-2">
                   <p className="line-clamp-1 font-display text-sm font-semibold">{it.name}</p>
                   <p className="text-[10px] text-foreground/80">{it.area} · {formatPrice(it.priceMin, it.priceMax)}</p>

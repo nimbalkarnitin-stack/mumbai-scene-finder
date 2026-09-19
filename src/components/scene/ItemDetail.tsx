@@ -8,17 +8,15 @@ import { Button } from "@/components/ui/button";
 import { useSaved } from "@/hooks/useSaved";
 import { itemImage } from "@/lib/scene-images";
 import type { SceneItem } from "@/lib/scene-types";
-import { buildBookingUrl, formatPrice, formatWhen, track } from "@/lib/track";
+import { formatPrice, formatWhen, openOutbound, resolveOutboundLink, track } from "@/lib/track";
 import { cn } from "@/lib/utils";
 
 export function ItemDetail({ item, related }: { item: SceneItem; related: SceneItem[] }) {
   const { isSaved, toggle } = useSaved();
   const saved = isSaved(item.type, item.id);
 
-  const book = () => {
-    track("booking_click", { itemType: item.type, itemId: item.id, metadata: { affiliate: item.affiliateLinkId, sponsored: item.isSponsored, source: "detail" } });
-    window.open(buildBookingUrl(item), "_blank", "noopener,noreferrer");
-  };
+  const link = resolveOutboundLink(item);
+  const book = () => openOutbound(item, { source: "detail" });
   const share = async () => {
     track("share", { itemType: item.type, itemId: item.id });
     const url = window.location.href;
@@ -72,12 +70,22 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
         <aside className="h-fit space-y-2 rounded-3xl border border-border bg-card p-4 md:sticky md:top-20">
           <p className="eyebrow">From</p>
           <p className="font-display text-3xl font-semibold">{formatPrice(item.priceMin, item.priceMax)}</p>
-          <Button variant="ember" size="lg" className="mt-2 w-full" onClick={book}>{item.bookingUrl ? "Book now" : "Find on maps"} <ExternalLink className="size-4" /></Button>
+          <Button variant="ember" size="lg" className="mt-2 w-full" onClick={book}>{link.kind === "booking" ? "Book now" : link.label} <ExternalLink className="size-4" /></Button>
+          {link.kind !== "booking" && (
+            <p className="text-[11px] text-muted-foreground">No booking link on file — this opens {link.kind === "website" ? "the venue's own site" : "a map search"}.</p>
+          )}
           <div className="flex gap-2">
             <Button variant="glass" className="flex-1" onClick={() => toggle(item.type, item.id)}><Bookmark className={cn("size-4", saved && "fill-primary-glow text-primary-glow")} />{saved ? "Saved" : "Save"}</Button>
             <Button variant="glass" className="flex-1" onClick={share}><Share2 className="size-4" />Share</Button>
           </div>
           {item.affiliateLinkId && <p className="pt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground">SceneAI may earn a commission on bookings</p>}
+          <div className="space-y-1 border-t border-border pt-3 text-[11px] text-muted-foreground">
+            <p>{item.isVerified ? "Checked by a SceneAI editor" : "Not yet checked by a SceneAI editor"}</p>
+            {item.updatedAt && <p>Record last updated {new Date(item.updatedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })}</p>}
+            {item.sourceUrl && (
+              <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-teal hover:underline">Source <ExternalLink className="size-3" /></a>
+            )}
+          </div>
         </aside>
       </div>
 
