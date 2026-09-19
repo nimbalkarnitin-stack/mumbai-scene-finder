@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight, CalendarDays, MessageCircle } from "lucide-react";
 import { AppShell } from "@/components/scene/AppShell";
 import { ScenePicker } from "@/components/scene/ScenePicker";
+import { HappeningNow } from "@/components/scene/HappeningNow";
+
 import { SceneCard, SceneCardSkeleton } from "@/components/scene/SceneCard";
 import { Button } from "@/components/ui/button";
 import { CATEGORY_NAV, CONCIERGE_SUGGESTIONS } from "@/lib/scene-constants";
@@ -72,6 +74,10 @@ function Index() {
           </Link>
         </div>
       </section>
+
+      <HappeningNow />
+
+
 
       {/* Categories */}
       <section className="pt-10 md:pt-14">
