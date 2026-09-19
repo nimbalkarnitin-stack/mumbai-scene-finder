@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const TASKS = ["orchestrate", "ingest-source", "normalise-record", "deduplicate-records", "verify-catalogue", "expire-events", "health"] as const;
+const TASKS = ["orchestrate", "ingest-source", "normalise-record", "deduplicate-records", "verify-catalogue", "expire-events", "health", "google-discovery"] as const;
 type Task = (typeof TASKS)[number];
 
 /**
