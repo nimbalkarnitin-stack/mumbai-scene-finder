@@ -91,7 +91,11 @@ export const ENTITIES: Record<string, EntityDef> = {
 
 export const ADMIN_NAV: { to: string; label: string }[] = [
   { to: "/admin", label: "Overview" },
+  { to: "/admin/data-review", label: "Data review" },
+  { to: "/admin/data-health", label: "Data health" },
+  { to: "/admin/sources", label: "Sources" },
   ...Object.entries(ENTITIES).map(([k, e]) => ({ to: `/admin/${k}`, label: e.label })),
   { to: "/admin/users", label: "Users" },
   { to: "/admin/analytics", label: "Analytics" },
 ];
+
