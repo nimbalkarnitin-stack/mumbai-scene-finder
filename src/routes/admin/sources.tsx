@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { listSources, runIngestionNow, updateSource } from "@/lib/ingestion/admin.functions";
+import { discoveryAction, googleDiscoveryStatus, googleTestConnection, listSources, runIngestionNow, setGoogleQueries, updateSource } from "@/lib/ingestion/admin.functions";
 import { formatIst } from "@/lib/ingestion/timezone";
 
 export const Route = createFileRoute("/admin/sources")({ component: Sources });
@@ -258,64 +258,158 @@ interface GoogleSourceRow {
 }
 
 /**
- * Google discovery configuration: search phrases only.
- * Google is a discovery signal — it identifies candidate places and their own website links.
- * No Google listing content is stored, and the source cannot run without GOOGLE_PLACES_API_KEY.
+ * Google Discovery panel: status, credential state, query registry, budget and controls.
+ * Google is a discovery signal only — it identifies candidate places and their own website links.
+ * No Google listing content is stored, and the source cannot run without the Places credential.
  */
 function GoogleDiscoveryConfig({ source, saving, onSave }: { source: GoogleSourceRow; saving: boolean; onSave: (config: Record<string, unknown>) => void }) {
-  const cfg = (source.config ?? {}) as { queries?: unknown; max_results?: unknown };
-  const configured = Array.isArray(cfg.queries) ? (cfg.queries as unknown[]).filter((q): q is string => typeof q === "string") : [];
-  const [draft, setDraft] = useState(configured.join("\n"));
-  const [error, setError] = useState<string | null>(null);
-  const lines = draft.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-
-  const submit = () => {
-    if (lines.length === 0) {
-      setError("Add at least one search phrase.");
-      return;
-    }
-    setError(null);
-    onSave({ queries: [...new Set(lines)].slice(0, 200) });
+  const qc = useQueryClient();
+  const cfg = (source.config ?? {}) as { queries_per_run?: unknown; daily_request_budget?: unknown; monthly_request_budget?: unknown };
+  const status = useQuery({ queryKey: ["google-discovery-status"], queryFn: () => googleDiscoveryStatus() });
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ["google-discovery-status"] });
+    void qc.invalidateQueries({ queryKey: ["admin-sources"] });
   };
+
+  const test = useMutation({
+    mutationFn: () => googleTestConnection(),
+    onSuccess: (r) => { r.ok ? toast.success(r.message) : toast.error(r.message); invalidate(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const toggleQueries = useMutation({
+    mutationFn: (vars: { enabled: boolean; area?: string; category?: string }) => setGoogleQueries({ data: vars }),
+    onSuccess: (r) => { toast.success(`${r.updated} queries updated`); invalidate(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const runNow = useMutation({
+    mutationFn: () => discoveryAction({ data: { action: "run_google", confirm: true } }),
+    onSuccess: (r) => {
+      const d = r.result as { queries_succeeded: number; new_candidates: number; duplicate_candidates: number; api_requests: number };
+      toast.success(`${d.queries_succeeded} queries · ${d.new_candidates} new candidates · ${d.duplicate_candidates} duplicates · ${d.api_requests} API requests`);
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const s = status.data;
+  const [area, setArea] = useState("");
 
   return (
     <div className="mt-4 space-y-3 rounded-xl border border-border bg-background/60 p-3">
       <div className="flex flex-wrap gap-2 font-mono text-[9px] uppercase tracking-wider">
-        <span className={`rounded-full border px-2 py-0.5 ${source.credentials_ready ? "border-teal/40 bg-teal/10 text-teal" : "border-saffron/40 bg-saffron/10 text-saffron"}`}>
-          API key {source.credentials_ready ? "configured" : "not configured"}
+        <span className={`rounded-full border px-2 py-0.5 ${s?.credentialConfigured ? "border-teal/40 bg-teal/10 text-teal" : "border-saffron/40 bg-saffron/10 text-saffron"}`}>
+          {s?.status ?? "loading"}
         </span>
-        <span className={`rounded-full border px-2 py-0.5 ${configured.length > 0 ? "border-teal/40 bg-teal/10 text-teal" : "border-saffron/40 bg-saffron/10 text-saffron"}`}>
-          {configured.length} search {configured.length === 1 ? "phrase" : "phrases"}
+        <span className={`rounded-full border px-2 py-0.5 ${s?.credentialConfigured ? "border-teal/40 bg-teal/10 text-teal" : "border-saffron/40 bg-saffron/10 text-saffron"}`}>
+          Credential {s?.credentialConfigured ? `configured (${s.credentialEnvName})` : "missing"}
+        </span>
+        <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">
+          {s ? `${s.queries.enabled}/${s.queries.total} queries enabled` : "queries —"}
         </span>
         <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">
           Last run {source.last_run_at ? `${formatIst(source.last_run_at)} IST` : "never"} · {source.last_status ?? "—"}
         </span>
       </div>
 
-      {!source.credentials_ready && (
+      {s && !s.credentialConfigured && (
         <p className="text-xs text-muted-foreground">
-          Add {source.missing_credentials.join(", ")} in Project Settings → Secrets. The source stays switched off until the key exists, and the key is never shown here.
+          Add {s.missingCredentials.join(" or ")} in Project Settings → Secrets. No Google requests are made until the credential exists, and its value is never shown here.
         </p>
       )}
 
-      <label className="block">
-        <span className="eyebrow">Search phrases (one per line)</span>
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          rows={10}
-          className="mt-1 w-full rounded-xl border border-border bg-background p-3 font-mono text-xs"
-          placeholder="live music venues in Bandra Mumbai"
-        />
-      </label>
+      {s && (
+        <div className="grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-4">
+          <Metric label="Requests today" value={`${s.requests.today}/${s.requests.dailyLimit}`} />
+          <Metric label="Requests this month" value={`${s.requests.month}/${s.requests.monthlyLimit}`} />
+          <Metric label="Candidates found" value={`${s.candidates.total}`} />
+          <Metric label="Official sources found" value={`${s.candidates.sourceFound}`} />
+          <Metric label="Validated" value={`${s.candidates.validated}`} />
+          <Metric label="Ingested" value={`${s.candidates.ingested}`} />
+          <Metric label="Rejected / failed" value={`${s.candidates.rejected} / ${s.candidates.failed}`} />
+          <Metric label="Open conflicts" value={`${s.openConflicts}`} />
+        </div>
+      )}
 
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="block">
+          <span className="eyebrow">Queries per run</span>
+          <Input type="number" min={1} max={60} defaultValue={Number(cfg.queries_per_run ?? 30)} className="mt-1"
+            onBlur={(e) => { const v = Number(e.currentTarget.value); if (v) onSave({ queries_per_run: Math.min(60, Math.max(1, v)) }); }} />
+        </label>
+        <label className="block">
+          <span className="eyebrow">Daily request budget</span>
+          <Input type="number" min={1} defaultValue={Number(cfg.daily_request_budget ?? 500)} className="mt-1"
+            onBlur={(e) => { const v = Number(e.currentTarget.value); if (v) onSave({ daily_request_budget: v }); }} />
+        </label>
+        <label className="block">
+          <span className="eyebrow">Monthly request budget</span>
+          <Input type="number" min={1} defaultValue={Number(cfg.monthly_request_budget ?? 5000)} className="mt-1"
+            onBlur={(e) => { const v = Number(e.currentTarget.value); if (v) onSave({ monthly_request_budget: v }); }} />
+        </label>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="block">
+          <span className="eyebrow">Area or category</span>
+          <Input value={area} onChange={(e) => setArea(e.target.value)} placeholder="Bandra West" className="mt-1" />
+        </label>
+        <Button size="sm" variant="glass" disabled={toggleQueries.isPending || !area.trim()} onClick={() => toggleQueries.mutate({ enabled: true, area: area.trim() })}>Enable area</Button>
+        <Button size="sm" variant="ghost" disabled={toggleQueries.isPending || !area.trim()} onClick={() => toggleQueries.mutate({ enabled: false, area: area.trim() })}>Disable area</Button>
+        <Button size="sm" variant="glass" disabled={toggleQueries.isPending || !area.trim()} onClick={() => toggleQueries.mutate({ enabled: true, category: area.trim() })}>Enable category</Button>
+        <Button size="sm" variant="ghost" disabled={toggleQueries.isPending || !area.trim()} onClick={() => toggleQueries.mutate({ enabled: false, category: area.trim() })}>Disable category</Button>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" disabled={test.isPending} onClick={() => test.mutate()}>Test connection</Button>
+        <Button
+          size="sm"
+          variant="ember"
+          disabled={runNow.isPending || saving || !source.enabled || !s?.credentialConfigured}
+          onClick={() => {
+            if (!window.confirm(`Run Google Discovery now? This will spend up to ${Number(cfg.queries_per_run ?? 30)} Google Places requests.`)) return;
+            runNow.mutate();
+          }}
+        >
+          Run now
+        </Button>
+      </div>
+
       {source.last_error && <p className="text-xs text-destructive">Last error: {source.last_error}</p>}
+      {s?.recentErrors?.map((e, i) => (
+        <p key={i} className="text-xs text-destructive">HTTP {e.http_status} · {e.endpoint} · {String(e.error).slice(0, 160)}</p>
+      ))}
 
-      <Button size="sm" variant="glass" disabled={saving} onClick={submit}>Save search phrases ({lines.length})</Button>
+      {s && s.queries.recent.length > 0 && (
+        <div className="max-h-52 overflow-auto rounded-xl border border-border">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-background/80 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+              <tr><th className="p-2">Query</th><th className="p-2">Last run</th><th className="p-2">Results</th></tr>
+            </thead>
+            <tbody>
+              {s.queries.recent.map((row) => (
+                <tr key={row.id} className="border-t border-border">
+                  <td className="p-2">{row.query_text}</td>
+                  <td className="p-2 text-muted-foreground">{row.last_run_at ? `${formatIst(row.last_run_at)} IST` : "never"}</td>
+                  <td className="p-2 text-muted-foreground">{row.last_error ? <span className="text-destructive">error</span> : (row.last_result_count ?? "—")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       <p className="text-[11px] text-muted-foreground">
-        Only candidate names and their own website links are stored. Event facts always come from the official or authorised source, never from Google listings.
+        Only candidate names, Place IDs and their own website links are stored. Event facts always come from the official or authorised source, never from Google listings.
       </p>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-card px-3 py-2">
+      <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-0.5 text-sm font-semibold">{value}</p>
     </div>
   );
 }

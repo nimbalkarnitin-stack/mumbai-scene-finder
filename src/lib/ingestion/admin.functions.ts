@@ -431,7 +431,8 @@ export const listDiscovery = createServerFn({ method: "POST" })
     const { data: socials } = ids.length
       ? await supabaseAdmin.from("social_profiles").select("id,candidate_id,platform,handle,profile_url,verification_state,authorised_api,last_checked_at").in("candidate_id", ids)
       : { data: [] };
-    const { count: googleReady } = { count: !!process.env["GOOGLE_PLACES_API_KEY"] };
+    const { googleCredential } = await import("@/lib/ingestion/discovery.server");
+    const googleReady = !!googleCredential().key;
     return {
       candidates: candidates ?? [],
       pages: pages ?? [],
@@ -450,6 +451,7 @@ export const discoveryAction = createServerFn({ method: "POST" })
         id: z.string().uuid().optional(),
         name: z.string().min(2).max(160).optional(),
         url: z.string().max(500).optional(),
+        confirm: z.boolean().optional(),
       })
       .parse(input),
   )
@@ -473,9 +475,14 @@ export const discoveryAction = createServerFn({ method: "POST" })
     }
 
     if (data.action === "run_google") {
+      // RUN NOW is explicit and confirmed in the UI: it spends Google quota.
+      if (!data.confirm) throw new Error("Confirmation is required before spending Google Places quota.");
       const { data: source } = await supabaseAdmin.from("ingestion_sources").select("config,enabled").eq("slug", "google-discovery").maybeSingle();
-      if (!source?.enabled) throw new Error("Google discovery is switched off. Enable it in Sources once the Google API key and search queries are configured.");
-      return { ok: true, result: await discovery.runGoogleDiscovery(supabaseAdmin, (source.config ?? {}) as Record<string, unknown>) };
+      if (!source?.enabled) throw new Error("Google discovery is switched off. Enable it in Sources once the Google API key and queries are configured.");
+      const google = await discovery.runGoogleDiscovery(supabaseAdmin, (source.config ?? {}) as Record<string, unknown>);
+      // Hand the fresh candidates straight to the official-source resolver (bounded batch).
+      const resolved = await discovery.runDiscoveryResolver(supabaseAdmin, 20);
+      return { ok: true, result: { ...google, resolver: resolved } };
     }
 
     if (!data.id) throw new Error("A candidate is required");
@@ -525,4 +532,137 @@ export const runDiscoveryNow = createServerFn({ method: "POST" })
     const pipeline = await import("@/lib/ingestion/pipeline.server");
     const settings = await pipeline.loadSettings(supabaseAdmin);
     return { ok: true, result: await pipeline.crossVerify(supabaseAdmin, settings) };
+  });
+
+/**
+ * Google Discovery status for Admin → Sources.
+ * Read-only: credential presence (never its value), query registry counts, request budget usage,
+ * candidate/source funnel counts and recent errors.
+ */
+export const googleDiscoveryStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { googleCredential, googleRequestUsage } = await import("@/lib/ingestion/discovery.server");
+    const { requestsRemaining } = await import("@/lib/ingestion/google-discovery");
+
+    const cred = googleCredential();
+    const [{ data: source }, usage] = await Promise.all([
+      supabaseAdmin.from("ingestion_sources").select("id,enabled,config,last_run_at,last_status,last_error").eq("slug", "google-discovery").maybeSingle(),
+      googleRequestUsage(supabaseAdmin),
+    ]);
+    const config = (source?.config ?? {}) as Record<string, unknown>;
+    const dailyLimit = Math.max(1, Number(config["daily_request_budget"] ?? 500) || 500);
+    const monthlyLimit = Math.max(1, Number(config["monthly_request_budget"] ?? 5000) || 5000);
+
+    const countOf = async (build: () => PromiseLike<{ count: number | null }>) => (await build()).count ?? 0;
+    const [totalQueries, enabledQueries, queryErrors, candidates, withSource, validated, ingested, rejected, failedCandidates, conflicts] = await Promise.all([
+      countOf(() => supabaseAdmin.from("google_discovery_queries").select("id", { count: "exact", head: true })),
+      countOf(() => supabaseAdmin.from("google_discovery_queries").select("id", { count: "exact", head: true }).eq("enabled", true)),
+      countOf(() => supabaseAdmin.from("google_discovery_queries").select("id", { count: "exact", head: true }).not("last_error", "is", null)),
+      countOf(() => supabaseAdmin.from("discovery_candidates").select("id", { count: "exact", head: true }).eq("discovery_method", "google_places")),
+      countOf(() => supabaseAdmin.from("discovery_candidates").select("id", { count: "exact", head: true }).eq("discovery_method", "google_places").eq("status", "SOURCE_FOUND")),
+      countOf(() => supabaseAdmin.from("discovery_candidates").select("id", { count: "exact", head: true }).eq("discovery_method", "google_places").eq("status", "VALIDATED")),
+      countOf(() => supabaseAdmin.from("discovery_candidates").select("id", { count: "exact", head: true }).eq("discovery_method", "google_places").eq("status", "INGESTED")),
+      countOf(() => supabaseAdmin.from("discovery_candidates").select("id", { count: "exact", head: true }).eq("discovery_method", "google_places").eq("status", "REJECTED")),
+      countOf(() => supabaseAdmin.from("discovery_candidates").select("id", { count: "exact", head: true }).eq("discovery_method", "google_places").not("last_error", "is", null)),
+      countOf(() => supabaseAdmin.from("field_conflicts").select("id", { count: "exact", head: true }).eq("status", "open")),
+    ]);
+
+    const { data: recentErrors } = await supabaseAdmin
+      .from("google_api_requests")
+      .select("endpoint,http_status,error,created_at")
+      .not("error", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    const { data: topQueries } = await supabaseAdmin
+      .from("google_discovery_queries")
+      .select("id,area,category,query_text,enabled,priority,last_run_at,last_result_count,last_error")
+      .eq("enabled", true)
+      .order("last_run_at", { ascending: false, nullsFirst: false })
+      .limit(25);
+
+    return {
+      status: !cred.key ? ("NOT_CONFIGURED" as const) : source?.enabled ? ("ACTIVE" as const) : ("DISABLED" as const),
+      credentialConfigured: !!cred.key,
+      credentialEnvName: cred.envName,
+      missingCredentials: cred.missing,
+      enabled: !!source?.enabled,
+      lastRunAt: source?.last_run_at ?? null,
+      lastStatus: source?.last_status ?? null,
+      lastError: source?.last_error ?? null,
+      queries: { total: totalQueries, enabled: enabledQueries, withErrors: queryErrors, recent: topQueries ?? [] },
+      requests: { today: usage.requestsToday, month: usage.requestsThisMonth, dailyLimit, monthlyLimit, remaining: requestsRemaining({ ...usage, dailyLimit, monthlyLimit }) },
+      candidates: { total: candidates, sourceFound: withSource, validated, ingested, rejected, failed: failedCandidates },
+      openConflicts: conflicts,
+      recentErrors: recentErrors ?? [],
+    };
+  });
+
+/**
+ * TEST CONNECTION — one minimal, field-masked Places request to confirm the key works.
+ * Stores nothing in the catalogue; the request is logged for budget accounting.
+ */
+export const googleTestConnection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { googleCredential } = await import("@/lib/ingestion/discovery.server");
+    const { safeFetch } = await import("@/lib/ingestion/safe-fetch.server");
+    const { sanitiseText } = await import("@/lib/ingestion/url-guard");
+
+    const cred = googleCredential();
+    if (!cred.key) {
+      return { ok: false as const, status: "NOT_CONFIGURED" as const, message: `Google Places API credential is not configured. Add ${cred.missing.join(" or ")} in Project Settings → Secrets.` };
+    }
+    const res = await safeFetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      skipRobots: true,
+      timeoutMs: 10000,
+      headers: { "content-type": "application/json", "X-Goog-Api-Key": cred.key, "X-Goog-FieldMask": "places.id" },
+      body: JSON.stringify({ textQuery: "live music venue in Bandra, Mumbai", maxResultCount: 1, regionCode: "IN" }),
+    });
+    const ok = res.status >= 200 && res.status < 300;
+    await supabaseAdmin.from("google_api_requests").insert({
+      endpoint: "places:searchText (test)",
+      http_status: res.status,
+      place_count: 0,
+      error: ok ? null : sanitiseText(res.body, 400),
+    });
+    return {
+      ok,
+      status: ok ? ("ACTIVE" as const) : ("ERROR" as const),
+      message: ok
+        ? `Google Places API (New) responded normally using ${cred.envName}.`
+        : `Google rejected the request (HTTP ${res.status}): ${sanitiseText(res.body, 300) ?? "no details"}`,
+    };
+  });
+
+/** Enable or disable registry queries, by id or by whole area / category. */
+export const setGoogleQueries = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        enabled: z.boolean(),
+        ids: z.array(z.string().uuid()).max(500).optional(),
+        area: z.string().max(80).optional(),
+        category: z.string().max(80).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (!data.ids?.length && !data.area && !data.category) throw new Error("Choose queries, an area or a category to change.");
+    let q = supabaseAdmin.from("google_discovery_queries").update({ enabled: data.enabled });
+    if (data.ids?.length) q = q.in("id", data.ids);
+    if (data.area) q = q.eq("area", data.area);
+    if (data.category) q = q.eq("category", data.category);
+    const { data: rows, error } = await q.select("id");
+    if (error) throw new Error(error.message);
+    return { ok: true, updated: (rows ?? []).length };
   });
