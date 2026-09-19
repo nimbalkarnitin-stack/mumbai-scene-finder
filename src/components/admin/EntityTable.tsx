@@ -83,6 +83,7 @@ function cell(v: unknown) {
 export function EntityTable({ def }: { def: EntityDef }) {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Row | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const list = useQuery({
     queryKey: ["admin", def.table],
@@ -100,9 +101,34 @@ export function EntityTable({ def }: { def: EntityDef }) {
       const res = id ? await table(def.table).update(payload).eq("id", id) : await table(def.table).insert(payload);
       if (res.error) throw res.error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin", def.table] }); setEditing(null); toast.success("Saved"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin", def.table] }); setEditing(null); setErrors({}); toast.success("Saved"); },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const validate = (row: Row) => {
+    const errs: Record<string, string> = {};
+    for (const f of def.fields) {
+      const v = row[f.key];
+      if (f.required && isEmpty(v)) errs[f.key] = `${f.label} is required`;
+      if (f.key === "slug" && typeof v === "string" && v && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(v)) errs[f.key] = "Use lowercase letters, numbers and dashes only";
+      if (f.kind === "number" && v != null && Number.isNaN(Number(v))) errs[f.key] = `${f.label} must be a number`;
+    }
+    const min = row["price_min"] as number | null, max = row["price_max"] as number | null;
+    if (min != null && max != null && Number(max) < Number(min)) errs["price_max"] = "Price max cannot be lower than price min";
+    const starts = row["starts_at"] as string | null, ends = row["ends_at"] as string | null;
+    if (starts && ends && new Date(ends) <= new Date(starts)) errs["ends_at"] = "End time must be after the start time";
+    return errs;
+  };
+
+  const submit = (row: Row) => {
+    const errs = validate(row);
+    setErrors(errs);
+    if (Object.keys(errs).length) {
+      toast.error(`Fix ${Object.keys(errs).length} field${Object.keys(errs).length === 1 ? "" : "s"} before saving`);
+      return;
+    }
+    save.mutate(row);
+  };
   const remove = useMutation({
     mutationFn: async (id: string) => { const { error } = await table(def.table).delete().eq("id", id); if (error) throw error; },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin", def.table] }); toast.success("Deleted"); },
