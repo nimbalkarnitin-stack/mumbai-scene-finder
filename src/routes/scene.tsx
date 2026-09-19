@@ -7,6 +7,8 @@ import { AppShell } from "@/components/scene/AppShell";
 import { ScenePicker } from "@/components/scene/ScenePicker";
 import { SceneCard, SceneCardSkeleton } from "@/components/scene/SceneCard";
 import { CatalogueEmptyState } from "@/components/scene/CatalogueEmptyState";
+import { SponsoredRail } from "@/components/scene/SponsoredRail";
+import { AffiliateDisclosure } from "@/components/scene/Disclosure";
 import { Button } from "@/components/ui/button";
 import { getRecommendations } from "@/lib/scene.functions";
 import { BUDGETS, GROUPS, MOODS, TIMINGS } from "@/lib/scene-constants";
@@ -53,6 +55,9 @@ function ScenePage() {
   useEffect(() => {
     if (!data) return;
     track("recommendation_view", { metadata: { ...search, count: data.items.length, candidates: data.total, personalised: !!history } });
+    for (const item of data.items) {
+      track("recommendation_impression", { itemType: item.type, itemId: item.id, metadata: { surface: "scene", score: item.score, relevanceScore: item.relevanceScore ?? item.score, monetisationBoost: item.monetisation?.boost ?? 0 } });
+    }
   }, [data, search, history]);
 
   const summary = [
@@ -97,9 +102,11 @@ function ScenePage() {
           <CatalogueEmptyState className="col-span-full" filtered={data.total > 0} onChangeFilters={() => setEditing(true)} />
         )}
       </div>
+      {data && data.items.length > 0 && <SponsoredRail className="mt-10" />}
+      {data && data.items.length > 0 && <AffiliateDisclosure className="mx-4 mt-6 md:mx-6" />}
       {data && data.items.length > 0 && (
         <p className="px-4 pt-6 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground md:px-6">
-          Ranked from {data.total} Mumbai listings · weighted on mood, budget, time, area, group, freshness, popularity &amp; your history
+          Ranked from {data.total} Mumbai listings · weighted on mood, budget, time, area, group, freshness, popularity &amp; your history · partner links may nudge order by at most {Math.round((data.monetisationWeight ?? 0) * 100)}%
         </p>
       )}
     </AppShell>
