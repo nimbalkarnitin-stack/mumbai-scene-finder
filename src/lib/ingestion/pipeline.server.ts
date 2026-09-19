@@ -9,7 +9,7 @@ import { enrichRecord } from "./enrich.server";
 import { completenessOf, computeQualityScore, nextRefreshAt, passesPublishGate, verificationStateFor } from "./quality";
 import { isTransient } from "./safe-fetch.server";
 import { crossSourceState, detectFieldConflicts, fieldValuesFrom, PROVENANCE_FIELDS, type FieldObservation } from "./provenance";
-import { runDiscoveryResolver } from "./discovery.server";
+import { promoteValidatedCandidates, runDiscoveryResolver } from "./discovery.server";
 import {
   DEFAULT_CADENCE,
   DEFAULT_GATE,
@@ -221,15 +221,24 @@ export async function runSource(db: DB, source: SourceRow, settings: Settings): 
 
   const status = counters.failed > 0 ? "partial" : "success";
   await finishJob(db, jobId, counters, status, counters.failed ? `${counters.failed} record(s) failed` : null, { logs });
-  await db
-    .from("ingestion_sources")
-    .update({
-      last_run_at: new Date().toISOString(),
-      last_status: status,
-      last_error: counters.failed ? logs.slice(-1)[0] ?? null : null,
-      next_run_at: new Date(Date.now() + source.refresh_interval_minutes * 60000).toISOString(),
-    })
-    .eq("id", source.id);
+  // Official page lists are read in rotating batches: advance the cursor so the next run
+  // continues where this one stopped.
+  const patch: Record<string, unknown> = {
+    last_run_at: new Date().toISOString(),
+    last_status: status,
+    last_error: counters.failed ? logs.slice(-1)[0] ?? null : null,
+    next_run_at: new Date(Date.now() + source.refresh_interval_minutes * 60000).toISOString(),
+  };
+  if (source.adapter_key === "official_site") {
+    const cfg = (source.config ?? {}) as Record<string, unknown>;
+    const pages = Array.isArray(cfg["pages"]) ? (cfg["pages"] as unknown[]).length : 0;
+    const perRun = Math.min(Math.max(Number(cfg["pages_per_run"] ?? 20) || 20, 1), 40);
+    if (pages > perRun) {
+      const cursor = (Number(cfg["page_cursor"] ?? 0) || 0) + perRun;
+      patch["config"] = { ...cfg, page_cursor: cursor % pages };
+    }
+  }
+  await db.from("ingestion_sources").update(patch as never).eq("id", source.id);
   await trackIngestion(db, "source_fetch_completed", { source: source.slug, ...counters });
   return { counters, status, error: null };
 }
@@ -692,6 +701,10 @@ export async function orchestrate(db: DB, options: OrchestrateOptions = {}) {
   const jobId = await startJob(db, null, `orchestrate:${mode}`);
   const nowIso = new Date().toISOString();
 
+  // Verified discoveries become authorised official-page sources before anything is fetched,
+  // so newly validated venues are read in this same run.
+  const promoted = options.sourceSlug ? null : await promoteValidatedCandidates(db, mode === "full" ? 50 : 15);
+
   let query = db.from("ingestion_sources").select("*").eq("enabled", true).neq("source_type", "discovery");
   if (options.sourceSlug) query = query.eq("slug", options.sourceSlug);
   else if (mode === "near") query = query.or(`next_run_at.is.null,next_run_at.lte.${nowIso}`);
@@ -720,6 +733,7 @@ export async function orchestrate(db: DB, options: OrchestrateOptions = {}) {
   await finishJob(db, jobId, totals, totals.failed ? "partial" : "success", null, {
     mode,
     sources: perSource,
+    promoted,
     published,
     duplicate_candidates: dupes.created,
     verified: verified.updated,
@@ -728,5 +742,5 @@ export async function orchestrate(db: DB, options: OrchestrateOptions = {}) {
     expired: expired.updated,
   });
 
-  return { mode, sources: perSource, totals, published, duplicates: dupes, verified, crossVerified, discovery, expired };
+  return { mode, sources: perSource, promoted, totals, published, duplicates: dupes, verified, crossVerified, discovery, expired };
 }

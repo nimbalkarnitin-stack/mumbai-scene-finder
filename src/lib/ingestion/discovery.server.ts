@@ -565,3 +565,38 @@ export async function promoteCandidateToSource(db: DB, candidateId: string): Pro
   await track(db, "discovery_promoted", { candidate: candidateId, host });
   return { ok: true, url };
 }
+
+/**
+ * Close the loop between discovery/verification and the catalogue: every candidate that has
+ * a validated first-party what's-on page is promoted into the authorised official-pages
+ * source, so the normal ingestion run can read its published schema.org events.
+ * Aggregator/social URLs are never promoted, and nothing here creates listings by itself.
+ */
+export async function promoteValidatedCandidates(
+  db: DB,
+  limit = 25,
+): Promise<{ scanned: number; promoted: number; skipped: number; errors: string[] }> {
+  const { data: rows } = await db
+    .from("discovery_candidates")
+    .select("id,events_page_url,official_website_url,linked_source_id,status")
+    .in("status", ["VALIDATED", "SOURCE_FOUND"])
+    .is("linked_source_id", null)
+    .not("events_page_url", "is", null)
+    .limit(limit);
+
+  let promoted = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+  for (const row of rows ?? []) {
+    try {
+      await promoteCandidateToSource(db, row.id);
+      promoted += 1;
+    } catch (error) {
+      skipped += 1;
+      const message = error instanceof Error ? error.message : String(error);
+      if (errors.length < 10) errors.push(`${row.id}: ${message}`);
+    }
+  }
+  if (promoted > 0) await track(db, "discovery_promoted_batch", { promoted, skipped });
+  return { scanned: (rows ?? []).length, promoted, skipped, errors };
+}
