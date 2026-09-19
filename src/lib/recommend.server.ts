@@ -50,26 +50,31 @@ export async function getCityId(db: DB, citySlug: string): Promise<string | null
   return data?.id ?? null;
 }
 
-export async function fetchCityItems(db: DB, cityId: string, type?: ItemType): Promise<SceneItem[]> {
+export async function fetchCityItems(db: DB, cityId: string, type?: ItemType | undefined): Promise<SceneItem[]> {
   const nowIso = new Date().toISOString();
   const jobs: Promise<SceneItem[]>[] = [];
   if (!type || type === "venue") {
     jobs.push(
-      db.from("venues").select(SELECT_VENUE).eq("city_id", cityId).eq("is_active", true).limit(300)
-        .then((r) => (r.data ?? []).map((row) => normalize(row, "venue"))),
+      (async () => {
+        const r = await db.from("venues").select(SELECT_VENUE).eq("city_id", cityId).eq("is_active", true).limit(300);
+        return (r.data ?? []).map((row) => normalize(row, "venue"));
+      })(),
     );
   }
   if (!type || type === "event") {
     jobs.push(
-      db.from("events").select(SELECT_EVENT).eq("city_id", cityId).eq("is_active", true).gte("starts_at", nowIso)
-        .order("starts_at", { ascending: true }).limit(300)
-        .then((r) => (r.data ?? []).map((row) => normalize(row, "event"))),
+      (async () => {
+        const r = await db.from("events").select(SELECT_EVENT).eq("city_id", cityId).eq("is_active", true).gte("starts_at", nowIso).order("starts_at", { ascending: true }).limit(300);
+        return (r.data ?? []).map((row) => normalize(row, "event"));
+      })(),
     );
   }
   if (!type || type === "experience") {
     jobs.push(
-      db.from("experiences").select(SELECT_EXPERIENCE).eq("city_id", cityId).eq("is_active", true).limit(300)
-        .then((r) => (r.data ?? []).map((row) => normalize(row, "experience"))),
+      (async () => {
+        const r = await db.from("experiences").select(SELECT_EXPERIENCE).eq("city_id", cityId).eq("is_active", true).limit(300);
+        return (r.data ?? []).map((row) => normalize(row, "experience"));
+      })(),
     );
   }
   const res = await Promise.all(jobs);
@@ -77,9 +82,15 @@ export async function fetchCityItems(db: DB, cityId: string, type?: ItemType): P
 }
 
 export async function fetchItemBySlug(db: DB, cityId: string, type: ItemType, slug: string): Promise<SceneItem | null> {
-  const table = type === "venue" ? "venues" : type === "event" ? "events" : "experiences";
-  const select = type === "venue" ? SELECT_VENUE : type === "event" ? SELECT_EVENT : SELECT_EXPERIENCE;
-  const { data } = await db.from(table).select(select).eq("city_id", cityId).eq("slug", slug).maybeSingle();
+  if (type === "venue") {
+    const { data } = await db.from("venues").select(SELECT_VENUE).eq("city_id", cityId).eq("slug", slug).maybeSingle();
+    return data ? normalize(data, type) : null;
+  }
+  if (type === "event") {
+    const { data } = await db.from("events").select(SELECT_EVENT).eq("city_id", cityId).eq("slug", slug).maybeSingle();
+    return data ? normalize(data, type) : null;
+  }
+  const { data } = await db.from("experiences").select(SELECT_EXPERIENCE).eq("city_id", cityId).eq("slug", slug).maybeSingle();
   return data ? normalize(data, type) : null;
 }
 
