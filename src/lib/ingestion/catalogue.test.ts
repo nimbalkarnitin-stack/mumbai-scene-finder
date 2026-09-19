@@ -16,7 +16,7 @@ const venueHtml = `<html><head>
 function parseAndNormalise(html: string, pageUrl: string) {
   const node = extractJsonLd(html)[0]!;
   const parsed = officialSiteAdapter.parse!({ raw: { ...node, __page: pageUrl }, sourceUrl: pageUrl })!;
-  return officialSiteAdapter.normalise(parsed);
+  return officialSiteAdapter.normalise(parsed, { raw: parsed, sourceUrl: pageUrl });
 }
 
 describe("JSON-LD extraction from official pages", () => {
@@ -56,7 +56,8 @@ describe("JSON-LD extraction from official pages", () => {
   });
 
   it("skips a node with no name", () => {
-    const parsed = officialSiteAdapter.parse!({ raw: { "@type": "Event", startDate: "2026-10-02" }, sourceUrl: "https://x.example.com" });
+    const raw = { "@type": "Event", startDate: "2026-10-02" };
+    const parsed = officialSiteAdapter.parse!({ raw, sourceUrl: "https://x.example.com" });
     expect(parsed).toBeNull();
   });
 
@@ -68,8 +69,9 @@ describe("JSON-LD extraction from official pages", () => {
 });
 
 describe("cross-source verification and conflicts", () => {
-  const observation = (source: string, field: "startsAt" | "priceMin", value: string, authority: number) => ({
+  const observation = (source: string, field: "starts_at" | "price_min", value: string, authority: number) => ({
     field,
+    sourceRecordId: `${source}-record`,
     value,
     sourceName: source,
     sourceUrl: `https://${source}.example.com`,
@@ -81,24 +83,24 @@ describe("cross-source verification and conflicts", () => {
 
   it("flags a field where two official sources disagree", () => {
     const conflicts = detectFieldConflicts([
-      observation("venue-a", "startsAt", "2026-10-02T20:30:00.000Z", 5),
-      observation("venue-b", "startsAt", "2026-10-03T20:30:00.000Z", 5),
+      observation("venue-a", "starts_at", "2026-10-02T20:30:00.000Z", 5),
+      observation("venue-b", "starts_at", "2026-10-03T20:30:00.000Z", 5),
     ]);
-    expect(conflicts.map((c) => c.field)).toContain("startsAt");
+    expect(conflicts.map((c) => c.field)).toContain("starts_at");
   });
 
   it("does not flag agreeing sources", () => {
     const conflicts = detectFieldConflicts([
-      observation("venue-a", "startsAt", "2026-10-02T20:30:00.000Z", 5),
-      observation("venue-b", "startsAt", "2026-10-02T20:30:00.000Z", 4),
+      observation("venue-a", "starts_at", "2026-10-02T20:30:00.000Z", 5),
+      observation("venue-b", "starts_at", "2026-10-02T20:30:00.000Z", 4),
     ]);
     expect(conflicts).toHaveLength(0);
   });
 
   it("holds a conflicting record at REVIEW_REQUIRED rather than picking a value", () => {
     const obs = [
-      observation("venue-a", "startsAt", "2026-10-02T20:30:00.000Z", 5),
-      observation("venue-b", "startsAt", "2026-10-03T20:30:00.000Z", 5),
+      observation("venue-a", "starts_at", "2026-10-02T20:30:00.000Z", 5),
+      observation("venue-b", "starts_at", "2026-10-03T20:30:00.000Z", 5),
     ];
     const verdict = crossSourceState({
       observations: obs,
@@ -110,7 +112,7 @@ describe("cross-source verification and conflicts", () => {
   });
 
   it("marks a record stale once its source check is older than the window", () => {
-    const obs = [observation("venue-a", "startsAt", "2026-10-02T20:30:00.000Z", 5)];
+    const obs = [observation("venue-a", "starts_at", "2026-10-02T20:30:00.000Z", 5)];
     const verdict = crossSourceState({ observations: obs, conflicts: [], ageHours: 200, staleAfterHours: 72 });
     expect(verdict.state).toBe("STALE");
   });
