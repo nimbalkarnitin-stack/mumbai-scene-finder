@@ -32,7 +32,7 @@ function Field({ f, value, onChange }: { f: FieldDef; value: unknown; onChange: 
     case "textarea": return <Textarea value={(value as string) ?? ""} onChange={(e) => onChange(e.target.value || null)} rows={f.key === "body" ? 10 : 3} className="rounded-xl bg-background/60" />;
     case "number": return <Input type="number" step="any" value={value == null ? "" : String(value)} onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))} className={cls} />;
     case "boolean": return <label className="flex h-10 items-center gap-2 text-sm"><input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} className="size-4 accent-primary" />{value ? "Yes" : "No"}</label>;
-    case "datetime": return <Input type="datetime-local" value={value ? new Date(value as string).toISOString().slice(0, 16) : ""} onChange={(e) => onChange(e.target.value ? new Date(e.target.value).toISOString() : null)} className={cls} />;
+    case "datetime": return <Input type="datetime-local" value={toIstInput(value as string | null)} onChange={(e) => onChange(fromIstInput(e.target.value))} className={cls} />;
     case "list": return <Input value={Array.isArray(value) ? (value as string[]).join(", ") : ""} onChange={(e) => onChange(e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} placeholder="comma, separated" className={cls} />;
     case "json": return <Textarea value={value ? JSON.stringify(value, null, 2) : ""} onChange={(e) => { try { onChange(e.target.value ? JSON.parse(e.target.value) : null); } catch { /* keep typing */ } }} rows={4} className="rounded-xl bg-background/60 font-mono text-xs" />;
     case "select":
@@ -49,6 +49,28 @@ function Field({ f, value, onChange }: { f: FieldDef; value: unknown; onChange: 
       );
     default: return <Input value={(value as string) ?? ""} onChange={(e) => onChange(e.target.value || null)} className={cls} />;
   }
+}
+
+const IST_OFFSET = "+05:30";
+
+/** Datetime inputs are always entered and shown in Mumbai time (Asia/Kolkata). */
+function toIstInput(iso: string | null) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })
+    .formatToParts(d)
+    .reduce<Record<string, string>>((acc, x) => { acc[x.type] = x.value; return acc; }, {});
+  return `${p["year"]}-${p["month"]}-${p["day"]}T${p["hour"] === "24" ? "00" : p["hour"]}:${p["minute"]}`;
+}
+function fromIstInput(local: string) {
+  if (!local) return null;
+  const d = new Date(`${local}:00${IST_OFFSET}`);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+function isEmpty(v: unknown) {
+  return v === null || v === undefined || v === "" || (Array.isArray(v) && v.length === 0);
 }
 
 function cell(v: unknown) {
