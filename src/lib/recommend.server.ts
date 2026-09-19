@@ -188,7 +188,7 @@ export function scoreItems(items: SceneItem[], q: SceneQuery): Recommendation[] 
 
   const scored = items.map<Recommendation>((item) => {
     const reasons: string[] = [];
-    const b: Record<string, number> = {};
+    const b: ScoreBreakdown = { preference: 0, budget: 0, time: 0, location: 0, occasion: 0, freshness: 0, popularity: 0, history: 0 };
 
     // Preference / mood
     let pref = 0.4;
