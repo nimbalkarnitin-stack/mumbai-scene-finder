@@ -25,4 +25,5 @@ Open (blocked on external input):
 - [x] Apify adapter (`src/lib/ingestion/adapters/apify.server.ts`) via Lovable connector gateway, registered in the adapter registry.
 - [x] Disabled source row "BookMyShow via Apify" (adapter `apify`), no Actor assumed.
 - [x] Admin Actor configuration/status panel on /admin/sources.
-- [ ] Blocked: link the Apify connector to this workspace/project, then set an authorised Actor ID + input JSON and enable the source.
+- [x] Apify connector linked ("Nitin's Apify", gateway-backed, credentials verified; FREE plan with $5/mo credits).
+- [ ] Blocked: user chose not to pick a store Actor — source stays disabled until they supply an authorised Actor ID + input JSON (Admin → Sources → BookMyShow via Apify), then enable + Run now.
