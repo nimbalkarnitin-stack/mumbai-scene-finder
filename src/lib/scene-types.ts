@@ -34,20 +34,31 @@ export interface SceneItem {
 export interface Recommendation extends SceneItem {
   score: number;
   reasons: string[];
-  breakdown: Record<string, number>;
+  breakdown: ScoreBreakdown;
 }
 
 export interface SceneQuery {
-  city?: string;
-  mood?: string;
-  group?: string;
-  budget?: number;
-  timing?: string;
-  area?: string;
-  category?: string;
-  type?: ItemType;
-  limit?: number;
-  history?: { moods?: string[]; areas?: string[]; categories?: string[] };
+  city?: string | undefined;
+  mood?: string | undefined;
+  group?: string | undefined;
+  budget?: number | undefined;
+  timing?: string | undefined;
+  area?: string | undefined;
+  category?: string | undefined;
+  type?: ItemType | undefined;
+  limit?: number | undefined;
+  history?: { moods?: string[] | undefined; areas?: string[] | undefined; categories?: string[] | undefined } | undefined;
+}
+
+export interface ScoreBreakdown {
+  preference: number;
+  budget: number;
+  time: number;
+  location: number;
+  occasion: number;
+  freshness: number;
+  popularity: number;
+  history: number;
 }
 
 export interface ItineraryStop {

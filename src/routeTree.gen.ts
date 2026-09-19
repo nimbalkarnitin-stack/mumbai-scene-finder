@@ -10,14 +10,58 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CafesRouteImport } from './routes/cafes'
+import { Route as ComedyRouteImport } from './routes/comedy'
 import { Route as ConciergeRouteImport } from './routes/concierge'
+import { Route as DealsRouteImport } from './routes/deals'
+import { Route as EventsRouteImport } from './routes/events'
+import { Route as ExperiencesRouteImport } from './routes/experiences'
+import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as GuidesRouteImport } from './routes/guides'
+import { Route as LiveMusicRouteImport } from './routes/live-music'
+import { Route as NightlifeRouteImport } from './routes/nightlife'
 import { Route as PlanRouteImport } from './routes/plan'
+import { Route as PlusRouteImport } from './routes/plus'
+import { Route as RestaurantsRouteImport } from './routes/restaurants'
+import { Route as SavedRouteImport } from './routes/saved'
 import { Route as SceneRouteImport } from './routes/scene'
+import { Route as TrendingRouteImport } from './routes/trending'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminEntityRouteImport } from './routes/admin/$entity'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin/analytics'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ESlugRouteImport } from './routes/e.$slug'
+import { Route as GuidesSlugRouteImport } from './routes/guides.$slug'
+import { Route as MumbaiSlugRouteImport } from './routes/mumbai.$slug'
+import { Route as VSlugRouteImport } from './routes/v.$slug'
+import { Route as XSlugRouteImport } from './routes/x.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CafesRoute = CafesRouteImport.update({
+  id: '/cafes',
+  path: '/cafes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComedyRoute = ComedyRouteImport.update({
+  id: '/comedy',
+  path: '/comedy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConciergeRoute = ConciergeRouteImport.update({
@@ -25,9 +69,59 @@ const ConciergeRoute = ConciergeRouteImport.update({
   path: '/concierge',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DealsRoute = DealsRouteImport.update({
+  id: '/deals',
+  path: '/deals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventsRoute = EventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExperiencesRoute = ExperiencesRouteImport.update({
+  id: '/experiences',
+  path: '/experiences',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExploreRoute = ExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesRoute = GuidesRouteImport.update({
+  id: '/guides',
+  path: '/guides',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveMusicRoute = LiveMusicRouteImport.update({
+  id: '/live-music',
+  path: '/live-music',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NightlifeRoute = NightlifeRouteImport.update({
+  id: '/nightlife',
+  path: '/nightlife',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlanRoute = PlanRouteImport.update({
   id: '/plan',
   path: '/plan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlusRoute = PlusRouteImport.update({
+  id: '/plus',
+  path: '/plus',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RestaurantsRoute = RestaurantsRouteImport.update({
+  id: '/restaurants',
+  path: '/restaurants',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SavedRoute = SavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SceneRoute = SceneRouteImport.update({
@@ -35,48 +129,275 @@ const SceneRoute = SceneRouteImport.update({
   path: '/scene',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TrendingRoute = TrendingRouteImport.update({
+  id: '/trending',
+  path: '/trending',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminEntityRoute = AdminEntityRouteImport.update({
+  id: '/$entity',
+  path: '/$entity',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ESlugRoute = ESlugRouteImport.update({
+  id: '/e/$slug',
+  path: '/e/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesSlugRoute = GuidesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => GuidesRoute,
+} as any)
+const MumbaiSlugRoute = MumbaiSlugRouteImport.update({
+  id: '/mumbai/$slug',
+  path: '/mumbai/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VSlugRoute = VSlugRouteImport.update({
+  id: '/v/$slug',
+  path: '/v/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const XSlugRoute = XSlugRouteImport.update({
+  id: '/x/$slug',
+  path: '/x/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/cafes': typeof CafesRoute
+  '/comedy': typeof ComedyRoute
   '/concierge': typeof ConciergeRoute
+  '/deals': typeof DealsRoute
+  '/events': typeof EventsRoute
+  '/experiences': typeof ExperiencesRoute
+  '/explore': typeof ExploreRoute
+  '/guides': typeof GuidesRouteWithChildren
+  '/live-music': typeof LiveMusicRoute
+  '/nightlife': typeof NightlifeRoute
   '/plan': typeof PlanRoute
+  '/plus': typeof PlusRoute
+  '/restaurants': typeof RestaurantsRoute
+  '/saved': typeof SavedRoute
   '/scene': typeof SceneRoute
+  '/trending': typeof TrendingRoute
+  '/admin/$entity': typeof AdminEntityRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
+  '/e/$slug': typeof ESlugRoute
+  '/guides/$slug': typeof GuidesSlugRoute
+  '/mumbai/$slug': typeof MumbaiSlugRoute
+  '/v/$slug': typeof VSlugRoute
+  '/x/$slug': typeof XSlugRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/cafes': typeof CafesRoute
+  '/comedy': typeof ComedyRoute
   '/concierge': typeof ConciergeRoute
+  '/deals': typeof DealsRoute
+  '/events': typeof EventsRoute
+  '/experiences': typeof ExperiencesRoute
+  '/explore': typeof ExploreRoute
+  '/guides': typeof GuidesRouteWithChildren
+  '/live-music': typeof LiveMusicRoute
+  '/nightlife': typeof NightlifeRoute
   '/plan': typeof PlanRoute
+  '/plus': typeof PlusRoute
+  '/restaurants': typeof RestaurantsRoute
+  '/saved': typeof SavedRoute
   '/scene': typeof SceneRoute
+  '/trending': typeof TrendingRoute
+  '/admin/$entity': typeof AdminEntityRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
+  '/e/$slug': typeof ESlugRoute
+  '/guides/$slug': typeof GuidesSlugRoute
+  '/mumbai/$slug': typeof MumbaiSlugRoute
+  '/v/$slug': typeof VSlugRoute
+  '/x/$slug': typeof XSlugRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/cafes': typeof CafesRoute
+  '/comedy': typeof ComedyRoute
   '/concierge': typeof ConciergeRoute
+  '/deals': typeof DealsRoute
+  '/events': typeof EventsRoute
+  '/experiences': typeof ExperiencesRoute
+  '/explore': typeof ExploreRoute
+  '/guides': typeof GuidesRouteWithChildren
+  '/live-music': typeof LiveMusicRoute
+  '/nightlife': typeof NightlifeRoute
   '/plan': typeof PlanRoute
+  '/plus': typeof PlusRoute
+  '/restaurants': typeof RestaurantsRoute
+  '/saved': typeof SavedRoute
   '/scene': typeof SceneRoute
+  '/trending': typeof TrendingRoute
+  '/admin/$entity': typeof AdminEntityRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
+  '/e/$slug': typeof ESlugRoute
+  '/guides/$slug': typeof GuidesSlugRoute
+  '/mumbai/$slug': typeof MumbaiSlugRoute
+  '/v/$slug': typeof VSlugRoute
+  '/x/$slug': typeof XSlugRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/concierge' | '/plan' | '/scene' | '/api/chat'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/cafes'
+    | '/comedy'
+    | '/concierge'
+    | '/deals'
+    | '/events'
+    | '/experiences'
+    | '/explore'
+    | '/guides'
+    | '/live-music'
+    | '/nightlife'
+    | '/plan'
+    | '/plus'
+    | '/restaurants'
+    | '/saved'
+    | '/scene'
+    | '/trending'
+    | '/admin/$entity'
+    | '/admin/analytics'
+    | '/admin/users'
+    | '/api/chat'
+    | '/e/$slug'
+    | '/guides/$slug'
+    | '/mumbai/$slug'
+    | '/v/$slug'
+    | '/x/$slug'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/concierge' | '/plan' | '/scene' | '/api/chat'
-  id: '__root__' | '/' | '/concierge' | '/plan' | '/scene' | '/api/chat'
+  to:
+    | '/'
+    | '/auth'
+    | '/cafes'
+    | '/comedy'
+    | '/concierge'
+    | '/deals'
+    | '/events'
+    | '/experiences'
+    | '/explore'
+    | '/guides'
+    | '/live-music'
+    | '/nightlife'
+    | '/plan'
+    | '/plus'
+    | '/restaurants'
+    | '/saved'
+    | '/scene'
+    | '/trending'
+    | '/admin/$entity'
+    | '/admin/analytics'
+    | '/admin/users'
+    | '/api/chat'
+    | '/e/$slug'
+    | '/guides/$slug'
+    | '/mumbai/$slug'
+    | '/v/$slug'
+    | '/x/$slug'
+    | '/admin'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/cafes'
+    | '/comedy'
+    | '/concierge'
+    | '/deals'
+    | '/events'
+    | '/experiences'
+    | '/explore'
+    | '/guides'
+    | '/live-music'
+    | '/nightlife'
+    | '/plan'
+    | '/plus'
+    | '/restaurants'
+    | '/saved'
+    | '/scene'
+    | '/trending'
+    | '/admin/$entity'
+    | '/admin/analytics'
+    | '/admin/users'
+    | '/api/chat'
+    | '/e/$slug'
+    | '/guides/$slug'
+    | '/mumbai/$slug'
+    | '/v/$slug'
+    | '/x/$slug'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  CafesRoute: typeof CafesRoute
+  ComedyRoute: typeof ComedyRoute
   ConciergeRoute: typeof ConciergeRoute
+  DealsRoute: typeof DealsRoute
+  EventsRoute: typeof EventsRoute
+  ExperiencesRoute: typeof ExperiencesRoute
+  ExploreRoute: typeof ExploreRoute
+  GuidesRoute: typeof GuidesRouteWithChildren
+  LiveMusicRoute: typeof LiveMusicRoute
+  NightlifeRoute: typeof NightlifeRoute
   PlanRoute: typeof PlanRoute
+  PlusRoute: typeof PlusRoute
+  RestaurantsRoute: typeof RestaurantsRoute
+  SavedRoute: typeof SavedRoute
   SceneRoute: typeof SceneRoute
+  TrendingRoute: typeof TrendingRoute
   ApiChatRoute: typeof ApiChatRoute
+  ESlugRoute: typeof ESlugRoute
+  MumbaiSlugRoute: typeof MumbaiSlugRoute
+  VSlugRoute: typeof VSlugRoute
+  XSlugRoute: typeof XSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -88,11 +409,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cafes': {
+      id: '/cafes'
+      path: '/cafes'
+      fullPath: '/cafes'
+      preLoaderRoute: typeof CafesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comedy': {
+      id: '/comedy'
+      path: '/comedy'
+      fullPath: '/comedy'
+      preLoaderRoute: typeof ComedyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/concierge': {
       id: '/concierge'
       path: '/concierge'
       fullPath: '/concierge'
       preLoaderRoute: typeof ConciergeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/deals': {
+      id: '/deals'
+      path: '/deals'
+      fullPath: '/deals'
+      preLoaderRoute: typeof DealsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/events': {
+      id: '/events'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof EventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/experiences': {
+      id: '/experiences'
+      path: '/experiences'
+      fullPath: '/experiences'
+      preLoaderRoute: typeof ExperiencesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides': {
+      id: '/guides'
+      path: '/guides'
+      fullPath: '/guides'
+      preLoaderRoute: typeof GuidesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live-music': {
+      id: '/live-music'
+      path: '/live-music'
+      fullPath: '/live-music'
+      preLoaderRoute: typeof LiveMusicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nightlife': {
+      id: '/nightlife'
+      path: '/nightlife'
+      fullPath: '/nightlife'
+      preLoaderRoute: typeof NightlifeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/plan': {
@@ -102,12 +500,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlanRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/plus': {
+      id: '/plus'
+      path: '/plus'
+      fullPath: '/plus'
+      preLoaderRoute: typeof PlusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/restaurants': {
+      id: '/restaurants'
+      path: '/restaurants'
+      fullPath: '/restaurants'
+      preLoaderRoute: typeof RestaurantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/saved': {
+      id: '/saved'
+      path: '/saved'
+      fullPath: '/saved'
+      preLoaderRoute: typeof SavedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/scene': {
       id: '/scene'
       path: '/scene'
       fullPath: '/scene'
       preLoaderRoute: typeof SceneRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/trending': {
+      id: '/trending'
+      path: '/trending'
+      fullPath: '/trending'
+      preLoaderRoute: typeof TrendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/$entity': {
+      id: '/admin/$entity'
+      path: '/$entity'
+      fullPath: '/admin/$entity'
+      preLoaderRoute: typeof AdminEntityRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/api/chat': {
       id: '/api/chat'
@@ -116,15 +570,98 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/e/$slug': {
+      id: '/e/$slug'
+      path: '/e/$slug'
+      fullPath: '/e/$slug'
+      preLoaderRoute: typeof ESlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/$slug': {
+      id: '/guides/$slug'
+      path: '/$slug'
+      fullPath: '/guides/$slug'
+      preLoaderRoute: typeof GuidesSlugRouteImport
+      parentRoute: typeof GuidesRoute
+    }
+    '/mumbai/$slug': {
+      id: '/mumbai/$slug'
+      path: '/mumbai/$slug'
+      fullPath: '/mumbai/$slug'
+      preLoaderRoute: typeof MumbaiSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v/$slug': {
+      id: '/v/$slug'
+      path: '/v/$slug'
+      fullPath: '/v/$slug'
+      preLoaderRoute: typeof VSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/x/$slug': {
+      id: '/x/$slug'
+      path: '/x/$slug'
+      fullPath: '/x/$slug'
+      preLoaderRoute: typeof XSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AdminRouteRouteChildren {
+  AdminEntityRoute: typeof AdminEntityRoute
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminEntityRoute: AdminEntityRoute,
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
+interface GuidesRouteChildren {
+  GuidesSlugRoute: typeof GuidesSlugRoute
+}
+
+const GuidesRouteChildren: GuidesRouteChildren = {
+  GuidesSlugRoute: GuidesSlugRoute,
+}
+
+const GuidesRouteWithChildren =
+  GuidesRoute._addFileChildren(GuidesRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  CafesRoute: CafesRoute,
+  ComedyRoute: ComedyRoute,
   ConciergeRoute: ConciergeRoute,
+  DealsRoute: DealsRoute,
+  EventsRoute: EventsRoute,
+  ExperiencesRoute: ExperiencesRoute,
+  ExploreRoute: ExploreRoute,
+  GuidesRoute: GuidesRouteWithChildren,
+  LiveMusicRoute: LiveMusicRoute,
+  NightlifeRoute: NightlifeRoute,
   PlanRoute: PlanRoute,
+  PlusRoute: PlusRoute,
+  RestaurantsRoute: RestaurantsRoute,
+  SavedRoute: SavedRoute,
   SceneRoute: SceneRoute,
+  TrendingRoute: TrendingRoute,
   ApiChatRoute: ApiChatRoute,
+  ESlugRoute: ESlugRoute,
+  MumbaiSlugRoute: MumbaiSlugRoute,
+  VSlugRoute: VSlugRoute,
+  XSlugRoute: XSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

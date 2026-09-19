@@ -13,11 +13,19 @@ export function getSessionId(): string | undefined {
   return id;
 }
 
-type EventType = Parameters<typeof trackInteraction>[0]["data"]["eventType"];
+export type EventType =
+  | "search" | "recommendation_view" | "item_view" | "save" | "unsave" | "share" | "booking_click"
+  | "conversion" | "itinerary_generated" | "concierge_message" | "preference_set";
 
-export function track(eventType: EventType, opts: { itemType?: ItemType; itemId?: string; metadata?: Record<string, unknown> } = {}) {
+export function track(eventType: EventType, opts: { itemType?: ItemType | undefined; itemId?: string | undefined; metadata?: Record<string, unknown> | undefined } = {}) {
   if (typeof window === "undefined") return;
-  void trackInteraction({ data: { eventType, sessionId: getSessionId(), ...opts } }).catch(() => {});
+  const data: { eventType: EventType; sessionId?: string; itemType?: ItemType; itemId?: string; metadata?: Record<string, unknown> } = { eventType };
+  const sid = getSessionId();
+  if (sid) data.sessionId = sid;
+  if (opts.itemType) data.itemType = opts.itemType;
+  if (opts.itemId) data.itemId = opts.itemId;
+  if (opts.metadata) data.metadata = opts.metadata;
+  void trackInteraction({ data }).catch(() => {});
 }
 
 /** Build the outbound booking URL, adding affiliate tracking when configured. */
