@@ -8,6 +8,8 @@ import { compareRecords, duplicateConfidenceFrom } from "./dedupe";
 import { enrichRecord } from "./enrich.server";
 import { completenessOf, computeQualityScore, nextRefreshAt, passesPublishGate, verificationStateFor } from "./quality";
 import { isTransient } from "./safe-fetch.server";
+import { crossSourceState, detectFieldConflicts, fieldValuesFrom, PROVENANCE_FIELDS, type FieldObservation } from "./provenance";
+import { runDiscoveryResolver } from "./discovery.server";
 import {
   DEFAULT_CADENCE,
   DEFAULT_GATE,
@@ -267,7 +269,7 @@ export async function publishReadyRecords(db: DB, settings: Settings, limit = 50
   const jobId = await startJob(db, null, "publish");
   const { data: records } = await db
     .from("source_records")
-    .select("id,source_name,source_url,normalised,quality_score,verification_status,review_status,linked_entity_type,linked_entity_id,last_checked_at")
+    .select("id,source_name,source_type,source_url,normalised,quality_score,verification_status,review_status,linked_entity_type,linked_entity_id,last_checked_at,source_confidence")
     .in("review_status", ["new", "approved", "changed"])
     .order("last_seen_at", { ascending: true })
     .limit(limit);
@@ -396,6 +398,16 @@ export async function publishReadyRecords(db: DB, settings: Settings, limit = 50
           linked_entity_id: entityId,
         })
         .eq("id", rec.id);
+      if (entityId) {
+        await recordProvenance(
+          db,
+          normalised.kind,
+          entityId,
+          { id: rec.id, source_name: rec.source_name, source_type: rec.source_type, source_url: rec.source_url },
+          normalised,
+          Math.max(1, Math.round((rec.source_confidence ?? 40) / 20)),
+        );
+      }
       await trackIngestion(db, publish ? "record_published" : "record_updated", { source: rec.source_name, kind: normalised.kind, score });
     } catch (error) {
       counters.failed += 1;
@@ -406,6 +418,128 @@ export async function publishReadyRecords(db: DB, settings: Settings, limit = 50
   }
 
   await finishJob(db, jobId, counters, counters.failed ? "partial" : "success", null);
+  return counters;
+}
+
+/**
+ * Field-level provenance: store which source stated each individual fact, with its URL.
+ * Only fields the source actually stated are written — silence is never recorded as a value.
+ */
+export async function recordProvenance(
+  db: DB,
+  entityType: "event" | "venue" | "experience",
+  entityId: string,
+  rec: { id: string; source_name: string | null; source_type: string | null; source_url: string | null },
+  normalised: NormalisedRecord,
+  authorityLevel: number,
+) {
+  const values = fieldValuesFrom(normalised);
+  const observedAt = new Date().toISOString();
+  const rows = PROVENANCE_FIELDS.filter((f) => values[f] !== null && values[f] !== undefined).map((field) => ({
+    entity_type: entityType,
+    entity_id: entityId,
+    field,
+    value_text: String(values[field]).slice(0, 500),
+    source_record_id: rec.id,
+    source_name: rec.source_name,
+    source_type: (rec.source_type ?? null) as Database["public"]["Enums"]["ingestion_source_type"] | null,
+    source_url: rec.source_url,
+    authority_level: authorityLevel,
+    confidence: Math.min(1, authorityLevel / 5),
+    observed_at: observedAt,
+  }));
+  if (rows.length === 0) return;
+  await db.from("field_provenance").upsert(rows as never, { onConflict: "entity_type,entity_id,field,source_name" });
+}
+
+/**
+ * Cross-source verification: compare every source that stated each field, detect contradictions
+ * and set the public verification state. Conflicts are queued for admin review — never auto-resolved,
+ * and no source record is ever deleted or overwritten.
+ */
+export async function crossVerify(db: DB, settings: Settings, limit = 400) {
+  const counters = emptyCounters();
+  const jobId = await startJob(db, null, "cross-verify");
+  const now = new Date();
+
+  const { data: observations } = await db
+    .from("field_provenance")
+    .select("entity_type,entity_id,field,value_text,source_name,source_type,source_url,authority_level,source_record_id,observed_at")
+    .order("observed_at", { ascending: false })
+    .limit(5000);
+
+  const byEntity = new Map<string, FieldObservation[]>();
+  for (const o of observations ?? []) {
+    const key = `${o.entity_type}:${o.entity_id}`;
+    const list = byEntity.get(key) ?? [];
+    list.push({
+      field: o.field as FieldObservation["field"],
+      value: o.value_text,
+      sourceName: o.source_name ?? "unknown",
+      sourceType: o.source_type ?? "official_site",
+      sourceUrl: o.source_url,
+      authorityLevel: o.authority_level ?? 2,
+      sourceRecordId: o.source_record_id,
+      observedAt: o.observed_at,
+    });
+    byEntity.set(key, list);
+  }
+
+  let processed = 0;
+  for (const [key, obs] of byEntity) {
+    if (processed >= limit) break;
+    processed += 1;
+    const [entityType, entityId] = key.split(":") as ["event" | "venue" | "experience", string];
+    counters.fetched += 1;
+
+    const newest = obs.reduce((max, o) => Math.max(max, new Date(o.observedAt).getTime()), 0);
+    const ageHours = (now.getTime() - newest) / 3600000;
+    const conflicts = detectFieldConflicts(obs);
+    const verdict = crossSourceState({ observations: obs, conflicts, ageHours, staleAfterHours: settings.gate.stale_after_hours });
+
+    // Open a review candidate per conflicting field; close ones the sources now agree on.
+    const conflictFields = new Set(conflicts.map((c) => c.field));
+    for (const conflict of conflicts) {
+      const { data: existing } = await db
+        .from("field_conflicts")
+        .select("id,status")
+        .eq("entity_type", entityType)
+        .eq("entity_id", entityId)
+        .eq("field", conflict.field)
+        .maybeSingle();
+      const row = { conflicting_values: conflict.values as never, status: "open", detected_at: new Date().toISOString() };
+      if (existing) {
+        if (existing.status === "open") await db.from("field_conflicts").update({ conflicting_values: conflict.values as never }).eq("id", existing.id);
+        else await db.from("field_conflicts").update(row).eq("id", existing.id);
+      } else {
+        await db.from("field_conflicts").insert({ entity_type: entityType, entity_id: entityId, field: conflict.field, ...row });
+        await trackIngestion(db, "source_conflict_detected", { entity_type: entityType, entity_id: entityId, field: conflict.field });
+      }
+    }
+    const { data: openConflicts } = await db.from("field_conflicts").select("id,field").eq("entity_type", entityType).eq("entity_id", entityId).eq("status", "open");
+    for (const open of openConflicts ?? []) {
+      if (!conflictFields.has(open.field as FieldObservation["field"])) {
+        await db.from("field_conflicts").update({ status: "resolved", resolved_at: new Date().toISOString(), resolution: "Sources now agree" }).eq("id", open.id);
+      }
+    }
+
+    const table = entityType === "event" ? "events" : entityType === "experience" ? "experiences" : "venues";
+    const { error } = await db
+      .from(table)
+      .update({ verification_status: verdict.state, is_verified: verdict.state === "VERIFIED" })
+      .eq("id", entityId);
+    if (error) counters.failed += 1;
+    else counters.updated += 1;
+    await trackIngestion(db, "record_cross_verified", {
+      entity_type: entityType,
+      entity_id: entityId,
+      state: verdict.state,
+      sources: verdict.distinctSources,
+      conflicts: conflicts.length,
+    });
+  }
+
+  await finishJob(db, jobId, counters, counters.failed ? "partial" : "success", null, { entities: processed });
   return counters;
 }
 
@@ -558,7 +692,7 @@ export async function orchestrate(db: DB, options: OrchestrateOptions = {}) {
   const jobId = await startJob(db, null, `orchestrate:${mode}`);
   const nowIso = new Date().toISOString();
 
-  let query = db.from("ingestion_sources").select("*").eq("enabled", true);
+  let query = db.from("ingestion_sources").select("*").eq("enabled", true).neq("source_type", "discovery");
   if (options.sourceSlug) query = query.eq("slug", options.sourceSlug);
   else if (mode === "near") query = query.or(`next_run_at.is.null,next_run_at.lte.${nowIso}`);
   const { data: sources } = await query.limit(options.maxSources ?? 10);
@@ -575,9 +709,12 @@ export async function orchestrate(db: DB, options: OrchestrateOptions = {}) {
     totals.failed += result.counters.failed;
   }
 
+  // Full runs also re-check discovered candidates for their official / what's-on pages.
+  const discovery = mode === "full" && !options.sourceSlug ? await runDiscoveryResolver(db, 10) : null;
   const published = await publishReadyRecords(db, settings);
   const dupes = await scanDuplicates(db);
   const verified = mode === "full" ? await verifyCatalogue(db, settings) : emptyCounters();
+  const crossVerified = await crossVerify(db, settings);
   const expired = await expireEvents(db);
 
   await finishJob(db, jobId, totals, totals.failed ? "partial" : "success", null, {
@@ -586,8 +723,10 @@ export async function orchestrate(db: DB, options: OrchestrateOptions = {}) {
     published,
     duplicate_candidates: dupes.created,
     verified: verified.updated,
+    cross_verified: crossVerified.updated,
+    discovery,
     expired: expired.updated,
   });
 
-  return { mode, sources: perSource, totals, published, duplicates: dupes, verified, expired };
+  return { mode, sources: perSource, totals, published, duplicates: dupes, verified, crossVerified, discovery, expired };
 }

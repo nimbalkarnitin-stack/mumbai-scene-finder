@@ -1,6 +1,6 @@
 /** Shared ingestion vocabulary. Client-safe: no secrets, no server-only imports. */
 
-export type VerificationState = "VERIFIED" | "REVIEW_REQUIRED" | "STALE" | "UNVERIFIED";
+export type VerificationState = "VERIFIED" | "PARTIALLY_VERIFIED" | "REVIEW_REQUIRED" | "STALE" | "UNVERIFIED";
 
 export type EventLifecycle =
   | "DRAFT"
@@ -16,7 +16,8 @@ export type SourceType =
   | "organiser_submission"
   | "partner_feed"
   | "ticketing_api"
-  | "social_api";
+  | "social_api"
+  | "discovery";
 
 export type ReviewStatus = "new" | "needs_review" | "approved" | "rejected" | "published" | "changed";
 
@@ -27,6 +28,8 @@ export function trustLabel(state: VerificationState): { label: string; tone: "go
   switch (state) {
     case "VERIFIED":
       return { label: "Verified", tone: "good" };
+    case "PARTIALLY_VERIFIED":
+      return { label: "Confirmed by one source only", tone: "warn" };
     case "REVIEW_REQUIRED":
       return { label: "Details may have changed — confirm with venue", tone: "warn" };
     case "STALE":
