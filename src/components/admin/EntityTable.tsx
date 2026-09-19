@@ -165,15 +165,20 @@ export function EntityTable({ def }: { def: EntityDef }) {
         </table>
       </div>
 
-      <Sheet open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+      <Sheet open={!!editing} onOpenChange={(o) => { if (!o) { setEditing(null); setErrors({}); } }}>
         <SheetContent className="w-full overflow-y-auto border-border bg-background sm:max-w-lg">
           <SheetHeader><SheetTitle>{editing?.id ? `Edit ${def.singular.toLowerCase()}` : `New ${def.singular.toLowerCase()}`}</SheetTitle></SheetHeader>
           {editing && (
-            <form className="space-y-4 px-4 pb-8" onSubmit={(e) => { e.preventDefault(); save.mutate(editing); }}>
+            <form className="space-y-4 px-4 pb-8" onSubmit={(e) => { e.preventDefault(); submit(editing); }} noValidate>
+              {Object.keys(errors).length > 0 && (
+                <p className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">Please fix the highlighted fields.</p>
+              )}
               {def.fields.map((f) => (
                 <div key={f.key}>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">{f.label}{f.required && " *"}</label>
-                  <Field f={f} value={editing[f.key]} onChange={(v) => setEditing({ ...editing, [f.key]: v })} />
+                  <Field f={f} value={editing[f.key]} onChange={(v) => { setEditing({ ...editing, [f.key]: v }); setErrors((e) => { const { [f.key]: _drop, ...rest } = e; return rest; }); }} />
+                  {errors[f.key] && <p className="mt-1 text-[11px] text-destructive">{errors[f.key]}</p>}
+                  {f.kind === "datetime" && <p className="mt-1 text-[11px] text-muted-foreground">Entered and shown in Mumbai time (IST).</p>}
                   {f.help && <p className="mt-1 text-[11px] text-muted-foreground">{f.help}</p>}
                 </div>
               ))}
