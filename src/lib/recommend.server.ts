@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import type { ItemType, Recommendation, SceneItem, SceneQuery } from "./scene-types";
+import type { ItemType, Recommendation, SceneItem, SceneQuery, ScoreBreakdown } from "./scene-types";
 
 type DB = SupabaseClient<Database>;
 
