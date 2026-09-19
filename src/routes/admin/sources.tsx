@@ -117,6 +117,15 @@ function Sources() {
                 />
               )}
 
+              {s.adapter_key === "google_discovery" && (
+                <GoogleDiscoveryConfig
+                  source={s}
+                  saving={save.isPending}
+                  onSave={(config) => save.mutate({ id: s.id, config: { ...(s.config as Record<string, unknown>), ...config } })}
+                />
+              )}
+
+
               {s.adapter_key === "official_site" && (
                 <div className="mt-3">
                   <span className="eyebrow">Official page URLs (one per line — first-party venue/organiser pages only)</span>

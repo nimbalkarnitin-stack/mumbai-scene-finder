@@ -33,6 +33,7 @@ import { Route as AdminEntityRouteImport } from './routes/admin/$entity'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin/analytics'
 import { Route as AdminDataHealthRouteImport } from './routes/admin/data-health'
 import { Route as AdminDataReviewRouteImport } from './routes/admin/data-review'
+import { Route as AdminDiscoveryRouteImport } from './routes/admin/discovery'
 import { Route as AdminMonetizationRouteImport } from './routes/admin/monetization'
 import { Route as AdminSourcesRouteImport } from './routes/admin/sources'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
@@ -165,6 +166,11 @@ const AdminDataReviewRoute = AdminDataReviewRouteImport.update({
   path: '/data-review',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminDiscoveryRoute = AdminDiscoveryRouteImport.update({
+  id: '/discovery',
+  path: '/discovery',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminMonetizationRoute = AdminMonetizationRouteImport.update({
   id: '/monetization',
   path: '/monetization',
@@ -246,6 +252,7 @@ export interface FileRoutesByFullPath {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/data-health': typeof AdminDataHealthRoute
   '/admin/data-review': typeof AdminDataReviewRoute
+  '/admin/discovery': typeof AdminDiscoveryRoute
   '/admin/monetization': typeof AdminMonetizationRoute
   '/admin/sources': typeof AdminSourcesRoute
   '/admin/users': typeof AdminUsersRoute
@@ -282,6 +289,7 @@ export interface FileRoutesByTo {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/data-health': typeof AdminDataHealthRoute
   '/admin/data-review': typeof AdminDataReviewRoute
+  '/admin/discovery': typeof AdminDiscoveryRoute
   '/admin/monetization': typeof AdminMonetizationRoute
   '/admin/sources': typeof AdminSourcesRoute
   '/admin/users': typeof AdminUsersRoute
@@ -320,6 +328,7 @@ export interface FileRoutesById {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/data-health': typeof AdminDataHealthRoute
   '/admin/data-review': typeof AdminDataReviewRoute
+  '/admin/discovery': typeof AdminDiscoveryRoute
   '/admin/monetization': typeof AdminMonetizationRoute
   '/admin/sources': typeof AdminSourcesRoute
   '/admin/users': typeof AdminUsersRoute
@@ -359,6 +368,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/data-health'
     | '/admin/data-review'
+    | '/admin/discovery'
     | '/admin/monetization'
     | '/admin/sources'
     | '/admin/users'
@@ -395,6 +405,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/data-health'
     | '/admin/data-review'
+    | '/admin/discovery'
     | '/admin/monetization'
     | '/admin/sources'
     | '/admin/users'
@@ -432,6 +443,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/data-health'
     | '/admin/data-review'
+    | '/admin/discovery'
     | '/admin/monetization'
     | '/admin/sources'
     | '/admin/users'
@@ -645,6 +657,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDataReviewRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/discovery': {
+      id: '/admin/discovery'
+      path: '/discovery'
+      fullPath: '/admin/discovery'
+      preLoaderRoute: typeof AdminDiscoveryRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/monetization': {
       id: '/admin/monetization'
       path: '/monetization'
@@ -730,6 +749,7 @@ interface AdminRouteRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminDataHealthRoute: typeof AdminDataHealthRoute
   AdminDataReviewRoute: typeof AdminDataReviewRoute
+  AdminDiscoveryRoute: typeof AdminDiscoveryRoute
   AdminMonetizationRoute: typeof AdminMonetizationRoute
   AdminSourcesRoute: typeof AdminSourcesRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -741,6 +761,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminDataHealthRoute: AdminDataHealthRoute,
   AdminDataReviewRoute: AdminDataReviewRoute,
+  AdminDiscoveryRoute: AdminDiscoveryRoute,
   AdminMonetizationRoute: AdminMonetizationRoute,
   AdminSourcesRoute: AdminSourcesRoute,
   AdminUsersRoute: AdminUsersRoute,
