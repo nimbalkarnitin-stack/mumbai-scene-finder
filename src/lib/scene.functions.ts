@@ -174,3 +174,18 @@ export const trackInteraction = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+/** Resolve a list of saved keys (`type:id`) to items. */
+export const getItemsByKeys = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ city: z.string().optional(), keys: z.array(z.string()).max(200) }).parse(input))
+  .handler(async ({ data }): Promise<SceneItem[]> => {
+    if (data.keys.length === 0) return [];
+    const { createPublicClient } = await import("./public-db.server");
+    const { getCityId, fetchCityItems } = await import("./recommend.server");
+    const db = createPublicClient();
+    const cityId = await getCityId(db, data.city ?? DEFAULT_CITY_SLUG);
+    if (!cityId) return [];
+    const set = new Set(data.keys);
+    const items = await fetchCityItems(db, cityId);
+    return items.filter((i) => set.has(`${i.type}:${i.id}`));
+  });
