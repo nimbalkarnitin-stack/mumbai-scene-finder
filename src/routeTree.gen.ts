@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ConciergeRouteImport } from './routes/concierge'
 import { Route as PlanRouteImport } from './routes/plan'
 import { Route as SceneRouteImport } from './routes/scene'
@@ -18,6 +19,11 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConciergeRoute = ConciergeRouteImport.update({
@@ -43,6 +49,7 @@ const ApiChatRoute = ApiChatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/concierge': typeof ConciergeRoute
   '/plan': typeof PlanRoute
   '/scene': typeof SceneRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/concierge': typeof ConciergeRoute
   '/plan': typeof PlanRoute
   '/scene': typeof SceneRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/concierge': typeof ConciergeRoute
   '/plan': typeof PlanRoute
   '/scene': typeof SceneRoute
@@ -65,14 +74,16 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/concierge' | '/plan' | '/scene' | '/api/chat'
+  fullPaths: '/' | '/auth' | '/concierge' | '/plan' | '/scene' | '/api/chat'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/concierge' | '/plan' | '/scene' | '/api/chat'
-  id: '__root__' | '/' | '/concierge' | '/plan' | '/scene' | '/api/chat'
+  to: '/' | '/auth' | '/concierge' | '/plan' | '/scene' | '/api/chat'
+  id:
+    '__root__' | '/' | '/auth' | '/concierge' | '/plan' | '/scene' | '/api/chat'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   ConciergeRoute: typeof ConciergeRoute
   PlanRoute: typeof PlanRoute
   SceneRoute: typeof SceneRoute
@@ -86,6 +97,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/concierge': {
@@ -121,6 +139,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   ConciergeRoute: ConciergeRoute,
   PlanRoute: PlanRoute,
   SceneRoute: SceneRoute,
