@@ -22,15 +22,75 @@ export type SceneQueryInput = z.infer<typeof QuerySchema>;
 
 export const getRecommendations = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => QuerySchema.parse(input))
-  .handler(async ({ data }): Promise<{ items: Recommendation[]; total: number }> => {
+  .handler(async ({ data }): Promise<{ items: Recommendation[]; total: number; monetisationWeight: number }> => {
     const { createPublicClient } = await import("./public-db.server");
     const { getCityId, fetchCityItems, scoreItems } = await import("./recommend.server");
+    const { loadMonetisationSettings } = await import("./monetisation/monetisation.server");
+    const { applyMonetisationSignal, effectiveWeight } = await import("./monetisation/ranking");
     const db = createPublicClient();
     const cityId = await getCityId(db, data.city ?? DEFAULT_CITY_SLUG);
-    if (!cityId) return { items: [], total: 0 };
+    if (!cityId) return { items: [], total: 0, monetisationWeight: 0 };
     const items = await fetchCityItems(db, cityId, data.type);
+
+    // Relevance first: mood, budget, time, area, group, freshness, verification.
     const ranked = scoreItems(items, data);
-    return { items: ranked, total: items.length };
+
+    // Monetisation is applied afterwards as a small, capped, auditable nudge.
+    const settings = await loadMonetisationSettings(db);
+    const weight = effectiveWeight(settings.ranking);
+    const [{ data: offers }, { data: deals }] = await Promise.all([
+      db.from("affiliate_offers").select("item_id").eq("status", "active"),
+      db.from("merchant_partnerships").select("item_id").eq("status", "active"),
+    ]);
+    const offerIds = new Set((offers ?? []).map((o) => o.item_id).filter((v): v is string => !!v));
+    const directIds = new Set((deals ?? []).map((o) => o.item_id).filter((v): v is string => !!v));
+
+    const adjusted = applyMonetisationSignal(
+      ranked,
+      (item) => ({ hasPartnerLink: offerIds.has(item.id), hasDirectPartnership: directIds.has(item.id) }),
+      settings.ranking,
+    ).map(({ item, finalScore, relevanceScore, monetisation }) => ({
+      ...item,
+      score: Number(finalScore.toFixed(4)),
+      relevanceScore: Number(relevanceScore.toFixed(4)),
+      monetisation,
+    }));
+
+    return { items: adjusted, total: items.length, monetisationWeight: weight.weight };
+  });
+
+/** Live sponsored placements resolved to real catalogue listings, for a separate labelled rail. */
+export const listSponsoredCards = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => z.object({ city: z.string().optional(), placement: z.string().optional() }).parse(input ?? {}))
+  .handler(async ({ data }): Promise<{ cards: { item: SceneItem; placementId: string; campaignName: string; disclosureLabel: string }[]; disclosure: string }> => {
+    const { createPublicClient } = await import("./public-db.server");
+    const { getCityId, fetchCityItems } = await import("./recommend.server");
+    const { loadMonetisationSettings } = await import("./monetisation/monetisation.server");
+    const db = createPublicClient();
+    const settings = await loadMonetisationSettings(db);
+    const cityId = await getCityId(db, data.city ?? DEFAULT_CITY_SLUG);
+    if (!cityId) return { cards: [], disclosure: settings.disclosure.sponsored };
+
+    let q = db
+      .from("sponsored_listings")
+      .select("id,campaign_name,disclosure_label,item_type,item_id,priority,placement")
+      .eq("status", "active")
+      .order("priority", { ascending: false })
+      .limit(6);
+    if (data.placement) q = q.eq("placement", data.placement);
+    const { data: placements } = await q;
+    const live = (placements ?? []).filter((p) => !!p.item_id);
+    if (live.length === 0) return { cards: [], disclosure: settings.disclosure.sponsored };
+
+    const items = await fetchCityItems(db, cityId);
+    const byId = new Map(items.map((i) => [i.id, i]));
+    const cards = live
+      .map((p) => {
+        const item = byId.get(p.item_id!);
+        return item ? { item, placementId: p.id, campaignName: p.campaign_name, disclosureLabel: p.disclosure_label } : null;
+      })
+      .filter((c): c is { item: SceneItem; placementId: string; campaignName: string; disclosureLabel: string } => !!c);
+    return { cards, disclosure: settings.disclosure.sponsored };
   });
 
 export const listItems = createServerFn({ method: "GET" })
