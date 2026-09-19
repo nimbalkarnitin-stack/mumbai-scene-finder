@@ -184,6 +184,161 @@ export type Database = {
         }
         Relationships: []
       }
+      discovery_candidates: {
+        Row: {
+          city_id: string | null
+          confidence: number
+          created_at: string
+          discovered_at: string
+          discovery_method: string
+          discovery_query: string | null
+          domain: string | null
+          entity_type: Database["public"]["Enums"]["item_type"]
+          events_page_url: string | null
+          evidence: Json
+          external_ref: string | null
+          id: string
+          last_checked_at: string | null
+          last_error: string | null
+          linked_entity_id: string | null
+          linked_entity_type: Database["public"]["Enums"]["item_type"] | null
+          linked_source_id: string | null
+          name: string
+          next_check_at: string | null
+          notes: string | null
+          official_website_url: string | null
+          provenance: Json
+          source_url: string | null
+          status: Database["public"]["Enums"]["discovery_status"]
+          updated_at: string
+        }
+        Insert: {
+          city_id?: string | null
+          confidence?: number
+          created_at?: string
+          discovered_at?: string
+          discovery_method: string
+          discovery_query?: string | null
+          domain?: string | null
+          entity_type?: Database["public"]["Enums"]["item_type"]
+          events_page_url?: string | null
+          evidence?: Json
+          external_ref?: string | null
+          id?: string
+          last_checked_at?: string | null
+          last_error?: string | null
+          linked_entity_id?: string | null
+          linked_entity_type?: Database["public"]["Enums"]["item_type"] | null
+          linked_source_id?: string | null
+          name: string
+          next_check_at?: string | null
+          notes?: string | null
+          official_website_url?: string | null
+          provenance?: Json
+          source_url?: string | null
+          status?: Database["public"]["Enums"]["discovery_status"]
+          updated_at?: string
+        }
+        Update: {
+          city_id?: string | null
+          confidence?: number
+          created_at?: string
+          discovered_at?: string
+          discovery_method?: string
+          discovery_query?: string | null
+          domain?: string | null
+          entity_type?: Database["public"]["Enums"]["item_type"]
+          events_page_url?: string | null
+          evidence?: Json
+          external_ref?: string | null
+          id?: string
+          last_checked_at?: string | null
+          last_error?: string | null
+          linked_entity_id?: string | null
+          linked_entity_type?: Database["public"]["Enums"]["item_type"] | null
+          linked_source_id?: string | null
+          name?: string
+          next_check_at?: string | null
+          notes?: string | null
+          official_website_url?: string | null
+          provenance?: Json
+          source_url?: string | null
+          status?: Database["public"]["Enums"]["discovery_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discovery_candidates_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discovery_candidates_linked_source_id_fkey"
+            columns: ["linked_source_id"]
+            isOneToOne: false
+            referencedRelation: "ingestion_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discovery_source_candidates: {
+        Row: {
+          candidate_id: string
+          confidence: number
+          created_at: string
+          domain: string | null
+          has_structured_data: boolean
+          http_status: number | null
+          id: string
+          kind: string
+          last_checked_at: string | null
+          status: string
+          structured_kinds: string[]
+          url: string
+          validation_notes: string | null
+        }
+        Insert: {
+          candidate_id: string
+          confidence?: number
+          created_at?: string
+          domain?: string | null
+          has_structured_data?: boolean
+          http_status?: number | null
+          id?: string
+          kind: string
+          last_checked_at?: string | null
+          status?: string
+          structured_kinds?: string[]
+          url: string
+          validation_notes?: string | null
+        }
+        Update: {
+          candidate_id?: string
+          confidence?: number
+          created_at?: string
+          domain?: string | null
+          has_structured_data?: boolean
+          http_status?: number | null
+          id?: string
+          kind?: string
+          last_checked_at?: string | null
+          status?: string
+          structured_kinds?: string[]
+          url?: string
+          validation_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discovery_source_candidates_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "discovery_candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       duplicate_candidates: {
         Row: {
           candidate_id: string
@@ -558,6 +713,107 @@ export type Database = {
             columns: ["sponsor_id"]
             isOneToOne: false
             referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      field_conflicts: {
+        Row: {
+          conflicting_values: Json
+          detected_at: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["item_type"]
+          field: string
+          id: string
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          conflicting_values?: Json
+          detected_at?: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["item_type"]
+          field: string
+          id?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          conflicting_values?: Json
+          detected_at?: string
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["item_type"]
+          field?: string
+          id?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      field_provenance: {
+        Row: {
+          authority_level: number | null
+          confidence: number
+          created_at: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["item_type"]
+          field: string
+          id: string
+          observed_at: string
+          source_name: string | null
+          source_record_id: string | null
+          source_type:
+            | Database["public"]["Enums"]["ingestion_source_type"]
+            | null
+          source_url: string | null
+          value_text: string | null
+        }
+        Insert: {
+          authority_level?: number | null
+          confidence?: number
+          created_at?: string
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["item_type"]
+          field: string
+          id?: string
+          observed_at?: string
+          source_name?: string | null
+          source_record_id?: string | null
+          source_type?:
+            | Database["public"]["Enums"]["ingestion_source_type"]
+            | null
+          source_url?: string | null
+          value_text?: string | null
+        }
+        Update: {
+          authority_level?: number | null
+          confidence?: number
+          created_at?: string
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["item_type"]
+          field?: string
+          id?: string
+          observed_at?: string
+          source_name?: string | null
+          source_record_id?: string | null
+          source_type?:
+            | Database["public"]["Enums"]["ingestion_source_type"]
+            | null
+          source_url?: string | null
+          value_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_provenance_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
             referencedColumns: ["id"]
           },
         ]
@@ -1112,6 +1368,62 @@ export type Database = {
         }
         Relationships: []
       }
+      social_profiles: {
+        Row: {
+          authorised_api: boolean
+          candidate_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: Database["public"]["Enums"]["item_type"] | null
+          evidence: Json
+          handle: string | null
+          id: string
+          last_checked_at: string | null
+          platform: string
+          profile_url: string
+          source_type: Database["public"]["Enums"]["ingestion_source_type"]
+          verification_state: Database["public"]["Enums"]["verification_state"]
+        }
+        Insert: {
+          authorised_api?: boolean
+          candidate_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: Database["public"]["Enums"]["item_type"] | null
+          evidence?: Json
+          handle?: string | null
+          id?: string
+          last_checked_at?: string | null
+          platform: string
+          profile_url: string
+          source_type?: Database["public"]["Enums"]["ingestion_source_type"]
+          verification_state?: Database["public"]["Enums"]["verification_state"]
+        }
+        Update: {
+          authorised_api?: boolean
+          candidate_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: Database["public"]["Enums"]["item_type"] | null
+          evidence?: Json
+          handle?: string | null
+          id?: string
+          last_checked_at?: string | null
+          platform?: string
+          profile_url?: string
+          source_type?: Database["public"]["Enums"]["ingestion_source_type"]
+          verification_state?: Database["public"]["Enums"]["verification_state"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_profiles_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "discovery_candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       source_records: {
         Row: {
           content_hash: string
@@ -1464,6 +1776,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      discovery_status:
+        | "DISCOVERED"
+        | "SOURCE_FOUND"
+        | "VALIDATED"
+        | "INGESTED"
+        | "REJECTED"
       event_lifecycle:
         | "DRAFT"
         | "PENDING_REVIEW"
@@ -1479,12 +1797,14 @@ export type Database = {
         | "partner_feed"
         | "ticketing_api"
         | "social_api"
+        | "discovery"
       item_type: "venue" | "event" | "experience"
       verification_state:
         | "VERIFIED"
         | "REVIEW_REQUIRED"
         | "STALE"
         | "UNVERIFIED"
+        | "PARTIALLY_VERIFIED"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1613,6 +1933,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      discovery_status: [
+        "DISCOVERED",
+        "SOURCE_FOUND",
+        "VALIDATED",
+        "INGESTED",
+        "REJECTED",
+      ],
       event_lifecycle: [
         "DRAFT",
         "PENDING_REVIEW",
@@ -1629,6 +1956,7 @@ export const Constants = {
         "partner_feed",
         "ticketing_api",
         "social_api",
+        "discovery",
       ],
       item_type: ["venue", "event", "experience"],
       verification_state: [
@@ -1636,6 +1964,7 @@ export const Constants = {
         "REVIEW_REQUIRED",
         "STALE",
         "UNVERIFIED",
+        "PARTIALLY_VERIFIED",
       ],
     },
   },
