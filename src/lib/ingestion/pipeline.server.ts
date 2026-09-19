@@ -257,6 +257,19 @@ async function resolveArea(db: DB, cityId: string, hint: string | null): Promise
   return match?.id ?? null;
 }
 
+/**
+ * Link an event to a venue already in the catalogue when the source states that venue's name.
+ * Never creates a venue and never guesses: an unmatched name simply stays unlinked.
+ */
+async function resolveVenue(db: DB, cityId: string, venueName: string | null): Promise<string | null> {
+  if (!venueName) return null;
+  const slug = slugify(venueName);
+  if (!slug) return null;
+  const { data } = await db.from("venues").select("id,slug,name").eq("city_id", cityId).limit(500);
+  const match = (data ?? []).find((v) => v.slug === slug || slugify(v.name) === slug);
+  return match?.id ?? null;
+}
+
 async function resolveCategory(db: DB, hint: string | null): Promise<string | null> {
   if (!hint) return null;
   const slug = slugify(hint);
