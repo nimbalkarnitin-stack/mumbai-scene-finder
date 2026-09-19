@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { PUBLIC_VISIBLE_STATES } from "./provenance";
+import { LIVE_WINDOW_STATES } from "./provenance";
 
 export interface NowEvent {
   id: string;
@@ -69,7 +69,7 @@ export const getHappeningNow = createServerFn({ method: "GET" }).handler(async (
   const weekend = istWeekendWindow(now);
 
   const select = "id,slug,name,starts_at,ends_at,image_url,price_min,price_max,booking_url,verification_status,source_name,areas(name),categories(name)";
-  // Source-backed only: stale and unverified events never appear in the live windows,
+  // Source-confirmed only: stale, unverified and review-pending events never appear here,
   // and cancelled/expired lifecycles are excluded.
   const query = (from: string, to: string, limit: number) =>
     db
@@ -77,7 +77,7 @@ export const getHappeningNow = createServerFn({ method: "GET" }).handler(async (
       .select(select, { count: "exact" })
       .eq("is_active", true)
       .eq("lifecycle_status", "ACTIVE")
-      .in("verification_status", PUBLIC_VISIBLE_STATES)
+      .in("verification_status", LIVE_WINDOW_STATES)
       .gte("starts_at", from)
       .lte("starts_at", to)
       .order("starts_at", { ascending: true })
