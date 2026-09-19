@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { extractJsonLd, jsonLdType } from "./adapters/shared";
 import { officialSiteAdapter } from "./adapters/official-site.server";
-import { crossSourceState, detectFieldConflicts, isPubliclyListable, PUBLIC_VISIBLE_STATES } from "./provenance";
+import { crossSourceState, detectFieldConflicts, isPubliclyListable, LIVE_WINDOW_STATES, PUBLIC_VISIBLE_STATES } from "./provenance";
 import { DEFAULT_GATE } from "./types";
 import { isSafeExternalUrl } from "./url-guard";
 
@@ -125,6 +125,12 @@ describe("recommendation surface filtering", () => {
     expect(isPubliclyListable("STALE")).toBe(false);
     expect(isPubliclyListable("UNVERIFIED")).toBe(false);
     expect(isPubliclyListable(null)).toBe(false);
+  });
+
+  it("keeps review-pending records out of the live time windows", () => {
+    expect(LIVE_WINDOW_STATES).toEqual(["VERIFIED", "PARTIALLY_VERIFIED"]);
+    expect(LIVE_WINDOW_STATES).not.toContain("REVIEW_REQUIRED");
+    expect(LIVE_WINDOW_STATES).not.toContain("STALE");
   });
 
   it("keeps the public state list free of stale/unverified values", () => {
