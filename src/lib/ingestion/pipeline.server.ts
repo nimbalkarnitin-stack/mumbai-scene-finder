@@ -1,0 +1,592 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+import { DEFAULT_CITY_ID } from "../scene-constants";
+import { getAdapter } from "./adapters/registry.server";
+import { AdapterDisabledError, type AdapterContext, type SourceRow } from "./adapters/types";
+import { sha256Hex, slugify } from "./adapters/shared";
+import { compareRecords, duplicateConfidenceFrom } from "./dedupe";
+import { enrichRecord } from "./enrich.server";
+import { completenessOf, computeQualityScore, nextRefreshAt, passesPublishGate, verificationStateFor } from "./quality";
+import { isTransient } from "./safe-fetch.server";
+import {
+  DEFAULT_CADENCE,
+  DEFAULT_GATE,
+  DEFAULT_WEIGHTS,
+  type NormalisedRecord,
+  type QualityGate,
+  type QualityWeights,
+  type RefreshCadence,
+  type VerificationState,
+} from "./types";
+
+type DB = SupabaseClient<Database>;
+
+export interface JobCounters {
+  fetched: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+}
+
+export interface Settings {
+  weights: QualityWeights;
+  gate: QualityGate;
+  cadence: RefreshCadence;
+}
+
+const emptyCounters = (): JobCounters => ({ fetched: 0, created: 0, updated: 0, skipped: 0, failed: 0 });
+
+export async function loadSettings(db: DB): Promise<Settings> {
+  const { data } = await db.from("ingestion_settings").select("key,value");
+  const map = new Map((data ?? []).map((r) => [r.key, r.value as Record<string, number>]));
+  return {
+    weights: { ...DEFAULT_WEIGHTS, ...(map.get("quality_weights") ?? {}) } as QualityWeights,
+    gate: { ...DEFAULT_GATE, ...(map.get("quality_gate") ?? {}) } as QualityGate,
+    cadence: { ...DEFAULT_CADENCE, ...(map.get("refresh_cadence") ?? {}) } as RefreshCadence,
+  };
+}
+
+/** Ingestion funnel analytics reuse the existing interactions table. */
+async function trackIngestion(db: DB, eventType: string, metadata: Record<string, unknown>) {
+  await db.from("interactions").insert({ event_type: eventType, city_id: DEFAULT_CITY_ID, metadata });
+}
+
+async function startJob(db: DB, source: { id?: string | null; name: string } | null, jobType: string) {
+  const { data } = await db
+    .from("ingestion_jobs")
+    .insert({ source_id: source?.id ?? null, source_name: source?.name ?? null, job_type: jobType, status: "running" })
+    .select("id")
+    .single();
+  return data?.id ?? null;
+}
+
+async function finishJob(
+  db: DB,
+  jobId: string | null,
+  counters: JobCounters,
+  status: "success" | "partial" | "failed",
+  errorSummary: string | null,
+  details: Record<string, unknown> = {},
+) {
+  if (!jobId) return;
+  await db
+    .from("ingestion_jobs")
+    .update({
+      status,
+      finished_at: new Date().toISOString(),
+      records_fetched: counters.fetched,
+      records_created: counters.created,
+      records_updated: counters.updated,
+      records_skipped: counters.skipped,
+      records_failed: counters.failed,
+      error_summary: errorSummary,
+      details,
+    })
+    .eq("id", jobId);
+}
+
+/** Fetch one source, store raw records idempotently (content hash), enrich and score them. */
+export async function runSource(db: DB, source: SourceRow, settings: Settings): Promise<{ counters: JobCounters; status: "success" | "partial" | "failed"; error: string | null }> {
+  const counters = emptyCounters();
+  const logs: string[] = [];
+  const ctx: AdapterContext = { source, now: new Date(), log: (m) => logs.push(m) };
+  const jobId = await startJob(db, { id: source.id, name: source.name }, `ingest:${source.adapter_key}`);
+  await trackIngestion(db, "source_fetch_started", { source: source.slug, adapter: source.adapter_key });
+
+  const adapter = getAdapter(source.adapter_key);
+  if (!adapter) {
+    await finishJob(db, jobId, counters, "failed", `No adapter registered for "${source.adapter_key}"`);
+    await trackIngestion(db, "source_fetch_failed", { source: source.slug, reason: "missing adapter" });
+    return { counters, status: "failed", error: `No adapter registered for "${source.adapter_key}"` };
+  }
+
+  let items: Awaited<ReturnType<typeof adapter.fetch>> = [];
+  try {
+    items = await adapter.fetch(ctx);
+    counters.fetched = items.length;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const disabled = error instanceof AdapterDisabledError;
+    await finishJob(db, jobId, counters, disabled ? "partial" : "failed", message, { logs, transient: isTransient(error) });
+    await db.from("ingestion_sources").update({ last_run_at: new Date().toISOString(), last_status: disabled ? "partial" : "failed", last_error: message, next_run_at: new Date(Date.now() + source.refresh_interval_minutes * 60000).toISOString() }).eq("id", source.id);
+    await trackIngestion(db, "source_fetch_failed", { source: source.slug, reason: message.slice(0, 200) });
+    return { counters, status: disabled ? "partial" : "failed", error: message };
+  }
+
+  for (const item of items) {
+    try {
+      const parsed = adapter.parse(item, ctx);
+      if (!parsed) {
+        counters.skipped += 1;
+        await trackIngestion(db, "record_skipped", { source: source.slug, reason: "unparseable" });
+        continue;
+      }
+      const normalisedBase = adapter.normalise(parsed, ctx);
+      if (!normalisedBase || !normalisedBase.name) {
+        counters.skipped += 1;
+        continue;
+      }
+      const enrichment = await enrichRecord(normalisedBase);
+      const normalised: NormalisedRecord = {
+        ...normalisedBase,
+        description: normalisedBase.description ?? enrichment.shortDescription,
+        categoryHint: enrichment.categoryHint ?? normalisedBase.categoryHint,
+        areaHint: enrichment.areaHint ?? normalisedBase.areaHint,
+        moodTags: enrichment.moodTags.length ? enrichment.moodTags : normalisedBase.moodTags,
+        occasionTags: enrichment.occasionTags,
+        groupTags: enrichment.groupTags,
+        keywords: enrichment.keywords,
+      };
+
+      const externalId = adapter.getExternalId(parsed, ctx);
+      const sourceUrl = adapter.getSourceUrl(parsed, ctx);
+      const lastModified = adapter.getLastModified(parsed, ctx);
+      const contentHash = await sha256Hex(JSON.stringify(normalised));
+      const nowIso = new Date().toISOString();
+
+      const { data: existing } = await db
+        .from("source_records")
+        .select("id,content_hash,review_status,linked_entity_type,linked_entity_id")
+        .eq("source_name", source.slug)
+        .eq("external_id", externalId)
+        .maybeSingle();
+
+      const authority = source.authority_level;
+      const duplicateConfidence = 1;
+      const score = computeQualityScore(
+        {
+          authorityLevel: authority,
+          ageHours: 0,
+          dateConfirmed: normalised.confirmed.date,
+          priceConfirmed: normalised.confirmed.price,
+          venueConfirmed: normalised.confirmed.venue,
+          locationConfirmed: normalised.confirmed.location,
+          duplicateConfidence,
+          completeness: completenessOf(normalised),
+        },
+        settings.weights,
+        settings.gate,
+      );
+      const state = verificationStateFor(score, { ageHours: 0, dateConfirmed: normalised.confirmed.date, duplicateConfidence }, settings.gate);
+      // Social signals and unclear classifications never auto-publish.
+      const forceReview = source.source_type === "social_api" || source.source_type === "organiser_submission" || enrichment.needsReview;
+
+      const row = {
+        source_id: source.id,
+        source_name: source.slug,
+        source_type: source.source_type,
+        source_url: sourceUrl,
+        external_id: externalId,
+        raw_payload: item.raw as never,
+        normalised: normalised as never,
+        content_hash: contentHash,
+        source_last_modified_at: lastModified,
+        last_seen_at: nowIso,
+        last_checked_at: nowIso,
+        fetch_status: "ok" as const,
+        parse_status: (forceReview ? "needs_review" : "ok") as "ok" | "needs_review",
+        source_confidence: Math.min(100, authority * 20),
+        verification_status: state,
+        quality_score: score,
+        error_message: null,
+      };
+
+      if (!existing) {
+        await db.from("source_records").insert({ ...row, review_status: forceReview ? "needs_review" : "new" });
+        counters.created += 1;
+        await trackIngestion(db, "record_created", { source: source.slug, external_id: externalId, score });
+      } else if (existing.content_hash === contentHash) {
+        await db.from("source_records").update({ last_seen_at: nowIso, last_checked_at: nowIso, verification_status: state, quality_score: score }).eq("id", existing.id);
+        counters.skipped += 1;
+        await trackIngestion(db, "record_skipped", { source: source.slug, reason: "unchanged" });
+      } else {
+        const keepDecision = existing.review_status === "rejected";
+        await db
+          .from("source_records")
+          .update({ ...row, review_status: keepDecision ? "rejected" : existing.linked_entity_id ? "changed" : forceReview ? "needs_review" : "new" })
+          .eq("id", existing.id);
+        counters.updated += 1;
+        await trackIngestion(db, "record_updated", { source: source.slug, external_id: externalId, score });
+      }
+    } catch (error) {
+      counters.failed += 1;
+      const message = error instanceof Error ? error.message : String(error);
+      logs.push(message);
+      await trackIngestion(db, "record_failed", { source: source.slug, reason: message.slice(0, 200) });
+    }
+  }
+
+  const status = counters.failed > 0 ? "partial" : "success";
+  await finishJob(db, jobId, counters, status, counters.failed ? `${counters.failed} record(s) failed` : null, { logs });
+  await db
+    .from("ingestion_sources")
+    .update({
+      last_run_at: new Date().toISOString(),
+      last_status: status,
+      last_error: counters.failed ? logs.slice(-1)[0] ?? null : null,
+      next_run_at: new Date(Date.now() + source.refresh_interval_minutes * 60000).toISOString(),
+    })
+    .eq("id", source.id);
+  await trackIngestion(db, "source_fetch_completed", { source: source.slug, ...counters });
+  return { counters, status, error: null };
+}
+
+async function resolveArea(db: DB, cityId: string, hint: string | null): Promise<string | null> {
+  if (!hint) return null;
+  const slug = slugify(hint);
+  const { data } = await db.from("areas").select("id,slug,name").eq("city_id", cityId);
+  const match = (data ?? []).find((a) => a.slug === slug || slugify(a.name) === slug || slug.includes(a.slug));
+  return match?.id ?? null;
+}
+
+async function resolveCategory(db: DB, hint: string | null): Promise<string | null> {
+  if (!hint) return null;
+  const slug = slugify(hint);
+  const { data } = await db.from("categories").select("id,slug,name");
+  const match = (data ?? []).find((c) => c.slug === slug || slugify(c.name) === slug);
+  return match?.id ?? null;
+}
+
+async function uniqueSlug(db: DB, table: "venues" | "events" | "experiences", cityId: string, base: string, ignoreId?: string): Promise<string> {
+  const root = slugify(base) || "listing";
+  for (let i = 0; i < 12; i += 1) {
+    const candidate = i === 0 ? root : `${root}-${i + 1}`;
+    const { data } = await db.from(table).select("id").eq("city_id", cityId).eq("slug", candidate).maybeSingle();
+    if (!data || data.id === ignoreId) return candidate;
+  }
+  return `${root}-${Date.now().toString(36)}`;
+}
+
+/**
+ * Turn approved / gate-passing source records into catalogue rows.
+ * Idempotent: a source record maps to at most one catalogue row (unique source_record_id).
+ */
+export async function publishReadyRecords(db: DB, settings: Settings, limit = 50) {
+  const counters = emptyCounters();
+  const jobId = await startJob(db, null, "publish");
+  const { data: records } = await db
+    .from("source_records")
+    .select("id,source_name,source_url,normalised,quality_score,verification_status,review_status,linked_entity_type,linked_entity_id,last_checked_at")
+    .in("review_status", ["new", "approved", "changed"])
+    .order("last_seen_at", { ascending: true })
+    .limit(limit);
+
+  for (const rec of records ?? []) {
+    const normalised = rec.normalised as NormalisedRecord | null;
+    if (!normalised?.name) {
+      counters.skipped += 1;
+      continue;
+    }
+    const state = rec.verification_status as VerificationState;
+    const score = Number(rec.quality_score ?? 0);
+    const approved = rec.review_status === "approved";
+    const publish = approved || passesPublishGate(score, state, settings.gate);
+
+    if (!publish && !rec.linked_entity_id) {
+      // Not good enough to publish and not live yet: leave it in the review queue.
+      if (rec.review_status === "new") await db.from("source_records").update({ review_status: "needs_review" }).eq("id", rec.id);
+      counters.skipped += 1;
+      continue;
+    }
+
+    const cityId = DEFAULT_CITY_ID;
+    const areaId = await resolveArea(db, cityId, normalised.areaHint);
+    const categoryId = await resolveCategory(db, normalised.categoryHint);
+    const table = normalised.kind === "event" ? "events" : normalised.kind === "experience" ? "experiences" : "venues";
+    const nowIso = new Date().toISOString();
+
+    const shared = {
+      city_id: cityId,
+      area_id: areaId,
+      category_id: categoryId,
+      name: normalised.name,
+      description: normalised.description,
+      image_url: normalised.imageUrl,
+      price_min: normalised.priceMin,
+      price_max: normalised.priceMax,
+      moods: normalised.moodTags,
+      group_types: normalised.groupTags,
+      tags: normalised.keywords,
+      booking_url: normalised.bookingUrl,
+      source_url: rec.source_url,
+      source_name: rec.source_name,
+      source_record_id: rec.id,
+      source_last_checked_at: rec.last_checked_at,
+      last_seen_at: nowIso,
+      verification_status: state,
+      quality_score: score,
+      is_verified: state === "VERIFIED",
+    };
+
+    try {
+      const existingId = rec.linked_entity_id;
+      let entityId = existingId;
+      if (table === "events") {
+        const lifecycle = publish ? "ACTIVE" : "PENDING_REVIEW";
+        const payload = {
+          ...shared,
+          starts_at: normalised.startsAt,
+          ends_at: normalised.endsAt,
+          timezone: normalised.timezone,
+          currency: normalised.currency,
+          website_url: normalised.websiteUrl,
+          age_min: normalised.ageMin,
+          language: normalised.language,
+          occasion_tags: normalised.occasionTags,
+          lifecycle_status: lifecycle as Database["public"]["Enums"]["event_lifecycle"],
+          next_refresh_at: nextRefreshAt("event", normalised.startsAt, new Date(), settings.cadence),
+        };
+        if (!normalised.startsAt) {
+          // Never publish an event without a stored start time from the source.
+          await db.from("source_records").update({ review_status: "needs_review", parse_status: "needs_review", error_message: "No start time in source payload" }).eq("id", rec.id);
+          counters.skipped += 1;
+          continue;
+        }
+        if (existingId) {
+          await db.from("events").update(payload).eq("id", existingId);
+          counters.updated += 1;
+        } else {
+          const slug = await uniqueSlug(db, "events", cityId, `${normalised.name}-${normalised.startsAt.slice(0, 10)}`);
+          const { data, error } = await db.from("events").insert({ ...payload, slug, starts_at: normalised.startsAt }).select("id").single();
+          if (error) throw error;
+          entityId = data.id;
+          counters.created += 1;
+        }
+      } else if (table === "experiences") {
+        const payload = { ...shared, next_refresh_at: nextRefreshAt("experience", null, new Date(), settings.cadence), is_active: publish };
+        if (existingId) {
+          await db.from("experiences").update(payload).eq("id", existingId);
+          counters.updated += 1;
+        } else {
+          const slug = await uniqueSlug(db, "experiences", cityId, normalised.name);
+          const { data, error } = await db.from("experiences").insert({ ...payload, slug }).select("id").single();
+          if (error) throw error;
+          entityId = data.id;
+          counters.created += 1;
+        }
+      } else {
+        const payload = {
+          ...shared,
+          address: normalised.address,
+          lat: normalised.lat,
+          lng: normalised.lng,
+          website_url: normalised.websiteUrl,
+          next_refresh_at: nextRefreshAt("venue", null, new Date(), settings.cadence),
+          is_active: publish,
+        };
+        if (existingId) {
+          await db.from("venues").update(payload).eq("id", existingId);
+          counters.updated += 1;
+        } else {
+          const slug = await uniqueSlug(db, "venues", cityId, normalised.name);
+          const { data, error } = await db.from("venues").insert({ ...payload, slug }).select("id").single();
+          if (error) throw error;
+          entityId = data.id;
+          counters.created += 1;
+        }
+      }
+
+      await db
+        .from("source_records")
+        .update({
+          review_status: publish ? "published" : "needs_review",
+          linked_entity_type: normalised.kind,
+          linked_entity_id: entityId,
+        })
+        .eq("id", rec.id);
+      await trackIngestion(db, publish ? "record_published" : "record_updated", { source: rec.source_name, kind: normalised.kind, score });
+    } catch (error) {
+      counters.failed += 1;
+      const message = error instanceof Error ? error.message : String(error);
+      await db.from("source_records").update({ error_message: message.slice(0, 500), review_status: "needs_review" }).eq("id", rec.id);
+      await trackIngestion(db, "record_failed", { source: rec.source_name, reason: message.slice(0, 200) });
+    }
+  }
+
+  await finishJob(db, jobId, counters, counters.failed ? "partial" : "success", null);
+  return counters;
+}
+
+/** Non-destructive duplicate detection: writes reviewable candidate pairs only. */
+export async function scanDuplicates(db: DB, windowDays = 60) {
+  const counters = emptyCounters();
+  const jobId = await startJob(db, null, "deduplicate");
+  const horizon = new Date(Date.now() + windowDays * 86400000).toISOString();
+  const { data: events } = await db
+    .from("events")
+    .select("id,name,starts_at,venue_id,area_id,description,source_name,lifecycle_status")
+    .gte("starts_at", new Date().toISOString())
+    .lte("starts_at", horizon)
+    .not("lifecycle_status", "in", '("CANCELLED","EXPIRED")')
+    .limit(500);
+
+  const rows = events ?? [];
+  counters.fetched = rows.length;
+  for (let i = 0; i < rows.length; i += 1) {
+    for (let j = i + 1; j < rows.length; j += 1) {
+      const a = rows[i]!;
+      const b = rows[j]!;
+      const verdict = compareRecords(
+        { name: a.name, startsAt: a.starts_at, venueId: a.venue_id, areaId: a.area_id, description: a.description, sourceName: a.source_name },
+        { name: b.name, startsAt: b.starts_at, venueId: b.venue_id, areaId: b.area_id, description: b.description, sourceName: b.source_name },
+      );
+      if (!verdict.isCandidate) continue;
+      const [primary, candidate] = a.id < b.id ? [a.id, b.id] : [b.id, a.id];
+      const { data: existing } = await db
+        .from("duplicate_candidates")
+        .select("id,status")
+        .eq("entity_type", "event")
+        .eq("primary_id", primary)
+        .eq("candidate_id", candidate)
+        .maybeSingle();
+      if (existing) {
+        counters.skipped += 1;
+        continue;
+      }
+      await db.from("duplicate_candidates").insert({
+        entity_type: "event",
+        primary_id: primary,
+        candidate_id: candidate,
+        match_score: verdict.score,
+        signals: verdict.signals as never,
+      });
+      counters.created += 1;
+      await trackIngestion(db, "dedupe_candidate_created", { score: verdict.score });
+    }
+  }
+  await finishJob(db, jobId, counters, "success", null);
+  return counters;
+}
+
+/** Recompute freshness / verification state and schedule the next refresh. */
+export async function verifyCatalogue(db: DB, settings: Settings) {
+  const counters = emptyCounters();
+  const jobId = await startJob(db, null, "verify");
+  const now = new Date();
+
+  const { data: sources } = await db.from("ingestion_sources").select("slug,authority_level");
+  const authorityBySource = new Map((sources ?? []).map((s) => [s.slug, s.authority_level]));
+
+  const { data: openDupes } = await db.from("duplicate_candidates").select("primary_id,candidate_id").eq("status", "open");
+  const dupeCount = new Map<string, number>();
+  for (const d of openDupes ?? []) {
+    dupeCount.set(d.primary_id, (dupeCount.get(d.primary_id) ?? 0) + 1);
+    dupeCount.set(d.candidate_id, (dupeCount.get(d.candidate_id) ?? 0) + 1);
+  }
+
+  for (const table of ["events", "venues", "experiences"] as const) {
+    const { data: rows } = await db
+      .from(table)
+      .select("id,name,description,image_url,price_min,booking_url,source_name,source_url,source_last_checked_at,updated_at,verification_status,area_id,category_id" + (table === "events" ? ",starts_at,venue_id,lifecycle_status" : ""))
+      .limit(500);
+    for (const row of (rows ?? []) as Record<string, unknown>[]) {
+      const checkedAt = (row["source_last_checked_at"] as string | null) ?? (row["updated_at"] as string);
+      const ageHours = (now.getTime() - new Date(checkedAt).getTime()) / 3600000;
+      const dateConfirmed = table === "events" ? !!row["starts_at"] : true;
+      const completeness =
+        [!!row["name"], !!row["description"], !!row["image_url"], !!row["booking_url"], !!row["area_id"], !!row["category_id"]].filter(Boolean).length / 6;
+      const duplicateConfidence = duplicateConfidenceFrom(dupeCount.get(row["id"] as string) ?? 0);
+      const score = computeQualityScore(
+        {
+          authorityLevel: authorityBySource.get((row["source_name"] as string) ?? "") ?? 2,
+          ageHours,
+          dateConfirmed,
+          priceConfirmed: row["price_min"] !== null && row["price_min"] !== undefined,
+          venueConfirmed: table === "events" ? !!row["venue_id"] : true,
+          locationConfirmed: !!row["area_id"],
+          duplicateConfidence,
+          completeness,
+        },
+        settings.weights,
+        settings.gate,
+      );
+      const state = verificationStateFor(score, { ageHours, dateConfirmed, duplicateConfidence }, settings.gate);
+      const refresh =
+        table === "events"
+          ? nextRefreshAt("event", (row["starts_at"] as string | null) ?? null, now, settings.cadence)
+          : nextRefreshAt(table === "venues" ? "venue" : "experience", null, now, settings.cadence);
+      await db
+        .from(table)
+        .update({ verification_status: state, quality_score: score, is_verified: state === "VERIFIED", next_refresh_at: refresh })
+        .eq("id", row["id"] as string);
+      counters.updated += 1;
+      if (state === "VERIFIED") await trackIngestion(db, "record_verified", { table, id: row["id"], score });
+    }
+  }
+  await finishJob(db, jobId, counters, "success", null);
+  return counters;
+}
+
+/** Events past their end (or 6h past start when no end is stored) become EXPIRED. */
+export async function expireEvents(db: DB) {
+  const counters = emptyCounters();
+  const jobId = await startJob(db, null, "expire");
+  const now = new Date();
+  const { data: rows } = await db
+    .from("events")
+    .select("id,starts_at,ends_at,lifecycle_status")
+    .not("lifecycle_status", "in", '("EXPIRED","CANCELLED")')
+    .lte("starts_at", now.toISOString())
+    .limit(1000);
+  for (const row of rows ?? []) {
+    const end = row.ends_at ? new Date(row.ends_at).getTime() : new Date(row.starts_at).getTime() + 6 * 3600000;
+    if (end > now.getTime()) {
+      counters.skipped += 1;
+      continue;
+    }
+    await db.from("events").update({ lifecycle_status: "EXPIRED" }).eq("id", row.id);
+    counters.updated += 1;
+    await trackIngestion(db, "record_expired", { id: row.id });
+  }
+  await finishJob(db, jobId, counters, "success", null);
+  return counters;
+}
+
+export interface OrchestrateOptions {
+  /** near = only sources whose next_run_at is due; full = every enabled source. */
+  mode?: "near" | "full";
+  sourceSlug?: string | null;
+  maxSources?: number;
+}
+
+/** a-i: discover sources, fetch, store, normalise, dedupe, verify, publish, expire. */
+export async function orchestrate(db: DB, options: OrchestrateOptions = {}) {
+  const mode = options.mode ?? "near";
+  const settings = await loadSettings(db);
+  const jobId = await startJob(db, null, `orchestrate:${mode}`);
+  const nowIso = new Date().toISOString();
+
+  let query = db.from("ingestion_sources").select("*").eq("enabled", true);
+  if (options.sourceSlug) query = query.eq("slug", options.sourceSlug);
+  else if (mode === "near") query = query.or(`next_run_at.is.null,next_run_at.lte.${nowIso}`);
+  const { data: sources } = await query.limit(options.maxSources ?? 10);
+
+  const perSource: Record<string, JobCounters> = {};
+  const totals = emptyCounters();
+  for (const source of (sources ?? []) as unknown as SourceRow[]) {
+    const result = await runSource(db, source, settings);
+    perSource[source.slug] = result.counters;
+    totals.fetched += result.counters.fetched;
+    totals.created += result.counters.created;
+    totals.updated += result.counters.updated;
+    totals.skipped += result.counters.skipped;
+    totals.failed += result.counters.failed;
+  }
+
+  const published = await publishReadyRecords(db, settings);
+  const dupes = await scanDuplicates(db);
+  const verified = mode === "full" ? await verifyCatalogue(db, settings) : emptyCounters();
+  const expired = await expireEvents(db);
+
+  await finishJob(db, jobId, totals, totals.failed ? "partial" : "success", null, {
+    mode,
+    sources: perSource,
+    published,
+    duplicate_candidates: dupes.created,
+    verified: verified.updated,
+    expired: expired.updated,
+  });
+
+  return { mode, sources: perSource, totals, published, duplicates: dupes, verified, expired };
+}
