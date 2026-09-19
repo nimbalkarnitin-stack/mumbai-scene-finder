@@ -310,7 +310,12 @@ export async function runGoogleDiscovery(db: DB, config: Record<string, unknown>
         body: JSON.stringify({ textQuery: query, maxResultCount: Math.min(maxResults, 20), regionCode: "IN" }),
       }),
     );
+    if (res.status < 200 || res.status >= 300) {
+      // Surface Google's own message (e.g. API_KEY_SERVICE_BLOCKED) instead of silently counting zero.
+      throw new AdapterDisabledError(`Google Places rejected the request (HTTP ${res.status}): ${sanitiseText(res.body, 300) ?? "no details"}`);
+    }
     const json = JSON.parse(res.body) as { places?: { id?: string; displayName?: { text?: string }; websiteUri?: string }[] };
+
     const places = Array.isArray(json.places) ? json.places : [];
     counters.scanned += places.length;
     for (const place of places) {
