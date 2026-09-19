@@ -155,6 +155,7 @@ function MessageBubble({ message }: { message: UIMessage }) {
                 <img src={itemImage({ imageUrl: it.imageUrl, categorySlug: null })} alt="" loading="lazy" width={512} height={384} className="aspect-[4/3] w-full object-cover" />
                 <div className="image-fade absolute inset-0" />
                 {it.sponsored && <span className="absolute left-2 top-2 rounded-full bg-saffron px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider text-saffron-foreground">Sponsored</span>}
+                {!it.verified && <span className="absolute right-2 top-2 rounded-full bg-background/80 px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider text-saffron">Unverified</span>}
                 <div className="absolute inset-x-2 bottom-2">
                   <p className="line-clamp-1 font-display text-sm font-semibold">{it.name}</p>
                   <p className="text-[10px] text-foreground/80">{it.area} · {formatPrice(it.priceMin, it.priceMax)}</p>
