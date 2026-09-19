@@ -31,6 +31,9 @@ import { Route as TrendingRouteImport } from './routes/trending'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminEntityRouteImport } from './routes/admin/$entity'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin/analytics'
+import { Route as AdminDataHealthRouteImport } from './routes/admin/data-health'
+import { Route as AdminDataReviewRouteImport } from './routes/admin/data-review'
+import { Route as AdminSourcesRouteImport } from './routes/admin/sources'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ESlugRouteImport } from './routes/e.$slug'
@@ -150,6 +153,21 @@ const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminDataHealthRoute = AdminDataHealthRouteImport.update({
+  id: '/data-health',
+  path: '/data-health',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminDataReviewRoute = AdminDataReviewRouteImport.update({
+  id: '/data-review',
+  path: '/data-review',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminSourcesRoute = AdminSourcesRouteImport.update({
+  id: '/sources',
+  path: '/sources',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -213,6 +231,9 @@ export interface FileRoutesByFullPath {
   '/trending': typeof TrendingRoute
   '/admin/$entity': typeof AdminEntityRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/data-health': typeof AdminDataHealthRoute
+  '/admin/data-review': typeof AdminDataReviewRoute
+  '/admin/sources': typeof AdminSourcesRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/e/$slug': typeof ESlugRoute
@@ -244,6 +265,9 @@ export interface FileRoutesByTo {
   '/trending': typeof TrendingRoute
   '/admin/$entity': typeof AdminEntityRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/data-health': typeof AdminDataHealthRoute
+  '/admin/data-review': typeof AdminDataReviewRoute
+  '/admin/sources': typeof AdminSourcesRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/e/$slug': typeof ESlugRoute
@@ -277,6 +301,9 @@ export interface FileRoutesById {
   '/trending': typeof TrendingRoute
   '/admin/$entity': typeof AdminEntityRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/data-health': typeof AdminDataHealthRoute
+  '/admin/data-review': typeof AdminDataReviewRoute
+  '/admin/sources': typeof AdminSourcesRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/e/$slug': typeof ESlugRoute
@@ -311,6 +338,9 @@ export interface FileRouteTypes {
     | '/trending'
     | '/admin/$entity'
     | '/admin/analytics'
+    | '/admin/data-health'
+    | '/admin/data-review'
+    | '/admin/sources'
     | '/admin/users'
     | '/api/chat'
     | '/e/$slug'
@@ -342,6 +372,9 @@ export interface FileRouteTypes {
     | '/trending'
     | '/admin/$entity'
     | '/admin/analytics'
+    | '/admin/data-health'
+    | '/admin/data-review'
+    | '/admin/sources'
     | '/admin/users'
     | '/api/chat'
     | '/e/$slug'
@@ -374,6 +407,9 @@ export interface FileRouteTypes {
     | '/trending'
     | '/admin/$entity'
     | '/admin/analytics'
+    | '/admin/data-health'
+    | '/admin/data-review'
+    | '/admin/sources'
     | '/admin/users'
     | '/api/chat'
     | '/e/$slug'
@@ -569,6 +605,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAnalyticsRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/data-health': {
+      id: '/admin/data-health'
+      path: '/data-health'
+      fullPath: '/admin/data-health'
+      preLoaderRoute: typeof AdminDataHealthRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/data-review': {
+      id: '/admin/data-review'
+      path: '/data-review'
+      fullPath: '/admin/data-review'
+      preLoaderRoute: typeof AdminDataReviewRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/sources': {
+      id: '/admin/sources'
+      path: '/sources'
+      fullPath: '/admin/sources'
+      preLoaderRoute: typeof AdminSourcesRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
@@ -631,6 +688,9 @@ declare module '@tanstack/react-router' {
 interface AdminRouteRouteChildren {
   AdminEntityRoute: typeof AdminEntityRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminDataHealthRoute: typeof AdminDataHealthRoute
+  AdminDataReviewRoute: typeof AdminDataReviewRoute
+  AdminSourcesRoute: typeof AdminSourcesRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -638,6 +698,9 @@ interface AdminRouteRouteChildren {
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminEntityRoute: AdminEntityRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminDataHealthRoute: AdminDataHealthRoute,
+  AdminDataReviewRoute: AdminDataReviewRoute,
+  AdminSourcesRoute: AdminSourcesRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }

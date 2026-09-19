@@ -337,28 +337,22 @@ export const getIngestionHealth = createServerFn({ method: "GET" })
     const today = istDayBounds(istDayKey(now));
     const day = new Date(now.getTime() - 86400000).toISOString();
 
-    const countOf = async (
-      table: "venues" | "events" | "experiences" | "offers",
-      build: (q: ReturnType<typeof supabaseAdmin.from>) => unknown,
-    ) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { count } = (await (build(supabaseAdmin.from(table) as never) as any)) as { count: number | null };
-      return count ?? 0;
-    };
-
     const tables = ["venues", "events", "experiences", "offers"] as const;
     const catalogue = await Promise.all(
       tables.map(async (t) => {
         const base = () => supabaseAdmin.from(t).select("id", { count: "exact", head: true });
+        // offers has no updated_at column; created_at is its freshness stamp.
+        const freshColumn = t === "offers" ? "created_at" : "updated_at";
         const [total, verified, fresh, stale] = await Promise.all([
           base().then((r) => r.count ?? 0),
           base().eq("verification_status", "VERIFIED").then((r) => r.count ?? 0),
-          base().gte("updated_at", day).then((r) => r.count ?? 0),
+          base().gte(freshColumn, day).then((r) => r.count ?? 0),
           base().eq("verification_status", "STALE").then((r) => r.count ?? 0),
         ]);
         return { table: t, total, verified, fresh24h: fresh, stale };
       }),
     );
+
 
     const [
       { count: duplicates },
@@ -407,6 +401,6 @@ export const getIngestionHealth = createServerFn({ method: "GET" })
       },
       sources: (sources ?? []).map((s) => ({ ...s, stats: bySource.get(s.slug) ?? null })),
       recentJobs: (jobs ?? []).slice(0, 15),
-      unusedCounter: await countOf("events", (q) => q.select("id", { count: "exact", head: true })),
     };
+
   });

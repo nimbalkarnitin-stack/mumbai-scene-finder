@@ -49,7 +49,7 @@ export async function loadSettings(db: DB): Promise<Settings> {
 
 /** Ingestion funnel analytics reuse the existing interactions table. */
 async function trackIngestion(db: DB, eventType: string, metadata: Record<string, unknown>) {
-  await db.from("interactions").insert({ event_type: eventType, city_id: DEFAULT_CITY_ID, metadata });
+  await db.from("interactions").insert({ event_type: eventType, city_id: DEFAULT_CITY_ID, metadata: metadata as never });
 }
 
 async function startJob(db: DB, source: { id?: string | null; name: string } | null, jobType: string) {
@@ -81,7 +81,7 @@ async function finishJob(
       records_skipped: counters.skipped,
       records_failed: counters.failed,
       error_summary: errorSummary,
-      details,
+      details: details as never,
     })
     .eq("id", jobId);
 }
@@ -344,7 +344,8 @@ export async function publishReadyRecords(db: DB, settings: Settings, limit = 50
           continue;
         }
         if (existingId) {
-          await db.from("events").update(payload).eq("id", existingId);
+          await db.from("events").update({ ...payload, starts_at: normalised.startsAt }).eq("id", existingId);
+
           counters.updated += 1;
         } else {
           const slug = await uniqueSlug(db, "events", cityId, `${normalised.name}-${normalised.startsAt.slice(0, 10)}`);
@@ -480,7 +481,7 @@ export async function verifyCatalogue(db: DB, settings: Settings) {
       .from(table)
       .select("id,name,description,image_url,price_min,booking_url,source_name,source_url,source_last_checked_at,updated_at,verification_status,area_id,category_id" + (table === "events" ? ",starts_at,venue_id,lifecycle_status" : ""))
       .limit(500);
-    for (const row of (rows ?? []) as Record<string, unknown>[]) {
+    for (const row of (rows ?? []) as unknown as Record<string, unknown>[]) {
       const checkedAt = (row["source_last_checked_at"] as string | null) ?? (row["updated_at"] as string);
       const ageHours = (now.getTime() - new Date(checkedAt).getTime()) / 3600000;
       const dateConfirmed = table === "events" ? !!row["starts_at"] : true;
