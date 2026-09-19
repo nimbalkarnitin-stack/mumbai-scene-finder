@@ -184,90 +184,177 @@ export type Database = {
         }
         Relationships: []
       }
+      duplicate_candidates: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          entity_type: Database["public"]["Enums"]["item_type"]
+          id: string
+          match_score: number
+          primary_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          signals: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          entity_type: Database["public"]["Enums"]["item_type"]
+          id?: string
+          match_score?: number
+          primary_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          signals?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          entity_type?: Database["public"]["Enums"]["item_type"]
+          id?: string
+          match_score?: number
+          primary_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          signals?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           affiliate_link_id: string | null
+          age_min: number | null
           area_id: string | null
           booking_url: string | null
           category_id: string | null
           city_id: string
           created_at: string
+          currency: string
           description: string | null
           ends_at: string | null
+          first_seen_at: string
           group_types: string[]
           id: string
           image_url: string | null
           is_active: boolean
           is_sponsored: boolean
           is_verified: boolean
+          language: string | null
+          last_seen_at: string | null
+          lifecycle_status: Database["public"]["Enums"]["event_lifecycle"]
           moods: string[]
           name: string
+          next_refresh_at: string | null
+          occasion_tags: string[]
           popularity_score: number
           price_max: number | null
           price_min: number | null
+          quality_score: number | null
           slug: string
+          source_last_checked_at: string | null
+          source_name: string | null
+          source_record_id: string | null
           source_url: string | null
           sponsor_id: string | null
           starts_at: string
           tags: string[]
+          timezone: string
           updated_at: string
           venue_id: string | null
+          verification_status: Database["public"]["Enums"]["verification_state"]
+          website_url: string | null
         }
         Insert: {
           affiliate_link_id?: string | null
+          age_min?: number | null
           area_id?: string | null
           booking_url?: string | null
           category_id?: string | null
           city_id: string
           created_at?: string
+          currency?: string
           description?: string | null
           ends_at?: string | null
+          first_seen_at?: string
           group_types?: string[]
           id?: string
           image_url?: string | null
           is_active?: boolean
           is_sponsored?: boolean
           is_verified?: boolean
+          language?: string | null
+          last_seen_at?: string | null
+          lifecycle_status?: Database["public"]["Enums"]["event_lifecycle"]
           moods?: string[]
           name: string
+          next_refresh_at?: string | null
+          occasion_tags?: string[]
           popularity_score?: number
           price_max?: number | null
           price_min?: number | null
+          quality_score?: number | null
           slug: string
+          source_last_checked_at?: string | null
+          source_name?: string | null
+          source_record_id?: string | null
           source_url?: string | null
           sponsor_id?: string | null
           starts_at: string
           tags?: string[]
+          timezone?: string
           updated_at?: string
           venue_id?: string | null
+          verification_status?: Database["public"]["Enums"]["verification_state"]
+          website_url?: string | null
         }
         Update: {
           affiliate_link_id?: string | null
+          age_min?: number | null
           area_id?: string | null
           booking_url?: string | null
           category_id?: string | null
           city_id?: string
           created_at?: string
+          currency?: string
           description?: string | null
           ends_at?: string | null
+          first_seen_at?: string
           group_types?: string[]
           id?: string
           image_url?: string | null
           is_active?: boolean
           is_sponsored?: boolean
           is_verified?: boolean
+          language?: string | null
+          last_seen_at?: string | null
+          lifecycle_status?: Database["public"]["Enums"]["event_lifecycle"]
           moods?: string[]
           name?: string
+          next_refresh_at?: string | null
+          occasion_tags?: string[]
           popularity_score?: number
           price_max?: number | null
           price_min?: number | null
+          quality_score?: number | null
           slug?: string
+          source_last_checked_at?: string | null
+          source_name?: string | null
+          source_record_id?: string | null
           source_url?: string | null
           sponsor_id?: string | null
           starts_at?: string
           tags?: string[]
+          timezone?: string
           updated_at?: string
           venue_id?: string | null
+          verification_status?: Database["public"]["Enums"]["verification_state"]
+          website_url?: string | null
         }
         Relationships: [
           {
@@ -299,6 +386,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "events_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "events_sponsor_id_fkey"
             columns: ["sponsor_id"]
             isOneToOne: false
@@ -325,23 +419,31 @@ export type Database = {
           created_at: string
           description: string | null
           duration_minutes: number | null
+          first_seen_at: string
           group_types: string[]
           id: string
           image_url: string | null
           is_active: boolean
           is_sponsored: boolean
           is_verified: boolean
+          last_seen_at: string | null
           moods: string[]
           name: string
+          next_refresh_at: string | null
           popularity_score: number
           price_max: number | null
           price_min: number | null
+          quality_score: number | null
           schedule_note: string | null
           slug: string
+          source_last_checked_at: string | null
+          source_name: string | null
+          source_record_id: string | null
           source_url: string | null
           sponsor_id: string | null
           tags: string[]
           updated_at: string
+          verification_status: Database["public"]["Enums"]["verification_state"]
         }
         Insert: {
           affiliate_link_id?: string | null
@@ -353,23 +455,31 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration_minutes?: number | null
+          first_seen_at?: string
           group_types?: string[]
           id?: string
           image_url?: string | null
           is_active?: boolean
           is_sponsored?: boolean
           is_verified?: boolean
+          last_seen_at?: string | null
           moods?: string[]
           name: string
+          next_refresh_at?: string | null
           popularity_score?: number
           price_max?: number | null
           price_min?: number | null
+          quality_score?: number | null
           schedule_note?: string | null
           slug: string
+          source_last_checked_at?: string | null
+          source_name?: string | null
+          source_record_id?: string | null
           source_url?: string | null
           sponsor_id?: string | null
           tags?: string[]
           updated_at?: string
+          verification_status?: Database["public"]["Enums"]["verification_state"]
         }
         Update: {
           affiliate_link_id?: string | null
@@ -381,23 +491,31 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration_minutes?: number | null
+          first_seen_at?: string
           group_types?: string[]
           id?: string
           image_url?: string | null
           is_active?: boolean
           is_sponsored?: boolean
           is_verified?: boolean
+          last_seen_at?: string | null
           moods?: string[]
           name?: string
+          next_refresh_at?: string | null
           popularity_score?: number
           price_max?: number | null
           price_min?: number | null
+          quality_score?: number | null
           schedule_note?: string | null
           slug?: string
+          source_last_checked_at?: string | null
+          source_name?: string | null
+          source_record_id?: string | null
           source_url?: string | null
           sponsor_id?: string | null
           tags?: string[]
           updated_at?: string
+          verification_status?: Database["public"]["Enums"]["verification_state"]
         }
         Relationships: [
           {
@@ -426,6 +544,13 @@ export type Database = {
             columns: ["city_id"]
             isOneToOne: false
             referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "experiences_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
             referencedColumns: ["id"]
           },
           {
@@ -477,6 +602,193 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "guides_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingestion_cron_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          token_sha256: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          token_sha256: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          token_sha256?: string
+        }
+        Relationships: []
+      }
+      ingestion_jobs: {
+        Row: {
+          created_at: string
+          details: Json
+          error_summary: string | null
+          finished_at: string | null
+          id: string
+          job_type: string
+          records_created: number
+          records_failed: number
+          records_fetched: number
+          records_skipped: number
+          records_updated: number
+          source_id: string | null
+          source_name: string | null
+          started_at: string
+          status: Database["public"]["Enums"]["ingestion_job_status"]
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          error_summary?: string | null
+          finished_at?: string | null
+          id?: string
+          job_type: string
+          records_created?: number
+          records_failed?: number
+          records_fetched?: number
+          records_skipped?: number
+          records_updated?: number
+          source_id?: string | null
+          source_name?: string | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["ingestion_job_status"]
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          error_summary?: string | null
+          finished_at?: string | null
+          id?: string
+          job_type?: string
+          records_created?: number
+          records_failed?: number
+          records_fetched?: number
+          records_skipped?: number
+          records_updated?: number
+          source_id?: string | null
+          source_name?: string | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["ingestion_job_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingestion_jobs_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "ingestion_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingestion_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      ingestion_sources: {
+        Row: {
+          adapter_key: string
+          authority_level: number
+          base_url: string | null
+          city_id: string | null
+          config: Json
+          created_at: string
+          credential_env_keys: string[]
+          enabled: boolean
+          id: string
+          last_error: string | null
+          last_run_at: string | null
+          last_status:
+            | Database["public"]["Enums"]["ingestion_job_status"]
+            | null
+          name: string
+          next_run_at: string | null
+          notes: string | null
+          refresh_interval_minutes: number
+          requires_credentials: boolean
+          slug: string
+          source_type: Database["public"]["Enums"]["ingestion_source_type"]
+          updated_at: string
+        }
+        Insert: {
+          adapter_key: string
+          authority_level?: number
+          base_url?: string | null
+          city_id?: string | null
+          config?: Json
+          created_at?: string
+          credential_env_keys?: string[]
+          enabled?: boolean
+          id?: string
+          last_error?: string | null
+          last_run_at?: string | null
+          last_status?:
+            | Database["public"]["Enums"]["ingestion_job_status"]
+            | null
+          name: string
+          next_run_at?: string | null
+          notes?: string | null
+          refresh_interval_minutes?: number
+          requires_credentials?: boolean
+          slug: string
+          source_type: Database["public"]["Enums"]["ingestion_source_type"]
+          updated_at?: string
+        }
+        Update: {
+          adapter_key?: string
+          authority_level?: number
+          base_url?: string | null
+          city_id?: string | null
+          config?: Json
+          created_at?: string
+          credential_env_keys?: string[]
+          enabled?: boolean
+          id?: string
+          last_error?: string | null
+          last_run_at?: string | null
+          last_status?:
+            | Database["public"]["Enums"]["ingestion_job_status"]
+            | null
+          name?: string
+          next_run_at?: string | null
+          notes?: string | null
+          refresh_interval_minutes?: number
+          requires_credentials?: boolean
+          slug?: string
+          source_type?: Database["public"]["Enums"]["ingestion_source_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingestion_sources_city_id_fkey"
             columns: ["city_id"]
             isOneToOne: false
             referencedRelation: "cities"
@@ -587,12 +899,19 @@ export type Database = {
           is_sponsored: boolean
           item_id: string | null
           item_type: Database["public"]["Enums"]["item_type"] | null
+          next_refresh_at: string | null
           promo_code: string | null
+          quality_score: number | null
+          source_last_checked_at: string | null
+          source_name: string | null
+          source_record_id: string | null
+          source_url: string | null
           sponsor_id: string | null
           title: string
           url: string | null
           valid_from: string | null
           valid_until: string | null
+          verification_status: Database["public"]["Enums"]["verification_state"]
         }
         Insert: {
           city_id: string
@@ -605,12 +924,19 @@ export type Database = {
           is_sponsored?: boolean
           item_id?: string | null
           item_type?: Database["public"]["Enums"]["item_type"] | null
+          next_refresh_at?: string | null
           promo_code?: string | null
+          quality_score?: number | null
+          source_last_checked_at?: string | null
+          source_name?: string | null
+          source_record_id?: string | null
+          source_url?: string | null
           sponsor_id?: string | null
           title: string
           url?: string | null
           valid_from?: string | null
           valid_until?: string | null
+          verification_status?: Database["public"]["Enums"]["verification_state"]
         }
         Update: {
           city_id?: string
@@ -623,12 +949,19 @@ export type Database = {
           is_sponsored?: boolean
           item_id?: string | null
           item_type?: Database["public"]["Enums"]["item_type"] | null
+          next_refresh_at?: string | null
           promo_code?: string | null
+          quality_score?: number | null
+          source_last_checked_at?: string | null
+          source_name?: string | null
+          source_record_id?: string | null
+          source_url?: string | null
           sponsor_id?: string | null
           title?: string
           url?: string | null
           valid_from?: string | null
           valid_until?: string | null
+          verification_status?: Database["public"]["Enums"]["verification_state"]
         }
         Relationships: [
           {
@@ -636,6 +969,13 @@ export type Database = {
             columns: ["city_id"]
             isOneToOne: false
             referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
             referencedColumns: ["id"]
           },
           {
@@ -772,6 +1112,95 @@ export type Database = {
         }
         Relationships: []
       }
+      source_records: {
+        Row: {
+          content_hash: string
+          created_at: string
+          error_message: string | null
+          external_id: string
+          fetch_status: string
+          first_seen_at: string
+          id: string
+          last_checked_at: string
+          last_seen_at: string
+          linked_entity_id: string | null
+          linked_entity_type: Database["public"]["Enums"]["item_type"] | null
+          normalised: Json | null
+          parse_status: string
+          quality_score: number | null
+          raw_payload: Json
+          review_status: string
+          source_confidence: number
+          source_id: string | null
+          source_last_modified_at: string | null
+          source_name: string
+          source_type: Database["public"]["Enums"]["ingestion_source_type"]
+          source_url: string | null
+          updated_at: string
+          verification_status: Database["public"]["Enums"]["verification_state"]
+        }
+        Insert: {
+          content_hash: string
+          created_at?: string
+          error_message?: string | null
+          external_id: string
+          fetch_status?: string
+          first_seen_at?: string
+          id?: string
+          last_checked_at?: string
+          last_seen_at?: string
+          linked_entity_id?: string | null
+          linked_entity_type?: Database["public"]["Enums"]["item_type"] | null
+          normalised?: Json | null
+          parse_status?: string
+          quality_score?: number | null
+          raw_payload?: Json
+          review_status?: string
+          source_confidence?: number
+          source_id?: string | null
+          source_last_modified_at?: string | null
+          source_name: string
+          source_type: Database["public"]["Enums"]["ingestion_source_type"]
+          source_url?: string | null
+          updated_at?: string
+          verification_status?: Database["public"]["Enums"]["verification_state"]
+        }
+        Update: {
+          content_hash?: string
+          created_at?: string
+          error_message?: string | null
+          external_id?: string
+          fetch_status?: string
+          first_seen_at?: string
+          id?: string
+          last_checked_at?: string
+          last_seen_at?: string
+          linked_entity_id?: string | null
+          linked_entity_type?: Database["public"]["Enums"]["item_type"] | null
+          normalised?: Json | null
+          parse_status?: string
+          quality_score?: number | null
+          raw_payload?: Json
+          review_status?: string
+          source_confidence?: number
+          source_id?: string | null
+          source_last_modified_at?: string | null
+          source_name?: string
+          source_type?: Database["public"]["Enums"]["ingestion_source_type"]
+          source_url?: string | null
+          updated_at?: string
+          verification_status?: Database["public"]["Enums"]["verification_state"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_records_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "ingestion_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsors: {
         Row: {
           contact_email: string | null
@@ -864,25 +1293,33 @@ export type Database = {
           city_id: string
           created_at: string
           description: string | null
+          first_seen_at: string
           group_types: string[]
           id: string
           image_url: string | null
           is_active: boolean
           is_sponsored: boolean
           is_verified: boolean
+          last_seen_at: string | null
           lat: number | null
           lng: number | null
           moods: string[]
           name: string
+          next_refresh_at: string | null
           opening_hours: Json | null
           popularity_score: number
           price_max: number | null
           price_min: number | null
+          quality_score: number | null
           slug: string
+          source_last_checked_at: string | null
+          source_name: string | null
+          source_record_id: string | null
           source_url: string | null
           sponsor_id: string | null
           tags: string[]
           updated_at: string
+          verification_status: Database["public"]["Enums"]["verification_state"]
           website_url: string | null
         }
         Insert: {
@@ -895,25 +1332,33 @@ export type Database = {
           city_id: string
           created_at?: string
           description?: string | null
+          first_seen_at?: string
           group_types?: string[]
           id?: string
           image_url?: string | null
           is_active?: boolean
           is_sponsored?: boolean
           is_verified?: boolean
+          last_seen_at?: string | null
           lat?: number | null
           lng?: number | null
           moods?: string[]
           name: string
+          next_refresh_at?: string | null
           opening_hours?: Json | null
           popularity_score?: number
           price_max?: number | null
           price_min?: number | null
+          quality_score?: number | null
           slug: string
+          source_last_checked_at?: string | null
+          source_name?: string | null
+          source_record_id?: string | null
           source_url?: string | null
           sponsor_id?: string | null
           tags?: string[]
           updated_at?: string
+          verification_status?: Database["public"]["Enums"]["verification_state"]
           website_url?: string | null
         }
         Update: {
@@ -926,25 +1371,33 @@ export type Database = {
           city_id?: string
           created_at?: string
           description?: string | null
+          first_seen_at?: string
           group_types?: string[]
           id?: string
           image_url?: string | null
           is_active?: boolean
           is_sponsored?: boolean
           is_verified?: boolean
+          last_seen_at?: string | null
           lat?: number | null
           lng?: number | null
           moods?: string[]
           name?: string
+          next_refresh_at?: string | null
           opening_hours?: Json | null
           popularity_score?: number
           price_max?: number | null
           price_min?: number | null
+          quality_score?: number | null
           slug?: string
+          source_last_checked_at?: string | null
+          source_name?: string | null
+          source_record_id?: string | null
           source_url?: string | null
           sponsor_id?: string | null
           tags?: string[]
           updated_at?: string
+          verification_status?: Database["public"]["Enums"]["verification_state"]
           website_url?: string | null
         }
         Relationships: [
@@ -977,6 +1430,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "venues_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "venues_sponsor_id_fkey"
             columns: ["sponsor_id"]
             isOneToOne: false
@@ -1000,7 +1460,27 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      event_lifecycle:
+        | "DRAFT"
+        | "PENDING_REVIEW"
+        | "ACTIVE"
+        | "SOLD_OUT"
+        | "POSTPONED"
+        | "CANCELLED"
+        | "EXPIRED"
+      ingestion_job_status: "running" | "success" | "partial" | "failed"
+      ingestion_source_type:
+        | "official_site"
+        | "organiser_submission"
+        | "partner_feed"
+        | "ticketing_api"
+        | "social_api"
       item_type: "venue" | "event" | "experience"
+      verification_state:
+        | "VERIFIED"
+        | "REVIEW_REQUIRED"
+        | "STALE"
+        | "UNVERIFIED"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1129,7 +1609,30 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      event_lifecycle: [
+        "DRAFT",
+        "PENDING_REVIEW",
+        "ACTIVE",
+        "SOLD_OUT",
+        "POSTPONED",
+        "CANCELLED",
+        "EXPIRED",
+      ],
+      ingestion_job_status: ["running", "success", "partial", "failed"],
+      ingestion_source_type: [
+        "official_site",
+        "organiser_submission",
+        "partner_feed",
+        "ticketing_api",
+        "social_api",
+      ],
       item_type: ["venue", "event", "experience"],
+      verification_state: [
+        "VERIFIED",
+        "REVIEW_REQUIRED",
+        "STALE",
+        "UNVERIFIED",
+      ],
     },
   },
 } as const
