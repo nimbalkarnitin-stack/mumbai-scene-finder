@@ -11,8 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CafesRouteImport } from './routes/cafes'
+import { Route as ComedyRouteImport } from './routes/comedy'
 import { Route as ConciergeRouteImport } from './routes/concierge'
+import { Route as EventsRouteImport } from './routes/events'
+import { Route as ExperiencesRouteImport } from './routes/experiences'
+import { Route as LiveMusicRouteImport } from './routes/live-music'
+import { Route as NightlifeRouteImport } from './routes/nightlife'
 import { Route as PlanRouteImport } from './routes/plan'
+import { Route as RestaurantsRouteImport } from './routes/restaurants'
 import { Route as SceneRouteImport } from './routes/scene'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 
@@ -26,14 +33,49 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CafesRoute = CafesRouteImport.update({
+  id: '/cafes',
+  path: '/cafes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComedyRoute = ComedyRouteImport.update({
+  id: '/comedy',
+  path: '/comedy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConciergeRoute = ConciergeRouteImport.update({
   id: '/concierge',
   path: '/concierge',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EventsRoute = EventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExperiencesRoute = ExperiencesRouteImport.update({
+  id: '/experiences',
+  path: '/experiences',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveMusicRoute = LiveMusicRouteImport.update({
+  id: '/live-music',
+  path: '/live-music',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NightlifeRoute = NightlifeRouteImport.update({
+  id: '/nightlife',
+  path: '/nightlife',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlanRoute = PlanRouteImport.update({
   id: '/plan',
   path: '/plan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RestaurantsRoute = RestaurantsRouteImport.update({
+  id: '/restaurants',
+  path: '/restaurants',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SceneRoute = SceneRouteImport.update({
@@ -50,16 +92,30 @@ const ApiChatRoute = ApiChatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/cafes': typeof CafesRoute
+  '/comedy': typeof ComedyRoute
   '/concierge': typeof ConciergeRoute
+  '/events': typeof EventsRoute
+  '/experiences': typeof ExperiencesRoute
+  '/live-music': typeof LiveMusicRoute
+  '/nightlife': typeof NightlifeRoute
   '/plan': typeof PlanRoute
+  '/restaurants': typeof RestaurantsRoute
   '/scene': typeof SceneRoute
   '/api/chat': typeof ApiChatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/cafes': typeof CafesRoute
+  '/comedy': typeof ComedyRoute
   '/concierge': typeof ConciergeRoute
+  '/events': typeof EventsRoute
+  '/experiences': typeof ExperiencesRoute
+  '/live-music': typeof LiveMusicRoute
+  '/nightlife': typeof NightlifeRoute
   '/plan': typeof PlanRoute
+  '/restaurants': typeof RestaurantsRoute
   '/scene': typeof SceneRoute
   '/api/chat': typeof ApiChatRoute
 }
@@ -67,25 +123,78 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/cafes': typeof CafesRoute
+  '/comedy': typeof ComedyRoute
   '/concierge': typeof ConciergeRoute
+  '/events': typeof EventsRoute
+  '/experiences': typeof ExperiencesRoute
+  '/live-music': typeof LiveMusicRoute
+  '/nightlife': typeof NightlifeRoute
   '/plan': typeof PlanRoute
+  '/restaurants': typeof RestaurantsRoute
   '/scene': typeof SceneRoute
   '/api/chat': typeof ApiChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/concierge' | '/plan' | '/scene' | '/api/chat'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/cafes'
+    | '/comedy'
+    | '/concierge'
+    | '/events'
+    | '/experiences'
+    | '/live-music'
+    | '/nightlife'
+    | '/plan'
+    | '/restaurants'
+    | '/scene'
+    | '/api/chat'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/concierge' | '/plan' | '/scene' | '/api/chat'
+  to:
+    | '/'
+    | '/auth'
+    | '/cafes'
+    | '/comedy'
+    | '/concierge'
+    | '/events'
+    | '/experiences'
+    | '/live-music'
+    | '/nightlife'
+    | '/plan'
+    | '/restaurants'
+    | '/scene'
+    | '/api/chat'
   id:
-    '__root__' | '/' | '/auth' | '/concierge' | '/plan' | '/scene' | '/api/chat'
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/cafes'
+    | '/comedy'
+    | '/concierge'
+    | '/events'
+    | '/experiences'
+    | '/live-music'
+    | '/nightlife'
+    | '/plan'
+    | '/restaurants'
+    | '/scene'
+    | '/api/chat'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  CafesRoute: typeof CafesRoute
+  ComedyRoute: typeof ComedyRoute
   ConciergeRoute: typeof ConciergeRoute
+  EventsRoute: typeof EventsRoute
+  ExperiencesRoute: typeof ExperiencesRoute
+  LiveMusicRoute: typeof LiveMusicRoute
+  NightlifeRoute: typeof NightlifeRoute
   PlanRoute: typeof PlanRoute
+  RestaurantsRoute: typeof RestaurantsRoute
   SceneRoute: typeof SceneRoute
   ApiChatRoute: typeof ApiChatRoute
 }
@@ -106,6 +215,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cafes': {
+      id: '/cafes'
+      path: '/cafes'
+      fullPath: '/cafes'
+      preLoaderRoute: typeof CafesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comedy': {
+      id: '/comedy'
+      path: '/comedy'
+      fullPath: '/comedy'
+      preLoaderRoute: typeof ComedyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/concierge': {
       id: '/concierge'
       path: '/concierge'
@@ -113,11 +236,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConciergeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/events': {
+      id: '/events'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof EventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/experiences': {
+      id: '/experiences'
+      path: '/experiences'
+      fullPath: '/experiences'
+      preLoaderRoute: typeof ExperiencesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live-music': {
+      id: '/live-music'
+      path: '/live-music'
+      fullPath: '/live-music'
+      preLoaderRoute: typeof LiveMusicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nightlife': {
+      id: '/nightlife'
+      path: '/nightlife'
+      fullPath: '/nightlife'
+      preLoaderRoute: typeof NightlifeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/plan': {
       id: '/plan'
       path: '/plan'
       fullPath: '/plan'
       preLoaderRoute: typeof PlanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/restaurants': {
+      id: '/restaurants'
+      path: '/restaurants'
+      fullPath: '/restaurants'
+      preLoaderRoute: typeof RestaurantsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/scene': {
@@ -140,8 +298,15 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  CafesRoute: CafesRoute,
+  ComedyRoute: ComedyRoute,
   ConciergeRoute: ConciergeRoute,
+  EventsRoute: EventsRoute,
+  ExperiencesRoute: ExperiencesRoute,
+  LiveMusicRoute: LiveMusicRoute,
+  NightlifeRoute: NightlifeRoute,
   PlanRoute: PlanRoute,
+  RestaurantsRoute: RestaurantsRoute,
   SceneRoute: SceneRoute,
   ApiChatRoute: ApiChatRoute,
 }
