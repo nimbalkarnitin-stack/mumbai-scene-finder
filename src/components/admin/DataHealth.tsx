@@ -6,12 +6,10 @@ type T = (typeof TABLES)[number];
 
 interface Health { table: T; total: number; verified: number; unverified: number; active: number; inactive: number }
 
-async function countOf(t: T, apply: (q: ReturnType<typeof base>) => ReturnType<typeof base>) {
-  const { count } = await apply(base(t));
+async function countOf(t: T, flag?: "is_verified" | "is_active") {
+  const q = supabase.from(t).select("id", { count: "exact", head: true });
+  const { count } = await (flag ? q.eq(flag, true) : q);
   return count ?? 0;
-}
-function base(t: T) {
-  return supabase.from(t).select("id", { count: "exact", head: true });
 }
 
 /** Read-only snapshot of catalogue coverage. No writes, no fabricated numbers. */
