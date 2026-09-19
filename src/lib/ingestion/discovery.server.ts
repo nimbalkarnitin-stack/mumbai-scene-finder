@@ -292,8 +292,10 @@ export async function runGoogleDiscovery(db: DB, config: Record<string, unknown>
 
   const key = process.env["GOOGLE_PLACES_API_KEY"]!;
   const maxResults = Math.min(Number(config["max_results"] ?? 20) || 20, 60);
+  // Per-run query budget keeps Google quota predictable; configurable per source.
+  const perRun = Math.min(Math.max(Number(config["queries_per_run"] ?? 30) || 30, 1), 60);
 
-  for (const query of queries.slice(0, 10)) {
+  for (const query of queries.slice(0, perRun)) {
     const res = await withRetry(() =>
       safeFetch("https://places.googleapis.com/v1/places:searchText", {
         method: "POST",
