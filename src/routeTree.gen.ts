@@ -33,6 +33,7 @@ import { Route as AdminEntityRouteImport } from './routes/admin/$entity'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin/analytics'
 import { Route as AdminDataHealthRouteImport } from './routes/admin/data-health'
 import { Route as AdminDataReviewRouteImport } from './routes/admin/data-review'
+import { Route as AdminMonetizationRouteImport } from './routes/admin/monetization'
 import { Route as AdminSourcesRouteImport } from './routes/admin/sources'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
@@ -42,6 +43,7 @@ import { Route as MumbaiSlugRouteImport } from './routes/mumbai.$slug'
 import { Route as VSlugRouteImport } from './routes/v.$slug'
 import { Route as XSlugRouteImport } from './routes/x.$slug'
 import { Route as ApiPublicIngestionTaskRouteImport } from './routes/api/public/ingestion.$task'
+import { Route as ApiPublicAffiliatePartnerPostbackRouteImport } from './routes/api/public/affiliate.$partner.postback'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -163,6 +165,11 @@ const AdminDataReviewRoute = AdminDataReviewRouteImport.update({
   path: '/data-review',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminMonetizationRoute = AdminMonetizationRouteImport.update({
+  id: '/monetization',
+  path: '/monetization',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminSourcesRoute = AdminSourcesRouteImport.update({
   id: '/sources',
   path: '/sources',
@@ -208,6 +215,12 @@ const ApiPublicIngestionTaskRoute = ApiPublicIngestionTaskRouteImport.update({
   path: '/api/public/ingestion/$task',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAffiliatePartnerPostbackRoute =
+  ApiPublicAffiliatePartnerPostbackRouteImport.update({
+    id: '/api/public/affiliate/$partner/postback',
+    path: '/api/public/affiliate/$partner/postback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -233,6 +246,7 @@ export interface FileRoutesByFullPath {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/data-health': typeof AdminDataHealthRoute
   '/admin/data-review': typeof AdminDataReviewRoute
+  '/admin/monetization': typeof AdminMonetizationRoute
   '/admin/sources': typeof AdminSourcesRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
@@ -243,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/x/$slug': typeof XSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/ingestion/$task': typeof ApiPublicIngestionTaskRoute
+  '/api/public/affiliate/$partner/postback': typeof ApiPublicAffiliatePartnerPostbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -267,6 +282,7 @@ export interface FileRoutesByTo {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/data-health': typeof AdminDataHealthRoute
   '/admin/data-review': typeof AdminDataReviewRoute
+  '/admin/monetization': typeof AdminMonetizationRoute
   '/admin/sources': typeof AdminSourcesRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
@@ -277,6 +293,7 @@ export interface FileRoutesByTo {
   '/x/$slug': typeof XSlugRoute
   '/admin': typeof AdminIndexRoute
   '/api/public/ingestion/$task': typeof ApiPublicIngestionTaskRoute
+  '/api/public/affiliate/$partner/postback': typeof ApiPublicAffiliatePartnerPostbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -303,6 +320,7 @@ export interface FileRoutesById {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/data-health': typeof AdminDataHealthRoute
   '/admin/data-review': typeof AdminDataReviewRoute
+  '/admin/monetization': typeof AdminMonetizationRoute
   '/admin/sources': typeof AdminSourcesRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
@@ -313,6 +331,7 @@ export interface FileRoutesById {
   '/x/$slug': typeof XSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/ingestion/$task': typeof ApiPublicIngestionTaskRoute
+  '/api/public/affiliate/$partner/postback': typeof ApiPublicAffiliatePartnerPostbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -340,6 +359,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/data-health'
     | '/admin/data-review'
+    | '/admin/monetization'
     | '/admin/sources'
     | '/admin/users'
     | '/api/chat'
@@ -350,6 +370,7 @@ export interface FileRouteTypes {
     | '/x/$slug'
     | '/admin/'
     | '/api/public/ingestion/$task'
+    | '/api/public/affiliate/$partner/postback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -374,6 +395,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/data-health'
     | '/admin/data-review'
+    | '/admin/monetization'
     | '/admin/sources'
     | '/admin/users'
     | '/api/chat'
@@ -384,6 +406,7 @@ export interface FileRouteTypes {
     | '/x/$slug'
     | '/admin'
     | '/api/public/ingestion/$task'
+    | '/api/public/affiliate/$partner/postback'
   id:
     | '__root__'
     | '/'
@@ -409,6 +432,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/data-health'
     | '/admin/data-review'
+    | '/admin/monetization'
     | '/admin/sources'
     | '/admin/users'
     | '/api/chat'
@@ -419,6 +443,7 @@ export interface FileRouteTypes {
     | '/x/$slug'
     | '/admin/'
     | '/api/public/ingestion/$task'
+    | '/api/public/affiliate/$partner/postback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -447,6 +472,7 @@ export interface RootRouteChildren {
   VSlugRoute: typeof VSlugRoute
   XSlugRoute: typeof XSlugRoute
   ApiPublicIngestionTaskRoute: typeof ApiPublicIngestionTaskRoute
+  ApiPublicAffiliatePartnerPostbackRoute: typeof ApiPublicAffiliatePartnerPostbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -619,6 +645,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDataReviewRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/monetization': {
+      id: '/admin/monetization'
+      path: '/monetization'
+      fullPath: '/admin/monetization'
+      preLoaderRoute: typeof AdminMonetizationRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/sources': {
       id: '/admin/sources'
       path: '/sources'
@@ -682,6 +715,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicIngestionTaskRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/affiliate/$partner/postback': {
+      id: '/api/public/affiliate/$partner/postback'
+      path: '/api/public/affiliate/$partner/postback'
+      fullPath: '/api/public/affiliate/$partner/postback'
+      preLoaderRoute: typeof ApiPublicAffiliatePartnerPostbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -690,6 +730,7 @@ interface AdminRouteRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminDataHealthRoute: typeof AdminDataHealthRoute
   AdminDataReviewRoute: typeof AdminDataReviewRoute
+  AdminMonetizationRoute: typeof AdminMonetizationRoute
   AdminSourcesRoute: typeof AdminSourcesRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -700,6 +741,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminDataHealthRoute: AdminDataHealthRoute,
   AdminDataReviewRoute: AdminDataReviewRoute,
+  AdminMonetizationRoute: AdminMonetizationRoute,
   AdminSourcesRoute: AdminSourcesRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -746,6 +788,8 @@ const rootRouteChildren: RootRouteChildren = {
   VSlugRoute: VSlugRoute,
   XSlugRoute: XSlugRoute,
   ApiPublicIngestionTaskRoute: ApiPublicIngestionTaskRoute,
+  ApiPublicAffiliatePartnerPostbackRoute:
+    ApiPublicAffiliatePartnerPostbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

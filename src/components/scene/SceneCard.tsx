@@ -6,13 +6,14 @@ import { cn } from "@/lib/utils";
 import { Tag } from "./Chip";
 import { Button } from "@/components/ui/button";
 import type { Recommendation, SceneItem } from "@/lib/scene-types";
-import { formatPrice, formatWhen, openOutbound, resolveOutboundLink, track } from "@/lib/track";
+import { formatPrice, formatWhen, openOutboundMonetised, resolveOutboundLink, track, type MonetisedClickOptions } from "@/lib/track";
+import { AffiliateDisclosure } from "./Disclosure";
 import { itemImage } from "@/lib/scene-images";
 import { useSaved } from "@/hooks/useSaved";
 
 type Item = SceneItem | Recommendation;
 
-export function SceneCard({ item, index = 0, compact = false }: { item: Item; index?: number; compact?: boolean }) {
+export function SceneCard({ item, index = 0, compact = false, monetisation }: { item: Item; index?: number; compact?: boolean; monetisation?: MonetisedClickOptions }) {
   const reasons = "reasons" in item ? item.reasons : [];
   const { isSaved, toggle } = useSaved();
   const saved = isSaved(item.type, item.id);
@@ -36,7 +37,7 @@ export function SceneCard({ item, index = 0, compact = false }: { item: Item; in
   };
 
   const link = resolveOutboundLink(item);
-  const book = () => openOutbound(item, { source: "card" });
+  const book = () => { void openOutboundMonetised(item, { placement: "card", ...(monetisation ?? {}) }); };
 
   const detailProps = item.type === "venue" ? { to: "/v/$slug" as const } : item.type === "event" ? { to: "/e/$slug" as const } : { to: "/x/$slug" as const };
 
@@ -104,6 +105,7 @@ export function SceneCard({ item, index = 0, compact = false }: { item: Item; in
             <Share2 className="size-4" />
           </Button>
         </div>
+        {link.kind !== "map" && <AffiliateDisclosure compact />}
       </div>
     </article>
   );

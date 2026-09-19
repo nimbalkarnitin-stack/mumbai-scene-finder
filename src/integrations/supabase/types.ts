@@ -14,6 +14,257 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_clicks: {
+        Row: {
+          campaign: string | null
+          city_id: string | null
+          commission_model:
+            | Database["public"]["Enums"]["commission_model"]
+            | null
+          created_at: string
+          dedupe_key: string | null
+          destination_url: string
+          disclosure_shown: boolean
+          expected_commission_rate: number | null
+          id: string
+          is_sponsored: boolean
+          item_id: string | null
+          item_type: Database["public"]["Enums"]["item_type"] | null
+          link_kind: string
+          merchant_partnership_id: string | null
+          metadata: Json
+          offer_id: string | null
+          partner_id: string | null
+          placement: string | null
+          recommendation_id: string | null
+          session_id: string | null
+          sponsored_listing_id: string | null
+          subid: string
+          tracked_url: string
+          user_id: string | null
+        }
+        Insert: {
+          campaign?: string | null
+          city_id?: string | null
+          commission_model?:
+            | Database["public"]["Enums"]["commission_model"]
+            | null
+          created_at?: string
+          dedupe_key?: string | null
+          destination_url: string
+          disclosure_shown?: boolean
+          expected_commission_rate?: number | null
+          id?: string
+          is_sponsored?: boolean
+          item_id?: string | null
+          item_type?: Database["public"]["Enums"]["item_type"] | null
+          link_kind?: string
+          merchant_partnership_id?: string | null
+          metadata?: Json
+          offer_id?: string | null
+          partner_id?: string | null
+          placement?: string | null
+          recommendation_id?: string | null
+          session_id?: string | null
+          sponsored_listing_id?: string | null
+          subid: string
+          tracked_url: string
+          user_id?: string | null
+        }
+        Update: {
+          campaign?: string | null
+          city_id?: string | null
+          commission_model?:
+            | Database["public"]["Enums"]["commission_model"]
+            | null
+          created_at?: string
+          dedupe_key?: string | null
+          destination_url?: string
+          disclosure_shown?: boolean
+          expected_commission_rate?: number | null
+          id?: string
+          is_sponsored?: boolean
+          item_id?: string | null
+          item_type?: Database["public"]["Enums"]["item_type"] | null
+          link_kind?: string
+          merchant_partnership_id?: string | null
+          metadata?: Json
+          offer_id?: string | null
+          partner_id?: string | null
+          placement?: string | null
+          recommendation_id?: string | null
+          session_id?: string | null
+          sponsored_listing_id?: string | null
+          subid?: string
+          tracked_url?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_clicks_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_clicks_merchant_partnership_id_fkey"
+            columns: ["merchant_partnership_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_partnerships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_clicks_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_clicks_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_clicks_sponsored_listing_id_fkey"
+            columns: ["sponsored_listing_id"]
+            isOneToOne: false
+            referencedRelation: "sponsored_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_conversions: {
+        Row: {
+          approved_at: string | null
+          click_id: string | null
+          commission_amount: number | null
+          commission_model:
+            | Database["public"]["Enums"]["commission_model"]
+            | null
+          created_at: string
+          currency: string
+          external_conversion_id: string
+          id: string
+          import_batch: string | null
+          item_id: string | null
+          item_type: Database["public"]["Enums"]["item_type"] | null
+          merchant_partnership_id: string | null
+          notes: string | null
+          occurred_at: string | null
+          offer_id: string | null
+          order_value: number | null
+          paid_at: string | null
+          partner_id: string | null
+          payout_reference: string | null
+          raw_payload: Json
+          reconciled_at: string | null
+          reconciliation_status: string
+          rejected_at: string | null
+          rejection_reason: string | null
+          reported_at: string
+          status: Database["public"]["Enums"]["conversion_status"]
+          subid: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          click_id?: string | null
+          commission_amount?: number | null
+          commission_model?:
+            | Database["public"]["Enums"]["commission_model"]
+            | null
+          created_at?: string
+          currency?: string
+          external_conversion_id: string
+          id?: string
+          import_batch?: string | null
+          item_id?: string | null
+          item_type?: Database["public"]["Enums"]["item_type"] | null
+          merchant_partnership_id?: string | null
+          notes?: string | null
+          occurred_at?: string | null
+          offer_id?: string | null
+          order_value?: number | null
+          paid_at?: string | null
+          partner_id?: string | null
+          payout_reference?: string | null
+          raw_payload?: Json
+          reconciled_at?: string | null
+          reconciliation_status?: string
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          reported_at?: string
+          status?: Database["public"]["Enums"]["conversion_status"]
+          subid?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          click_id?: string | null
+          commission_amount?: number | null
+          commission_model?:
+            | Database["public"]["Enums"]["commission_model"]
+            | null
+          created_at?: string
+          currency?: string
+          external_conversion_id?: string
+          id?: string
+          import_batch?: string | null
+          item_id?: string | null
+          item_type?: Database["public"]["Enums"]["item_type"] | null
+          merchant_partnership_id?: string | null
+          notes?: string | null
+          occurred_at?: string | null
+          offer_id?: string | null
+          order_value?: number | null
+          paid_at?: string | null
+          partner_id?: string | null
+          payout_reference?: string | null
+          raw_payload?: Json
+          reconciled_at?: string | null
+          reconciliation_status?: string
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          reported_at?: string
+          status?: Database["public"]["Enums"]["conversion_status"]
+          subid?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_conversions_click_id_fkey"
+            columns: ["click_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_clicks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_conversions_merchant_partnership_id_fkey"
+            columns: ["merchant_partnership_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_partnerships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_conversions_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_conversions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       affiliate_links: {
         Row: {
           base_url: string
@@ -41,6 +292,171 @@ export type Database = {
           is_active?: boolean
           partner_name?: string
           tracking_param?: string | null
+        }
+        Relationships: []
+      }
+      affiliate_offers: {
+        Row: {
+          city_id: string | null
+          commission_flat: number | null
+          commission_model: Database["public"]["Enums"]["commission_model"]
+          commission_rate: number | null
+          created_at: string
+          currency: string
+          deep_link_template: string | null
+          description: string | null
+          destination_url: string | null
+          disclosure_required: boolean
+          ends_at: string | null
+          external_id: string | null
+          id: string
+          item_id: string | null
+          item_type: Database["public"]["Enums"]["item_type"] | null
+          partner_id: string
+          starts_at: string | null
+          status: Database["public"]["Enums"]["campaign_status"]
+          terms_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          city_id?: string | null
+          commission_flat?: number | null
+          commission_model?: Database["public"]["Enums"]["commission_model"]
+          commission_rate?: number | null
+          created_at?: string
+          currency?: string
+          deep_link_template?: string | null
+          description?: string | null
+          destination_url?: string | null
+          disclosure_required?: boolean
+          ends_at?: string | null
+          external_id?: string | null
+          id?: string
+          item_id?: string | null
+          item_type?: Database["public"]["Enums"]["item_type"] | null
+          partner_id: string
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          terms_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          city_id?: string | null
+          commission_flat?: number | null
+          commission_model?: Database["public"]["Enums"]["commission_model"]
+          commission_rate?: number | null
+          created_at?: string
+          currency?: string
+          deep_link_template?: string | null
+          description?: string | null
+          destination_url?: string | null
+          disclosure_required?: boolean
+          ends_at?: string | null
+          external_id?: string | null
+          id?: string
+          item_id?: string | null
+          item_type?: Database["public"]["Enums"]["item_type"] | null
+          partner_id?: string
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          terms_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_offers_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_offers_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_partners: {
+        Row: {
+          adapter_key: string
+          base_url: string | null
+          capabilities: Json
+          config: Json
+          created_at: string
+          credential_env_keys: string[]
+          currency: string
+          dashboard_url: string | null
+          default_commission_model:
+            | Database["public"]["Enums"]["commission_model"]
+            | null
+          default_commission_rate: number | null
+          disclosure_text: string | null
+          enabled: boolean
+          id: string
+          kind: Database["public"]["Enums"]["partner_kind"]
+          last_error: string | null
+          last_sync_at: string | null
+          name: string
+          notes: string | null
+          slug: string
+          status: Database["public"]["Enums"]["partner_status"]
+          updated_at: string
+        }
+        Insert: {
+          adapter_key: string
+          base_url?: string | null
+          capabilities?: Json
+          config?: Json
+          created_at?: string
+          credential_env_keys?: string[]
+          currency?: string
+          dashboard_url?: string | null
+          default_commission_model?:
+            | Database["public"]["Enums"]["commission_model"]
+            | null
+          default_commission_rate?: number | null
+          disclosure_text?: string | null
+          enabled?: boolean
+          id?: string
+          kind?: Database["public"]["Enums"]["partner_kind"]
+          last_error?: string | null
+          last_sync_at?: string | null
+          name: string
+          notes?: string | null
+          slug: string
+          status?: Database["public"]["Enums"]["partner_status"]
+          updated_at?: string
+        }
+        Update: {
+          adapter_key?: string
+          base_url?: string | null
+          capabilities?: Json
+          config?: Json
+          created_at?: string
+          credential_env_keys?: string[]
+          currency?: string
+          dashboard_url?: string | null
+          default_commission_model?:
+            | Database["public"]["Enums"]["commission_model"]
+            | null
+          default_commission_rate?: number | null
+          disclosure_text?: string | null
+          enabled?: boolean
+          id?: string
+          kind?: Database["public"]["Enums"]["partner_kind"]
+          last_error?: string | null
+          last_sync_at?: string | null
+          name?: string
+          notes?: string | null
+          slug?: string
+          status?: Database["public"]["Enums"]["partner_status"]
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1143,6 +1559,114 @@ export type Database = {
           },
         ]
       }
+      merchant_partnerships: {
+        Row: {
+          booking_fee: number | null
+          city_id: string | null
+          commission_rate: number | null
+          contact_email: string | null
+          contact_name: string | null
+          contract_ends_at: string | null
+          contract_starts_at: string | null
+          created_at: string
+          currency: string
+          flat_fee: number | null
+          id: string
+          item_id: string | null
+          item_type: Database["public"]["Enums"]["item_type"] | null
+          merchant_name: string
+          model: Database["public"]["Enums"]["commission_model"]
+          notes: string | null
+          partner_id: string | null
+          payout_terms: string | null
+          status: Database["public"]["Enums"]["partner_status"]
+          updated_at: string
+        }
+        Insert: {
+          booking_fee?: number | null
+          city_id?: string | null
+          commission_rate?: number | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contract_ends_at?: string | null
+          contract_starts_at?: string | null
+          created_at?: string
+          currency?: string
+          flat_fee?: number | null
+          id?: string
+          item_id?: string | null
+          item_type?: Database["public"]["Enums"]["item_type"] | null
+          merchant_name: string
+          model?: Database["public"]["Enums"]["commission_model"]
+          notes?: string | null
+          partner_id?: string | null
+          payout_terms?: string | null
+          status?: Database["public"]["Enums"]["partner_status"]
+          updated_at?: string
+        }
+        Update: {
+          booking_fee?: number | null
+          city_id?: string | null
+          commission_rate?: number | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contract_ends_at?: string | null
+          contract_starts_at?: string | null
+          created_at?: string
+          currency?: string
+          flat_fee?: number | null
+          id?: string
+          item_id?: string | null
+          item_type?: Database["public"]["Enums"]["item_type"] | null
+          merchant_name?: string
+          model?: Database["public"]["Enums"]["commission_model"]
+          notes?: string | null
+          partner_id?: string | null
+          payout_terms?: string | null
+          status?: Database["public"]["Enums"]["partner_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_partnerships_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merchant_partnerships_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monetisation_settings: {
+        Row: {
+          description: string | null
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       offers: {
         Row: {
           city_id: string
@@ -1513,6 +2037,100 @@ export type Database = {
           },
         ]
       }
+      sponsored_listings: {
+        Row: {
+          budget_amount: number | null
+          campaign_name: string
+          city_id: string | null
+          clicks: number
+          created_at: string
+          currency: string
+          disclosure_label: string
+          ends_at: string | null
+          fee_amount: number | null
+          id: string
+          impressions: number
+          item_id: string | null
+          item_type: Database["public"]["Enums"]["item_type"] | null
+          notes: string | null
+          partner_id: string | null
+          placement: string
+          priority: number
+          sponsor_id: string | null
+          starts_at: string | null
+          status: Database["public"]["Enums"]["campaign_status"]
+          updated_at: string
+        }
+        Insert: {
+          budget_amount?: number | null
+          campaign_name: string
+          city_id?: string | null
+          clicks?: number
+          created_at?: string
+          currency?: string
+          disclosure_label?: string
+          ends_at?: string | null
+          fee_amount?: number | null
+          id?: string
+          impressions?: number
+          item_id?: string | null
+          item_type?: Database["public"]["Enums"]["item_type"] | null
+          notes?: string | null
+          partner_id?: string | null
+          placement?: string
+          priority?: number
+          sponsor_id?: string | null
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          updated_at?: string
+        }
+        Update: {
+          budget_amount?: number | null
+          campaign_name?: string
+          city_id?: string | null
+          clicks?: number
+          created_at?: string
+          currency?: string
+          disclosure_label?: string
+          ends_at?: string | null
+          fee_amount?: number | null
+          id?: string
+          impressions?: number
+          item_id?: string | null
+          item_type?: Database["public"]["Enums"]["item_type"] | null
+          notes?: string | null
+          partner_id?: string | null
+          placement?: string
+          priority?: number
+          sponsor_id?: string | null
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsored_listings_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsored_listings_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsored_listings_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsors: {
         Row: {
           contact_email: string | null
@@ -1776,6 +2394,15 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      campaign_status: "draft" | "scheduled" | "active" | "paused" | "ended"
+      commission_model:
+        | "CPA"
+        | "CPL"
+        | "CPS"
+        | "REVENUE_SHARE"
+        | "BOOKING_FEE"
+        | "FIXED_SPONSORSHIP"
+      conversion_status: "pending" | "approved" | "rejected" | "paid"
       discovery_status:
         | "DISCOVERED"
         | "SOURCE_FOUND"
@@ -1799,6 +2426,17 @@ export type Database = {
         | "social_api"
         | "discovery"
       item_type: "venue" | "event" | "experience"
+      partner_kind:
+        | "affiliate_network"
+        | "direct_merchant"
+        | "venue"
+        | "sponsor"
+      partner_status:
+        | "unconfigured"
+        | "configured"
+        | "active"
+        | "paused"
+        | "disabled"
       verification_state:
         | "VERIFIED"
         | "REVIEW_REQUIRED"
@@ -1933,6 +2571,16 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      campaign_status: ["draft", "scheduled", "active", "paused", "ended"],
+      commission_model: [
+        "CPA",
+        "CPL",
+        "CPS",
+        "REVENUE_SHARE",
+        "BOOKING_FEE",
+        "FIXED_SPONSORSHIP",
+      ],
+      conversion_status: ["pending", "approved", "rejected", "paid"],
       discovery_status: [
         "DISCOVERED",
         "SOURCE_FOUND",
@@ -1959,6 +2607,19 @@ export const Constants = {
         "discovery",
       ],
       item_type: ["venue", "event", "experience"],
+      partner_kind: [
+        "affiliate_network",
+        "direct_merchant",
+        "venue",
+        "sponsor",
+      ],
+      partner_status: [
+        "unconfigured",
+        "configured",
+        "active",
+        "paused",
+        "disabled",
+      ],
       verification_state: [
         "VERIFIED",
         "REVIEW_REQUIRED",

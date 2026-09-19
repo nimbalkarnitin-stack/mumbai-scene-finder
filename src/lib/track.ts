@@ -15,7 +15,11 @@ export function getSessionId(): string | undefined {
 
 export type EventType =
   | "search" | "recommendation_view" | "item_view" | "save" | "unsave" | "share" | "booking_click"
-  | "discovery_click" | "conversion" | "itinerary_generated" | "concierge_message" | "preference_set";
+  | "discovery_click" | "conversion" | "itinerary_generated" | "concierge_message" | "preference_set"
+  // Monetisation funnel: impression → affiliate click → booking start → conversion → commission.
+  | "recommendation_impression" | "affiliate_click" | "booking_start" | "conversion_received"
+  | "commission_approved" | "commission_paid" | "sponsored_impression" | "sponsored_click";
+
 
 export function track(eventType: EventType, opts: { itemType?: ItemType | undefined; itemId?: string | undefined; metadata?: Record<string, unknown> | undefined } = {}) {
   if (typeof window === "undefined") return;
@@ -86,4 +90,72 @@ export function formatWhen(item: { startsAt: string | null; scheduleNote: string
   if (item.openingHours?.["today"]) return item.openingHours["today"];
   if (item.bestTimes.length) return `Best ${item.bestTimes.join(" · ")}`;
   return "Check venue hours";
+}
+
+// ---------- monetised outbound links ----------
+
+export interface MonetisedClickOptions {
+  partnerSlug?: string | null;
+  offerId?: string | null;
+  sponsoredListingId?: string | null;
+  merchantPartnershipId?: string | null;
+  recommendationId?: string | null;
+  placement?: string | null;
+  campaign?: string | null;
+  isSponsored?: boolean;
+  /** Set false only if the surface genuinely shows no disclosure (it always should). */
+  disclosureShown?: boolean;
+}
+
+/**
+ * Open an outbound link through the monetisation layer.
+ *
+ * The click is recorded server-side with full attribution (session, listing,
+ * recommendation, placement, campaign, disclosure) and the returned URL is used —
+ * which is the partner deep link when a partner is configured AND live, and the
+ * plain destination otherwise. Map lookups are never monetised or called bookings.
+ */
+export async function openOutboundMonetised(
+  item: LinkItem & { type: ItemType; isSponsored: boolean },
+  opts: MonetisedClickOptions = {},
+) {
+  const link = resolveOutboundLink(item);
+  const win = window.open("about:blank", "_blank");
+  if (win) win.opener = null;
+
+  const meta = { linkKind: link.kind, sponsored: opts.isSponsored ?? item.isSponsored, placement: opts.placement ?? null, ...opts };
+  track(link.kind === "booking" ? "booking_click" : "discovery_click", { itemType: item.type, itemId: item.id, metadata: meta });
+  if (link.kind === "booking") track("booking_start", { itemType: item.type, itemId: item.id, metadata: meta });
+  if (link.kind !== "map") track("affiliate_click", { itemType: item.type, itemId: item.id, metadata: meta });
+  if (opts.sponsoredListingId) track("sponsored_click", { itemType: item.type, itemId: item.id, metadata: meta });
+
+  let url = link.url;
+  try {
+    const { recordAffiliateClick } = await import("./monetisation/monetisation.functions");
+    const res = await recordAffiliateClick({
+      data: {
+        destinationUrl: link.url,
+        linkKind: link.kind,
+        partnerSlug: opts.partnerSlug ?? null,
+        offerId: opts.offerId ?? null,
+        sponsoredListingId: opts.sponsoredListingId ?? null,
+        merchantPartnershipId: opts.merchantPartnershipId ?? null,
+        itemType: item.type,
+        itemId: item.id,
+        recommendationId: opts.recommendationId ?? null,
+        sessionId: getSessionId() ?? null,
+        placement: opts.placement ?? null,
+        campaign: opts.campaign ?? null,
+        disclosureShown: opts.disclosureShown ?? true,
+        isSponsored: opts.isSponsored ?? item.isSponsored,
+      },
+    });
+    url = res.url;
+  } catch {
+    // Monetisation must never block the user reaching the venue.
+  }
+
+  if (win) win.location.href = url;
+  else window.open(url, "_blank", "noopener,noreferrer");
+  return link;
 }

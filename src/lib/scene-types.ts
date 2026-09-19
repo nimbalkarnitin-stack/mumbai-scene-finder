@@ -39,6 +39,9 @@ export interface Recommendation extends SceneItem {
   score: number;
   reasons: string[];
   breakdown: ScoreBreakdown;
+  /** Score before the capped monetisation nudge — kept so ranking stays auditable. */
+  relevanceScore?: number;
+  monetisation?: { applied: boolean; weight: number; boost: number; reason: string };
 }
 
 export interface SceneQuery {

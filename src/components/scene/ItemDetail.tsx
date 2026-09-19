@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { useSaved } from "@/hooks/useSaved";
 import { itemImage } from "@/lib/scene-images";
 import type { SceneItem } from "@/lib/scene-types";
-import { formatPrice, formatWhen, openOutbound, resolveOutboundLink, track } from "@/lib/track";
+import { formatPrice, formatWhen, openOutboundMonetised, resolveOutboundLink, track } from "@/lib/track";
+import { AffiliateDisclosure } from "./Disclosure";
 import { cn } from "@/lib/utils";
 
 export function ItemDetail({ item, related }: { item: SceneItem; related: SceneItem[] }) {
@@ -16,7 +17,7 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
   const saved = isSaved(item.type, item.id);
 
   const link = resolveOutboundLink(item);
-  const book = () => openOutbound(item, { source: "detail" });
+  const book = () => { void openOutboundMonetised(item, { placement: "detail" }); };
   const share = async () => {
     track("share", { itemType: item.type, itemId: item.id });
     const url = window.location.href;
@@ -78,7 +79,7 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
             <Button variant="glass" className="flex-1" onClick={() => toggle(item.type, item.id)}><Bookmark className={cn("size-4", saved && "fill-primary-glow text-primary-glow")} />{saved ? "Saved" : "Save"}</Button>
             <Button variant="glass" className="flex-1" onClick={share}><Share2 className="size-4" />Share</Button>
           </div>
-          {item.affiliateLinkId && <p className="pt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground">SceneAI may earn a commission on bookings</p>}
+          {link.kind !== "map" && <AffiliateDisclosure className="mt-2" />}
           <div className="space-y-1 border-t border-border pt-3 text-[11px] text-muted-foreground">
             <p>{item.isVerified ? "Checked by a SceneAI editor" : "Not yet checked by a SceneAI editor"}</p>
             {item.updatedAt && <p>Record last updated {new Date(item.updatedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })}</p>}
