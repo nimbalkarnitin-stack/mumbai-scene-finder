@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CafesRouteImport } from './routes/cafes'
 import { Route as ComedyRouteImport } from './routes/comedy'
@@ -27,6 +28,10 @@ import { Route as RestaurantsRouteImport } from './routes/restaurants'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as SceneRouteImport } from './routes/scene'
 import { Route as TrendingRouteImport } from './routes/trending'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminEntityRouteImport } from './routes/admin/$entity'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin/analytics'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ESlugRouteImport } from './routes/e.$slug'
 import { Route as GuidesSlugRouteImport } from './routes/guides.$slug'
@@ -37,6 +42,11 @@ import { Route as XSlugRouteImport } from './routes/x.$slug'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -124,6 +134,26 @@ const TrendingRoute = TrendingRouteImport.update({
   path: '/trending',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminEntityRoute = AdminEntityRouteImport.update({
+  id: '/$entity',
+  path: '/$entity',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
@@ -157,6 +187,7 @@ const XSlugRoute = XSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/cafes': typeof CafesRoute
   '/comedy': typeof ComedyRoute
@@ -174,12 +205,16 @@ export interface FileRoutesByFullPath {
   '/saved': typeof SavedRoute
   '/scene': typeof SceneRoute
   '/trending': typeof TrendingRoute
+  '/admin/$entity': typeof AdminEntityRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/e/$slug': typeof ESlugRoute
   '/guides/$slug': typeof GuidesSlugRoute
   '/mumbai/$slug': typeof MumbaiSlugRoute
   '/v/$slug': typeof VSlugRoute
   '/x/$slug': typeof XSlugRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -200,16 +235,21 @@ export interface FileRoutesByTo {
   '/saved': typeof SavedRoute
   '/scene': typeof SceneRoute
   '/trending': typeof TrendingRoute
+  '/admin/$entity': typeof AdminEntityRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/e/$slug': typeof ESlugRoute
   '/guides/$slug': typeof GuidesSlugRoute
   '/mumbai/$slug': typeof MumbaiSlugRoute
   '/v/$slug': typeof VSlugRoute
   '/x/$slug': typeof XSlugRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/cafes': typeof CafesRoute
   '/comedy': typeof ComedyRoute
@@ -227,17 +267,22 @@ export interface FileRoutesById {
   '/saved': typeof SavedRoute
   '/scene': typeof SceneRoute
   '/trending': typeof TrendingRoute
+  '/admin/$entity': typeof AdminEntityRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/e/$slug': typeof ESlugRoute
   '/guides/$slug': typeof GuidesSlugRoute
   '/mumbai/$slug': typeof MumbaiSlugRoute
   '/v/$slug': typeof VSlugRoute
   '/x/$slug': typeof XSlugRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/auth'
     | '/cafes'
     | '/comedy'
@@ -255,12 +300,16 @@ export interface FileRouteTypes {
     | '/saved'
     | '/scene'
     | '/trending'
+    | '/admin/$entity'
+    | '/admin/analytics'
+    | '/admin/users'
     | '/api/chat'
     | '/e/$slug'
     | '/guides/$slug'
     | '/mumbai/$slug'
     | '/v/$slug'
     | '/x/$slug'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -281,15 +330,20 @@ export interface FileRouteTypes {
     | '/saved'
     | '/scene'
     | '/trending'
+    | '/admin/$entity'
+    | '/admin/analytics'
+    | '/admin/users'
     | '/api/chat'
     | '/e/$slug'
     | '/guides/$slug'
     | '/mumbai/$slug'
     | '/v/$slug'
     | '/x/$slug'
+    | '/admin'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/auth'
     | '/cafes'
     | '/comedy'
@@ -307,16 +361,21 @@ export interface FileRouteTypes {
     | '/saved'
     | '/scene'
     | '/trending'
+    | '/admin/$entity'
+    | '/admin/analytics'
+    | '/admin/users'
     | '/api/chat'
     | '/e/$slug'
     | '/guides/$slug'
     | '/mumbai/$slug'
     | '/v/$slug'
     | '/x/$slug'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   CafesRoute: typeof CafesRoute
   ComedyRoute: typeof ComedyRoute
@@ -348,6 +407,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -469,6 +535,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrendingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/$entity': {
+      id: '/admin/$entity'
+      path: '/$entity'
+      fullPath: '/admin/$entity'
+      preLoaderRoute: typeof AdminEntityRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/api/chat': {
       id: '/api/chat'
       path: '/api/chat'
@@ -514,6 +608,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteRouteChildren {
+  AdminEntityRoute: typeof AdminEntityRoute
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminEntityRoute: AdminEntityRoute,
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
 interface GuidesRouteChildren {
   GuidesSlugRoute: typeof GuidesSlugRoute
 }
@@ -527,6 +639,7 @@ const GuidesRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   CafesRoute: CafesRoute,
   ComedyRoute: ComedyRoute,
