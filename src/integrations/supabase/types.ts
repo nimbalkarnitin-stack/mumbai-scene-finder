@@ -1457,6 +1457,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      trigger_ingestion: {
+        Args: { _body?: Json; _task: string }
+        Returns: number
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
