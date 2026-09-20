@@ -130,10 +130,23 @@ export async function openOutboundMonetised(
   const win = window.open("about:blank", "_blank");
   if (win) win.opener = null;
 
-  const meta = { linkKind: link.kind, sponsored: opts.isSponsored ?? item.isSponsored, placement: opts.placement ?? null, ...opts };
+  let destinationHost: string | null = null;
+  try {
+    destinationHost = new URL(link.url).host;
+  } catch {
+    destinationHost = null;
+  }
+  const meta = {
+    linkKind: link.kind,
+    sponsored: opts.isSponsored ?? item.isSponsored,
+    placement: opts.placement ?? null,
+    destinationHost,
+    ...opts,
+    // Requested partner; the partner that actually handled the click is added below.
+    partnerSlug: opts.partnerSlug ?? null,
+  };
   track(link.kind === "booking" ? "booking_click" : "discovery_click", { itemType: item.type, itemId: item.id, metadata: meta });
   if (link.kind === "booking") track("booking_start", { itemType: item.type, itemId: item.id, metadata: meta });
-  if (link.kind !== "map") track("affiliate_click", { itemType: item.type, itemId: item.id, metadata: meta });
   if (opts.sponsoredListingId) track("sponsored_click", { itemType: item.type, itemId: item.id, metadata: meta });
 
   let url = link.url;
@@ -158,8 +171,28 @@ export async function openOutboundMonetised(
       },
     });
     url = res.url;
+    if (link.kind !== "map") {
+      // One affiliate_click per partner outcome, so each partner is measurable separately.
+      track("affiliate_click", {
+        itemType: item.type,
+        itemId: item.id,
+        metadata: {
+          ...meta,
+          partnerSlug: res.partnerSlug,
+          partnerApplied: res.partnerApplied,
+          fallbackReason: res.fallbackReason,
+          disclosure: res.disclosure,
+          clickId: res.clickId,
+          subid: res.subid,
+          deduped: res.deduped,
+        },
+      });
+    }
   } catch {
     // Monetisation must never block the user reaching the venue.
+    if (link.kind !== "map") {
+      track("affiliate_click", { itemType: item.type, itemId: item.id, metadata: { ...meta, partnerApplied: false, fallbackReason: "click_record_failed" } });
+    }
   }
 
   if (win) win.location.href = url;

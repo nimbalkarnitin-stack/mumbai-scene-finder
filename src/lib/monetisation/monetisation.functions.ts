@@ -37,6 +37,10 @@ export interface AffiliateClickResult {
   subid: string;
   clickId: string | null;
   partnerApplied: boolean;
+  /** Which partner actually handled the click (null when none was resolved). */
+  partnerSlug: string | null;
+  /** Why no partner link was used, for per-partner analytics. */
+  fallbackReason: string | null;
   /** Which stored disclosure the surface must show alongside the link. */
   disclosure: "affiliate" | "sponsored" | "none";
   deduped: boolean;
@@ -133,6 +137,8 @@ export const recordAffiliateClick = createServerFn({ method: "POST" })
       subid,
       clickId,
       partnerApplied: link.partnerApplied,
+      partnerSlug: link.partnerSlug ?? partner?.slug ?? null,
+      fallbackReason: link.reason ?? null,
       disclosure: data.isSponsored ? "sponsored" : link.partnerApplied || partner ? "affiliate" : "none",
       deduped,
     };
