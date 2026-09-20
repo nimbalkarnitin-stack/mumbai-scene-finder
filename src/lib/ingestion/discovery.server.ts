@@ -652,3 +652,141 @@ export async function promoteStructuredSourcePages(
   if (promoted > 0) await track(db, "discovery_promoted_structured_batch", { promoted, skipped });
   return { scanned: (rows ?? []).length, promoted, skipped, errors };
 }
+
+/**
+ * Backfill the first-party website of candidates Google Text Search returned without one.
+ * Uses Places Details with an explicit FieldMask limited to identity + the business' own
+ * website link: no ratings, reviews, photos or editorial content are stored, and Google is
+ * never treated as the catalogue authority. Candidates that genuinely publish no website are
+ * closed as REJECTED with a reason instead of being retried forever.
+ */
+export async function backfillCandidateWebsites(
+  db: DB,
+  limit = 50,
+): Promise<{ scanned: number; websites_found: number; no_website: number; failed: number; api_requests: number; errors: string[] }> {
+  const cred = googleCredential();
+  if (!cred.key) throw new AdapterDisabledError(`Places credential missing — add ${GOOGLE_KEY_ENV_NAMES.join(" or ")} in Project Settings → Secrets.`);
+
+  const usage = await googleRequestUsage(db);
+  let remaining = requestsRemaining({ ...usage, dailyLimit: 2000, monthlyLimit: 20000 });
+  const { data: rows } = await db
+    .from("discovery_candidates")
+    .select("id,google_place_id,name")
+    .is("official_website_url", null)
+    .not("google_place_id", "is", null)
+    .in("status", ["DISCOVERED", "SOURCE_FOUND"])
+    .limit(limit);
+
+  let found = 0;
+  let none = 0;
+  let failed = 0;
+  let apiRequests = 0;
+  const errors: string[] = [];
+
+  for (const row of rows ?? []) {
+    if (remaining <= 0) {
+      errors.push("Stopped early: Google request budget reached.");
+      break;
+    }
+    const placeId = row.google_place_id!;
+    try {
+      let website: string | null = null;
+      let ok = false;
+      for (let attempt = 1; attempt <= 3; attempt += 1) {
+        const res = await safeFetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
+          skipRobots: true,
+          timeoutMs: 12000,
+          headers: { "X-Goog-Api-Key": cred.key, "X-Goog-FieldMask": "id,websiteUri,businessStatus" },
+        });
+        apiRequests += 1;
+        remaining -= 1;
+        ok = res.status >= 200 && res.status < 300;
+        await db.from("google_api_requests").insert({
+          endpoint: "places:details",
+          http_status: res.status,
+          place_count: ok ? 1 : 0,
+          error: ok ? null : sanitiseText(res.body, 400),
+        });
+        if (ok) {
+          const parsed = JSON.parse(res.body) as { websiteUri?: string };
+          website = sanitiseUrl(parsed.websiteUri ?? null);
+          break;
+        }
+        if (!isRetryableStatus(res.status)) throw new AdapterDisabledError(`Google Places Details rejected the request (HTTP ${res.status})`);
+        if (attempt < 3) await new Promise((r) => setTimeout(r, backoffDelayMs(attempt)));
+      }
+      if (!ok) throw new Error("Google Places Details unavailable after retries");
+
+      if (website && !isAggregatorDomain(website)) {
+        await db
+          .from("discovery_candidates")
+          .update({
+            official_website_url: website,
+            domain: registrableDomain(website),
+            last_checked_at: new Date().toISOString(),
+            next_check_at: null,
+            last_error: null,
+          })
+          .eq("id", row.id);
+        found += 1;
+      } else {
+        await db
+          .from("discovery_candidates")
+          .update({
+            status: "REJECTED",
+            last_checked_at: new Date().toISOString(),
+            next_check_at: null,
+            last_error: website ? "Only an aggregator/social link is published — no first-party website to verify." : "No first-party website published for this place.",
+            notes: "Closed by website backfill: no authoritative source available.",
+          })
+          .eq("id", row.id);
+        none += 1;
+      }
+    } catch (error) {
+      failed += 1;
+      const message = error instanceof Error ? error.message : String(error);
+      if (errors.length < 10) errors.push(`${row.name}: ${message}`);
+      await db.from("discovery_candidates").update({ last_error: message.slice(0, 400), last_checked_at: new Date().toISOString() }).eq("id", row.id);
+      if (error instanceof AdapterDisabledError) break;
+    }
+  }
+
+  await track(db, "discovery_website_backfill", { scanned: (rows ?? []).length, found, none, failed, api_requests: apiRequests });
+  return { scanned: (rows ?? []).length, websites_found: found, no_website: none, failed, api_requests: apiRequests, errors: errors.slice(0, 10) };
+}
+
+/**
+ * Third promotion pass: a candidate whose own domain is confidently its official site becomes
+ * an authorised source page even when the resolver found no dedicated what's-on URL and no
+ * structured data. The official-site adapter still only reads what that page itself publishes.
+ */
+export async function promoteOfficialHomePages(
+  db: DB,
+  limit = 50,
+): Promise<{ scanned: number; promoted: number; skipped: number; errors: string[] }> {
+  if (limit <= 0) return { scanned: 0, promoted: 0, skipped: 0, errors: [] };
+  const { data: rows } = await db
+    .from("discovery_candidates")
+    .select("id,official_website_url,confidence")
+    .in("status", ["VALIDATED", "SOURCE_FOUND"])
+    .is("linked_source_id", null)
+    .not("official_website_url", "is", null)
+    .gte("confidence", 0.5)
+    .limit(limit);
+
+  let promoted = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+  for (const row of rows ?? []) {
+    try {
+      await promoteCandidateToSource(db, row.id);
+      promoted += 1;
+    } catch (error) {
+      skipped += 1;
+      const message = error instanceof Error ? error.message : String(error);
+      if (errors.length < 10) errors.push(`${row.id}: ${message}`);
+    }
+  }
+  if (promoted > 0) await track(db, "discovery_promoted_home_batch", { promoted, skipped });
+  return { scanned: (rows ?? []).length, promoted, skipped, errors };
+}
