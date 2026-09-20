@@ -87,7 +87,12 @@ export function formatWhen(item: { startsAt: string | null; scheduleNote: string
     return d.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
   }
   if (item.scheduleNote) return item.scheduleNote;
-  if (item.openingHours?.["today"]) return item.openingHours["today"];
+  if (item.openingHours) {
+    // Venue hours are published per weekday; show today's window in Mumbai time.
+    const day = new Date().toLocaleDateString("en-GB", { timeZone: "Asia/Kolkata", weekday: "short" }).slice(0, 3).toLowerCase();
+    const today = item.openingHours["today"] ?? item.openingHours[day];
+    if (today) return `Today ${today}`;
+  }
   if (item.bestTimes.length) return `Best ${item.bestTimes.join(" · ")}`;
   return "Check venue hours";
 }
