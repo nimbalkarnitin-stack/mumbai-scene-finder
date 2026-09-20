@@ -46,3 +46,22 @@ Open (blocked on external input):
 - Sponsored placements need a real campaign row pointing at an existing catalogue listing.
 
 - [x] Discovery -> recommendation loop connected: verified candidates auto-promote to official-pages source (rotating batches), ingest -> publish -> NOW/NEXT. 8 upcoming Mumbai events live.
+
+## Swiggy live food layer (complete in-app; awaits per-user Swiggy authorisation)
+- OAuth 2.1 + PKCE with dynamic client registration (`src/lib/swiggy/oauth.server.ts`), single-use
+  state rows, exact HTTPS callback `/api/public/swiggy/callback` (http only for localhost).
+- Server-only MCP transport with session reuse, backoff+jitter retries (max 5), documented error
+  classes and no synthetic RATE_LIMITED (`src/lib/swiggy/client.server.ts`).
+- Server functions: status, connect, disconnect, addresses, search_restaurants, get_restaurant_menu,
+  search_menu, venue match (`src/lib/swiggy/swiggy.functions.ts`). Tokens never reach the browser.
+- UI: `/food` live search (restaurants + dishes, pagination, OPEN-only), venue "Food delivery"
+  section on restaurant/cafe/nightlife pages with "Live from Swiggy" badge, connect/reconnect card,
+  privacy note. Address id kept in sessionStorage only.
+- Concierge tool `search_food_delivery` uses the signed-in user's own session; falls back to the
+  SceneAI catalogue when not connected.
+- Admin: /admin/swiggy — connection counts, success rate, latency, retries, error classes, tool usage.
+  No tokens or response bodies stored.
+- Tests: 22 Swiggy tests (131 total). Dineout is structured for later via the same session.
+- [ ] External step: each user must authorise Swiggy (Builders Club). v1.0 issues no refresh token,
+      so reconnection is needed after 5 days or revocation. Dynamic registration must be permitted
+      for this app's callback URL, otherwise connect returns a registration error.

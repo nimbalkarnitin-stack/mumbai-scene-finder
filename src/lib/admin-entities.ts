@@ -117,6 +117,7 @@ export const ADMIN_NAV: { to: string; label: string }[] = [
   { to: "/admin/sources", label: "Sources" },
   { to: "/admin/discovery", label: "Discovery" },
   { to: "/admin/monetization", label: "Monetisation" },
+  { to: "/admin/swiggy", label: "Swiggy" },
   ...Object.entries(ENTITIES).map(([k, e]) => ({ to: `/admin/${k}`, label: e.label })),
   { to: "/admin/users", label: "Users" },
   { to: "/admin/analytics", label: "Analytics" },

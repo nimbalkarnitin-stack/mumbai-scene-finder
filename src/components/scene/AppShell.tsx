@@ -15,6 +15,7 @@ const BOTTOM = [
 ] as const;
 
 const MORE = [
+  { to: "/food", label: "Food delivery" },
   { to: "/trending", label: "Trending" },
   { to: "/guides", label: "Guides" },
   { to: "/deals", label: "Deals" },

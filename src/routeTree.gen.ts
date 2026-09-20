@@ -19,6 +19,7 @@ import { Route as DealsRouteImport } from './routes/deals'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as ExperiencesRouteImport } from './routes/experiences'
 import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as FoodRouteImport } from './routes/food'
 import { Route as GuidesRouteImport } from './routes/guides'
 import { Route as LiveMusicRouteImport } from './routes/live-music'
 import { Route as NightlifeRouteImport } from './routes/nightlife'
@@ -36,6 +37,7 @@ import { Route as AdminDataReviewRouteImport } from './routes/admin/data-review'
 import { Route as AdminDiscoveryRouteImport } from './routes/admin/discovery'
 import { Route as AdminMonetizationRouteImport } from './routes/admin/monetization'
 import { Route as AdminSourcesRouteImport } from './routes/admin/sources'
+import { Route as AdminSwiggyRouteImport } from './routes/admin/swiggy'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ESlugRouteImport } from './routes/e.$slug'
@@ -44,6 +46,7 @@ import { Route as MumbaiSlugRouteImport } from './routes/mumbai.$slug'
 import { Route as VSlugRouteImport } from './routes/v.$slug'
 import { Route as XSlugRouteImport } from './routes/x.$slug'
 import { Route as ApiPublicIngestionTaskRouteImport } from './routes/api/public/ingestion.$task'
+import { Route as ApiPublicSwiggyCallbackRouteImport } from './routes/api/public/swiggy.callback'
 import { Route as ApiPublicAffiliatePartnerPostbackRouteImport } from './routes/api/public/affiliate.$partner.postback'
 
 const IndexRoute = IndexRouteImport.update({
@@ -94,6 +97,11 @@ const ExperiencesRoute = ExperiencesRouteImport.update({
 const ExploreRoute = ExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FoodRoute = FoodRouteImport.update({
+  id: '/food',
+  path: '/food',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuidesRoute = GuidesRouteImport.update({
@@ -181,6 +189,11 @@ const AdminSourcesRoute = AdminSourcesRouteImport.update({
   path: '/sources',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminSwiggyRoute = AdminSwiggyRouteImport.update({
+  id: '/swiggy',
+  path: '/swiggy',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -221,6 +234,11 @@ const ApiPublicIngestionTaskRoute = ApiPublicIngestionTaskRouteImport.update({
   path: '/api/public/ingestion/$task',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSwiggyCallbackRoute = ApiPublicSwiggyCallbackRouteImport.update({
+  id: '/api/public/swiggy/callback',
+  path: '/api/public/swiggy/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAffiliatePartnerPostbackRoute =
   ApiPublicAffiliatePartnerPostbackRouteImport.update({
     id: '/api/public/affiliate/$partner/postback',
@@ -239,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/events': typeof EventsRoute
   '/experiences': typeof ExperiencesRoute
   '/explore': typeof ExploreRoute
+  '/food': typeof FoodRoute
   '/guides': typeof GuidesRouteWithChildren
   '/live-music': typeof LiveMusicRoute
   '/nightlife': typeof NightlifeRoute
@@ -255,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/admin/discovery': typeof AdminDiscoveryRoute
   '/admin/monetization': typeof AdminMonetizationRoute
   '/admin/sources': typeof AdminSourcesRoute
+  '/admin/swiggy': typeof AdminSwiggyRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/e/$slug': typeof ESlugRoute
@@ -264,6 +284,7 @@ export interface FileRoutesByFullPath {
   '/x/$slug': typeof XSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/ingestion/$task': typeof ApiPublicIngestionTaskRoute
+  '/api/public/swiggy/callback': typeof ApiPublicSwiggyCallbackRoute
   '/api/public/affiliate/$partner/postback': typeof ApiPublicAffiliatePartnerPostbackRoute
 }
 export interface FileRoutesByTo {
@@ -276,6 +297,7 @@ export interface FileRoutesByTo {
   '/events': typeof EventsRoute
   '/experiences': typeof ExperiencesRoute
   '/explore': typeof ExploreRoute
+  '/food': typeof FoodRoute
   '/guides': typeof GuidesRouteWithChildren
   '/live-music': typeof LiveMusicRoute
   '/nightlife': typeof NightlifeRoute
@@ -292,6 +314,7 @@ export interface FileRoutesByTo {
   '/admin/discovery': typeof AdminDiscoveryRoute
   '/admin/monetization': typeof AdminMonetizationRoute
   '/admin/sources': typeof AdminSourcesRoute
+  '/admin/swiggy': typeof AdminSwiggyRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/e/$slug': typeof ESlugRoute
@@ -301,6 +324,7 @@ export interface FileRoutesByTo {
   '/x/$slug': typeof XSlugRoute
   '/admin': typeof AdminIndexRoute
   '/api/public/ingestion/$task': typeof ApiPublicIngestionTaskRoute
+  '/api/public/swiggy/callback': typeof ApiPublicSwiggyCallbackRoute
   '/api/public/affiliate/$partner/postback': typeof ApiPublicAffiliatePartnerPostbackRoute
 }
 export interface FileRoutesById {
@@ -315,6 +339,7 @@ export interface FileRoutesById {
   '/events': typeof EventsRoute
   '/experiences': typeof ExperiencesRoute
   '/explore': typeof ExploreRoute
+  '/food': typeof FoodRoute
   '/guides': typeof GuidesRouteWithChildren
   '/live-music': typeof LiveMusicRoute
   '/nightlife': typeof NightlifeRoute
@@ -331,6 +356,7 @@ export interface FileRoutesById {
   '/admin/discovery': typeof AdminDiscoveryRoute
   '/admin/monetization': typeof AdminMonetizationRoute
   '/admin/sources': typeof AdminSourcesRoute
+  '/admin/swiggy': typeof AdminSwiggyRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/e/$slug': typeof ESlugRoute
@@ -340,6 +366,7 @@ export interface FileRoutesById {
   '/x/$slug': typeof XSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/ingestion/$task': typeof ApiPublicIngestionTaskRoute
+  '/api/public/swiggy/callback': typeof ApiPublicSwiggyCallbackRoute
   '/api/public/affiliate/$partner/postback': typeof ApiPublicAffiliatePartnerPostbackRoute
 }
 export interface FileRouteTypes {
@@ -355,6 +382,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/experiences'
     | '/explore'
+    | '/food'
     | '/guides'
     | '/live-music'
     | '/nightlife'
@@ -371,6 +399,7 @@ export interface FileRouteTypes {
     | '/admin/discovery'
     | '/admin/monetization'
     | '/admin/sources'
+    | '/admin/swiggy'
     | '/admin/users'
     | '/api/chat'
     | '/e/$slug'
@@ -380,6 +409,7 @@ export interface FileRouteTypes {
     | '/x/$slug'
     | '/admin/'
     | '/api/public/ingestion/$task'
+    | '/api/public/swiggy/callback'
     | '/api/public/affiliate/$partner/postback'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -392,6 +422,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/experiences'
     | '/explore'
+    | '/food'
     | '/guides'
     | '/live-music'
     | '/nightlife'
@@ -408,6 +439,7 @@ export interface FileRouteTypes {
     | '/admin/discovery'
     | '/admin/monetization'
     | '/admin/sources'
+    | '/admin/swiggy'
     | '/admin/users'
     | '/api/chat'
     | '/e/$slug'
@@ -417,6 +449,7 @@ export interface FileRouteTypes {
     | '/x/$slug'
     | '/admin'
     | '/api/public/ingestion/$task'
+    | '/api/public/swiggy/callback'
     | '/api/public/affiliate/$partner/postback'
   id:
     | '__root__'
@@ -430,6 +463,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/experiences'
     | '/explore'
+    | '/food'
     | '/guides'
     | '/live-music'
     | '/nightlife'
@@ -446,6 +480,7 @@ export interface FileRouteTypes {
     | '/admin/discovery'
     | '/admin/monetization'
     | '/admin/sources'
+    | '/admin/swiggy'
     | '/admin/users'
     | '/api/chat'
     | '/e/$slug'
@@ -455,6 +490,7 @@ export interface FileRouteTypes {
     | '/x/$slug'
     | '/admin/'
     | '/api/public/ingestion/$task'
+    | '/api/public/swiggy/callback'
     | '/api/public/affiliate/$partner/postback'
   fileRoutesById: FileRoutesById
 }
@@ -469,6 +505,7 @@ export interface RootRouteChildren {
   EventsRoute: typeof EventsRoute
   ExperiencesRoute: typeof ExperiencesRoute
   ExploreRoute: typeof ExploreRoute
+  FoodRoute: typeof FoodRoute
   GuidesRoute: typeof GuidesRouteWithChildren
   LiveMusicRoute: typeof LiveMusicRoute
   NightlifeRoute: typeof NightlifeRoute
@@ -484,6 +521,7 @@ export interface RootRouteChildren {
   VSlugRoute: typeof VSlugRoute
   XSlugRoute: typeof XSlugRoute
   ApiPublicIngestionTaskRoute: typeof ApiPublicIngestionTaskRoute
+  ApiPublicSwiggyCallbackRoute: typeof ApiPublicSwiggyCallbackRoute
   ApiPublicAffiliatePartnerPostbackRoute: typeof ApiPublicAffiliatePartnerPostbackRoute
 }
 
@@ -557,6 +595,13 @@ declare module '@tanstack/react-router' {
       path: '/explore'
       fullPath: '/explore'
       preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/food': {
+      id: '/food'
+      path: '/food'
+      fullPath: '/food'
+      preLoaderRoute: typeof FoodRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guides': {
@@ -678,6 +723,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSourcesRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/swiggy': {
+      id: '/admin/swiggy'
+      path: '/swiggy'
+      fullPath: '/admin/swiggy'
+      preLoaderRoute: typeof AdminSwiggyRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
@@ -734,6 +786,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicIngestionTaskRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/swiggy/callback': {
+      id: '/api/public/swiggy/callback'
+      path: '/api/public/swiggy/callback'
+      fullPath: '/api/public/swiggy/callback'
+      preLoaderRoute: typeof ApiPublicSwiggyCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/affiliate/$partner/postback': {
       id: '/api/public/affiliate/$partner/postback'
       path: '/api/public/affiliate/$partner/postback'
@@ -752,6 +811,7 @@ interface AdminRouteRouteChildren {
   AdminDiscoveryRoute: typeof AdminDiscoveryRoute
   AdminMonetizationRoute: typeof AdminMonetizationRoute
   AdminSourcesRoute: typeof AdminSourcesRoute
+  AdminSwiggyRoute: typeof AdminSwiggyRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -764,6 +824,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminDiscoveryRoute: AdminDiscoveryRoute,
   AdminMonetizationRoute: AdminMonetizationRoute,
   AdminSourcesRoute: AdminSourcesRoute,
+  AdminSwiggyRoute: AdminSwiggyRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -794,6 +855,7 @@ const rootRouteChildren: RootRouteChildren = {
   EventsRoute: EventsRoute,
   ExperiencesRoute: ExperiencesRoute,
   ExploreRoute: ExploreRoute,
+  FoodRoute: FoodRoute,
   GuidesRoute: GuidesRouteWithChildren,
   LiveMusicRoute: LiveMusicRoute,
   NightlifeRoute: NightlifeRoute,
@@ -809,6 +871,7 @@ const rootRouteChildren: RootRouteChildren = {
   VSlugRoute: VSlugRoute,
   XSlugRoute: XSlugRoute,
   ApiPublicIngestionTaskRoute: ApiPublicIngestionTaskRoute,
+  ApiPublicSwiggyCallbackRoute: ApiPublicSwiggyCallbackRoute,
   ApiPublicAffiliatePartnerPostbackRoute:
     ApiPublicAffiliatePartnerPostbackRoute,
 }

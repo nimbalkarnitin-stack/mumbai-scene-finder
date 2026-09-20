@@ -12,9 +12,13 @@ import { formatPrice, formatWhen, openOutboundMonetised, resolveOutboundLink, tr
 import { AffiliateDisclosure } from "./Disclosure";
 import { VenueInfo } from "./VenueInfo";
 import { EventInfo } from "./EventInfo";
+import { SwiggyVenueLive } from "./SwiggyLive";
 import { cn } from "@/lib/utils";
 
 /** Source pages sometimes embed HTML in descriptions; display plain text only. */
+/** Live Swiggy delivery is only meaningful for food-led venues. */
+const FOOD_CATEGORIES = new Set(["restaurants", "cafes", "nightlife"]);
+
 function stripHtml(s: string) {
   return s.replace(/<[^>]*>/g, "").replace(/\s+\n/g, "\n").trim();
 }
@@ -72,6 +76,7 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
           </div>
           {item.type === "event" && <EventInfo item={item} />}
           {item.type === "venue" && <VenueInfo item={item} />}
+          {item.type === "venue" && FOOD_CATEGORIES.has(item.categorySlug ?? "") && <SwiggyVenueLive venueName={item.name} />}
           <Link to="/concierge" search={{ q: `Tell me about ${item.name}${item.areaName ? ` in ${item.areaName}` : ""} and what to pair it with for a full evening.` }} className="flex items-center justify-between rounded-2xl border border-teal/25 bg-teal/5 px-4 py-3 text-sm transition hover:bg-teal/10">
             <span className="inline-flex items-center gap-2 text-teal"><MessageCircle className="size-4" /> Ask the concierge about this</span>
             <span className="text-muted-foreground">→</span>
