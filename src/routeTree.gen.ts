@@ -44,6 +44,7 @@ import { Route as MumbaiSlugRouteImport } from './routes/mumbai.$slug'
 import { Route as VSlugRouteImport } from './routes/v.$slug'
 import { Route as XSlugRouteImport } from './routes/x.$slug'
 import { Route as ApiPublicIngestionTaskRouteImport } from './routes/api/public/ingestion.$task'
+import { Route as ApiPublicSwiggyCallbackRouteImport } from './routes/api/public/swiggy.callback'
 import { Route as ApiPublicAffiliatePartnerPostbackRouteImport } from './routes/api/public/affiliate.$partner.postback'
 
 const IndexRoute = IndexRouteImport.update({
@@ -221,6 +222,11 @@ const ApiPublicIngestionTaskRoute = ApiPublicIngestionTaskRouteImport.update({
   path: '/api/public/ingestion/$task',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSwiggyCallbackRoute = ApiPublicSwiggyCallbackRouteImport.update({
+  id: '/api/public/swiggy/callback',
+  path: '/api/public/swiggy/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAffiliatePartnerPostbackRoute =
   ApiPublicAffiliatePartnerPostbackRouteImport.update({
     id: '/api/public/affiliate/$partner/postback',
@@ -264,6 +270,7 @@ export interface FileRoutesByFullPath {
   '/x/$slug': typeof XSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/ingestion/$task': typeof ApiPublicIngestionTaskRoute
+  '/api/public/swiggy/callback': typeof ApiPublicSwiggyCallbackRoute
   '/api/public/affiliate/$partner/postback': typeof ApiPublicAffiliatePartnerPostbackRoute
 }
 export interface FileRoutesByTo {
@@ -301,6 +308,7 @@ export interface FileRoutesByTo {
   '/x/$slug': typeof XSlugRoute
   '/admin': typeof AdminIndexRoute
   '/api/public/ingestion/$task': typeof ApiPublicIngestionTaskRoute
+  '/api/public/swiggy/callback': typeof ApiPublicSwiggyCallbackRoute
   '/api/public/affiliate/$partner/postback': typeof ApiPublicAffiliatePartnerPostbackRoute
 }
 export interface FileRoutesById {
@@ -340,6 +348,7 @@ export interface FileRoutesById {
   '/x/$slug': typeof XSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/ingestion/$task': typeof ApiPublicIngestionTaskRoute
+  '/api/public/swiggy/callback': typeof ApiPublicSwiggyCallbackRoute
   '/api/public/affiliate/$partner/postback': typeof ApiPublicAffiliatePartnerPostbackRoute
 }
 export interface FileRouteTypes {
@@ -380,6 +389,7 @@ export interface FileRouteTypes {
     | '/x/$slug'
     | '/admin/'
     | '/api/public/ingestion/$task'
+    | '/api/public/swiggy/callback'
     | '/api/public/affiliate/$partner/postback'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -417,6 +427,7 @@ export interface FileRouteTypes {
     | '/x/$slug'
     | '/admin'
     | '/api/public/ingestion/$task'
+    | '/api/public/swiggy/callback'
     | '/api/public/affiliate/$partner/postback'
   id:
     | '__root__'
@@ -455,6 +466,7 @@ export interface FileRouteTypes {
     | '/x/$slug'
     | '/admin/'
     | '/api/public/ingestion/$task'
+    | '/api/public/swiggy/callback'
     | '/api/public/affiliate/$partner/postback'
   fileRoutesById: FileRoutesById
 }
@@ -484,6 +496,7 @@ export interface RootRouteChildren {
   VSlugRoute: typeof VSlugRoute
   XSlugRoute: typeof XSlugRoute
   ApiPublicIngestionTaskRoute: typeof ApiPublicIngestionTaskRoute
+  ApiPublicSwiggyCallbackRoute: typeof ApiPublicSwiggyCallbackRoute
   ApiPublicAffiliatePartnerPostbackRoute: typeof ApiPublicAffiliatePartnerPostbackRoute
 }
 
@@ -734,6 +747,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicIngestionTaskRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/swiggy/callback': {
+      id: '/api/public/swiggy/callback'
+      path: '/api/public/swiggy/callback'
+      fullPath: '/api/public/swiggy/callback'
+      preLoaderRoute: typeof ApiPublicSwiggyCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/affiliate/$partner/postback': {
       id: '/api/public/affiliate/$partner/postback'
       path: '/api/public/affiliate/$partner/postback'
@@ -809,6 +829,7 @@ const rootRouteChildren: RootRouteChildren = {
   VSlugRoute: VSlugRoute,
   XSlugRoute: XSlugRoute,
   ApiPublicIngestionTaskRoute: ApiPublicIngestionTaskRoute,
+  ApiPublicSwiggyCallbackRoute: ApiPublicSwiggyCallbackRoute,
   ApiPublicAffiliatePartnerPostbackRoute:
     ApiPublicAffiliatePartnerPostbackRoute,
 }
