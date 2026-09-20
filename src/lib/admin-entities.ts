@@ -28,8 +28,29 @@ const LISTING_COMMON: FieldDef[] = [
 
 export const ENTITIES: Record<string, EntityDef> = {
   venues: {
-    table: "venues", label: "Venues", singular: "Venue", orderBy: "updated_at", listCols: ["name", "slug", "price_min", "is_verified", "is_sponsored", "is_active"],
-    fields: [...LISTING_COMMON, { key: "address", label: "Address", kind: "text" }, { key: "website_url", label: "Website", kind: "text" }, { key: "opening_hours", label: "Opening hours (JSON)", kind: "json" }, { key: "best_times", label: "Best times", kind: "list", help: "morning, afternoon, evening, late-night" }],
+    table: "venues", label: "Venues", singular: "Venue", orderBy: "updated_at", listCols: ["name", "geo_status", "completeness_score", "is_verified", "is_active", "quarantine_reason"],
+    fields: [
+      ...LISTING_COMMON,
+      { key: "address", label: "Address", kind: "text" }, { key: "locality", label: "Locality", kind: "text" },
+      { key: "lat", label: "Latitude", kind: "number" }, { key: "lng", label: "Longitude", kind: "number" },
+      { key: "website_url", label: "Official website", kind: "text" }, { key: "map_url", label: "Map URL", kind: "text" },
+      { key: "phone", label: "Phone", kind: "text" }, { key: "email", label: "Email", kind: "text" }, { key: "contact_url", label: "Contact page", kind: "text" },
+      { key: "reservation_url", label: "Reservation URL", kind: "text" }, { key: "booking_provider", label: "Booking provider", kind: "text" },
+      { key: "reservations_available", label: "Takes reservations", kind: "boolean" },
+      { key: "menu_url", label: "Menu URL", kind: "text" }, { key: "events_url", label: "What's-on URL", kind: "text" },
+      { key: "opening_hours", label: "Opening hours (JSON)", kind: "json", help: '{"mon":"12:00–23:30", …} — Asia/Kolkata' },
+      { key: "special_hours", label: "Special hours (JSON)", kind: "json" },
+      { key: "service_type", label: "Service type", kind: "text" }, { key: "cuisines", label: "Cuisines", kind: "list" },
+      { key: "dietary_options", label: "Dietary options", kind: "list" }, { key: "amenities", label: "Amenities", kind: "list" },
+      { key: "dress_code", label: "Dress code", kind: "text" }, { key: "accessibility", label: "Accessibility", kind: "text" },
+      { key: "parking", label: "Parking", kind: "text" }, { key: "age_restriction", label: "Age restriction", kind: "text" },
+      { key: "pet_policy", label: "Pet policy", kind: "text" }, { key: "price_band", label: "Price band", kind: "text" },
+      { key: "cover_charge", label: "Cover charge", kind: "text" },
+      { key: "social_urls", label: "Social links (JSON)", kind: "json" },
+      { key: "best_times", label: "Best times", kind: "list", help: "morning, afternoon, evening, late-night" },
+      { key: "geo_status", label: "Mumbai check", kind: "text", help: "VALID | UNVERIFIED | OUT_OF_REGION — set by the venue audit" },
+      { key: "quarantine_reason", label: "Quarantine reason", kind: "text" },
+    ],
     defaults: { city_id: DEFAULT_CITY_ID, is_active: true, moods: [], group_types: [], tags: [], best_times: [], popularity_score: 50 },
   },
   events: {
