@@ -781,7 +781,7 @@ export async function orchestrate(db: DB, options: OrchestrateOptions = {}) {
 
   // Verified discoveries become authorised official-page sources before anything is fetched,
   // so newly validated venues are read in this same run.
-  const promoted = options.sourceSlug ? null : await promoteValidatedCandidates(db, mode === "full" ? 50 : 15);
+  const promoted = options.sourceSlug ? null : await promoteValidatedCandidates(db, mode === "full" ? 120 : 30);
 
   let query = db.from("ingestion_sources").select("*").eq("enabled", true).neq("source_type", "discovery");
   if (options.sourceSlug) query = query.eq("slug", options.sourceSlug);
@@ -801,8 +801,8 @@ export async function orchestrate(db: DB, options: OrchestrateOptions = {}) {
   }
 
   // Full runs also re-check discovered candidates for their official / what's-on pages.
-  const discovery = mode === "full" && !options.sourceSlug ? await runDiscoveryResolver(db, 10) : null;
-  const published = await publishReadyRecords(db, settings);
+  const discovery = mode === "full" && !options.sourceSlug ? await runDiscoveryResolver(db, 40, 4) : null;
+  const published = await publishReadyRecords(db, settings, mode === "full" ? 200 : 60);
   const dupes = await scanDuplicates(db);
   const verified = mode === "full" ? await verifyCatalogue(db, settings) : emptyCounters();
   const crossVerified = await crossVerify(db, settings);
