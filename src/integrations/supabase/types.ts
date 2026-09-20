@@ -835,6 +835,7 @@ export type Database = {
           name: string
           next_refresh_at: string | null
           occasion_tags: string[]
+          organiser: string | null
           popularity_score: number
           price_max: number | null
           price_min: number | null
@@ -878,6 +879,7 @@ export type Database = {
           name: string
           next_refresh_at?: string | null
           occasion_tags?: string[]
+          organiser?: string | null
           popularity_score?: number
           price_max?: number | null
           price_min?: number | null
@@ -921,6 +923,7 @@ export type Database = {
           name?: string
           next_refresh_at?: string | null
           occasion_tags?: string[]
+          organiser?: string | null
           popularity_score?: number
           price_max?: number | null
           price_min?: number | null
