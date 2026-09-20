@@ -9,6 +9,7 @@ import { CONCIERGE_SUGGESTIONS } from "@/lib/scene-constants";
 import { itemImage } from "@/lib/scene-images";
 import { formatPrice, track } from "@/lib/track";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ToolItem {
   id: string; type: "venue" | "event" | "experience"; slug: string; name: string; category: string | null; area: string | null;
@@ -27,10 +28,18 @@ export function Concierge({ context, initialPrompt, suggestions = CONCIERGE_SUGG
   const scrollRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
 
+  // The access token lets the concierge use the signed-in user's own live Swiggy session.
+  const { session } = useAuth();
+  const accessToken = session?.access_token ?? null;
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/chat", body: { context: context ?? {} } }),
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        body: { context: context ?? {} },
+        headers: accessToken ? { authorization: `Bearer ${accessToken}` } : {},
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(context)],
+    [JSON.stringify(context), accessToken],
   );
   const { messages, sendMessage, status, stop, error } = useChat({ transport });
   const busy = status === "submitted" || status === "streaming";
