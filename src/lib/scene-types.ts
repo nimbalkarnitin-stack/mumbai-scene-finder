@@ -1,4 +1,44 @@
+import type { OpeningHours } from "./ingestion/venue-profile";
+
 export type ItemType = "venue" | "event" | "experience";
+
+/**
+ * Venue profile facts, exactly as a permitted source published them.
+ * Every field is nullable: the UI only renders what a source actually stated.
+ */
+export interface VenueDetails {
+  address: string | null;
+  locality: string | null;
+  lat: number | null;
+  lng: number | null;
+  mapUrl: string | null;
+  phone: string | null;
+  email: string | null;
+  contactUrl: string | null;
+  reservationUrl: string | null;
+  bookingProvider: string | null;
+  reservationsAvailable: boolean | null;
+  menuUrl: string | null;
+  eventsUrl: string | null;
+  socialUrls: Record<string, string>;
+  hours: OpeningHours | null;
+  specialHours: Record<string, string> | null;
+  cuisines: string[];
+  dietaryOptions: string[];
+  serviceType: string | null;
+  amenities: string[];
+  dressCode: string | null;
+  accessibility: string | null;
+  parking: string | null;
+  ageRestriction: string | null;
+  petPolicy: string | null;
+  priceBand: string | null;
+  coverCharge: string | null;
+  completeness: number | null;
+  missingFields: string[];
+  geoStatus: string | null;
+  lastVerifiedAt: string | null;
+}
 
 export interface SceneItem {
   id: string;
@@ -33,6 +73,8 @@ export interface SceneItem {
   /** Last time the stored record was edited (stand-in for last-checked). */
   updatedAt: string | null;
   createdAt: string;
+  /** Present for venues only, and only with the fields a source published. */
+  venue?: VenueDetails | null;
 }
 
 export interface Recommendation extends SceneItem {

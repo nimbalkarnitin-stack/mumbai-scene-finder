@@ -1,5 +1,7 @@
 /** Shared ingestion vocabulary. Client-safe: no secrets, no server-only imports. */
 
+import type { VenueProfile } from "./venue-profile";
+
 export type VerificationState = "VERIFIED" | "PARTIALLY_VERIFIED" | "REVIEW_REQUIRED" | "STALE" | "UNVERIFIED";
 
 export type EventLifecycle =
@@ -89,6 +91,11 @@ export interface NormalisedRecord {
   };
   /** Raw text preserved for traceability / admin review. */
   sourceText: string | null;
+  /**
+   * Venue-profile facts the source published itself (hours, contact, menu, amenities…).
+   * Always null unless the source stated them; adapters never infer these.
+   */
+  venue: VenueProfile | null;
 }
 
 export interface SourceRecordInput {

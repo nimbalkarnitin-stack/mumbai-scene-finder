@@ -17,6 +17,15 @@ export const PROVENANCE_FIELDS = [
   "booking_url",
   "image_url",
   "organiser",
+  // venue-profile facts
+  "address",
+  "coordinates",
+  "phone",
+  "email",
+  "opening_hours",
+  "website_url",
+  "menu_url",
+  "reservation_url",
 ] as const;
 
 export type ProvenanceField = (typeof PROVENANCE_FIELDS)[number];
@@ -50,6 +59,14 @@ export function fieldValuesFrom(rec: NormalisedRecord): Record<ProvenanceField, 
     booking_url: rec.bookingUrl,
     image_url: rec.imageUrl,
     organiser: rec.organiser,
+    address: rec.address,
+    coordinates: rec.lat !== null && rec.lng !== null ? `${rec.lat},${rec.lng}` : null,
+    phone: rec.venue?.phone ?? null,
+    email: rec.venue?.email ?? null,
+    opening_hours: rec.venue?.openingHours ? JSON.stringify(rec.venue.openingHours) : null,
+    website_url: rec.websiteUrl,
+    menu_url: rec.venue?.menuUrl ?? null,
+    reservation_url: rec.venue?.reservationUrl ?? null,
   };
 }
 
@@ -66,13 +83,26 @@ export function canonicalise(field: ProvenanceField, value: string | null): stri
     const n = Number(raw.replace(/[^0-9.]/g, ""));
     return Number.isFinite(n) ? String(n) : null;
   }
-  if (field === "booking_url" || field === "image_url") return raw.replace(/\/+$/, "").toLowerCase();
+  if (field === "booking_url" || field === "image_url" || field === "website_url" || field === "menu_url" || field === "reservation_url") {
+    return raw.replace(/\/+$/, "").toLowerCase();
+  }
+  if (field === "phone") {
+    const digits = raw.replace(/\D/g, "").slice(-10);
+    return digits.length >= 8 ? digits : null;
+  }
+  if (field === "coordinates") {
+    const [lat, lng] = raw.split(",").map((n) => Number(n));
+    return Number.isFinite(lat) && Number.isFinite(lng) ? `${lat!.toFixed(3)},${lng!.toFixed(3)}` : null;
+  }
   if (field === "description") return raw.slice(0, 160).toLowerCase().replace(/\s+/g, " ");
   return raw.toLowerCase().replace(/\s+/g, " ");
 }
 
 /** Fields where two different stated values are a real contradiction worth review. */
-const CONFLICT_FIELDS = new Set<ProvenanceField>(["starts_at", "ends_at", "venue", "price_min", "booking_url"]);
+const CONFLICT_FIELDS = new Set<ProvenanceField>([
+  "starts_at", "ends_at", "venue", "price_min", "booking_url",
+  "address", "coordinates", "phone", "opening_hours",
+]);
 
 export function detectFieldConflicts(observations: FieldObservation[]): FieldConflict[] {
   const byField = new Map<ProvenanceField, Map<string, { sources: Set<string>; authorityLevel: number }>>();

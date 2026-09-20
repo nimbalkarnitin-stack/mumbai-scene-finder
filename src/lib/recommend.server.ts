@@ -1,11 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import type { ItemType, Recommendation, SceneItem, SceneQuery, ScoreBreakdown } from "./scene-types";
+import type { ItemType, Recommendation, SceneItem, SceneQuery, ScoreBreakdown, VenueDetails } from "./scene-types";
 
 type DB = SupabaseClient<Database>;
 
 const SELECT_VENUE =
-  "id,slug,name,description,image_url,price_min,price_max,moods,group_types,tags,best_times,opening_hours,booking_url,website_url,source_url,affiliate_link_id,is_sponsored,popularity_score,is_verified,created_at,updated_at,categories(slug,name),areas(slug,name),sponsors(name)";
+  "id,slug,name,description,image_url,price_min,price_max,moods,group_types,tags,best_times,opening_hours,booking_url,website_url,source_url,affiliate_link_id,is_sponsored,popularity_score,is_verified,created_at,updated_at,categories(slug,name),areas(slug,name),sponsors(name)" +
+  ",address,lat,lng,locality,map_url,phone,email,contact_url,reservation_url,booking_provider,reservations_available,menu_url,events_url,social_urls,special_hours,cuisines,dietary_options,service_type,amenities,dress_code,accessibility,parking,age_restriction,pet_policy,price_band,cover_charge,completeness_score,missing_fields,geo_status,last_verified_at";
 const SELECT_EVENT =
   "id,slug,name,description,image_url,price_min,price_max,moods,group_types,tags,starts_at,ends_at,booking_url,source_url,affiliate_link_id,is_sponsored,popularity_score,is_verified,created_at,updated_at,categories(slug,name),areas(slug,name),sponsors(name)";
 const SELECT_EXPERIENCE =
@@ -44,6 +45,44 @@ function normalize(row: any, type: ItemType): SceneItem {
     sourceUrl: row.source_url ?? null,
     updatedAt: row.updated_at ?? null,
     createdAt: row.created_at,
+    venue: type === "venue" ? venueDetails(row) : null,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function venueDetails(row: any): VenueDetails {
+  return {
+    address: row.address ?? null,
+    locality: row.locality ?? null,
+    lat: row.lat ?? null,
+    lng: row.lng ?? null,
+    mapUrl: row.map_url ?? null,
+    phone: row.phone ?? null,
+    email: row.email ?? null,
+    contactUrl: row.contact_url ?? null,
+    reservationUrl: row.reservation_url ?? null,
+    bookingProvider: row.booking_provider ?? null,
+    reservationsAvailable: row.reservations_available ?? null,
+    menuUrl: row.menu_url ?? null,
+    eventsUrl: row.events_url ?? null,
+    socialUrls: (row.social_urls ?? {}) as Record<string, string>,
+    hours: row.opening_hours ?? null,
+    specialHours: row.special_hours ?? null,
+    cuisines: row.cuisines ?? [],
+    dietaryOptions: row.dietary_options ?? [],
+    serviceType: row.service_type ?? null,
+    amenities: row.amenities ?? [],
+    dressCode: row.dress_code ?? null,
+    accessibility: row.accessibility ?? null,
+    parking: row.parking ?? null,
+    ageRestriction: row.age_restriction ?? null,
+    petPolicy: row.pet_policy ?? null,
+    priceBand: row.price_band ?? null,
+    coverCharge: row.cover_charge ?? null,
+    completeness: row.completeness_score === null || row.completeness_score === undefined ? null : Number(row.completeness_score),
+    missingFields: row.missing_fields ?? [],
+    geoStatus: row.geo_status ?? null,
+    lastVerifiedAt: row.last_verified_at ?? null,
   };
 }
 

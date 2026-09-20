@@ -10,6 +10,8 @@ import { completenessOf, computeQualityScore, nextRefreshAt, passesPublishGate, 
 import { isTransient } from "./safe-fetch.server";
 import { crossSourceState, detectFieldConflicts, fieldValuesFrom, PROVENANCE_FIELDS, type FieldObservation } from "./provenance";
 import { promoteValidatedCandidates, runDiscoveryResolver } from "./discovery.server";
+import { validateMumbaiVenue } from "./mumbai-geo";
+import { scoreVenueCompleteness } from "./venue-profile";
 import {
   DEFAULT_CADENCE,
   DEFAULT_GATE,
@@ -398,15 +400,44 @@ export async function publishReadyRecords(db: DB, settings: Settings, limit = 50
           counters.created += 1;
         }
       } else {
-        const payload = {
+        // A venue only joins the Mumbai catalogue when its own published address/coordinates
+        // put it in the Mumbai region. Anything else is quarantined, never silently listed.
+        const geo = validateMumbaiVenue({
+          name: normalised.name,
+          address: normalised.address,
+          locality: normalised.venue?.locality ?? normalised.areaHint,
+          lat: normalised.lat,
+          lng: normalised.lng,
+          websiteUrl: normalised.websiteUrl,
+        });
+        const quarantined = geo.status === "OUT_OF_REGION";
+        const profile = venueProfileColumns(normalised);
+        const base = {
           ...shared,
+          ...profile,
           address: normalised.address,
           lat: normalised.lat,
           lng: normalised.lng,
           website_url: normalised.websiteUrl,
           next_refresh_at: nextRefreshAt("venue", null, new Date(), settings.cadence),
-          is_active: publish,
+          geo_status: geo.status,
+          geo_notes: geo.reasons.join("; ").slice(0, 400),
+          quarantined_at: quarantined ? nowIso : null,
+          quarantine_reason: quarantined ? geo.reasons.join("; ").slice(0, 300) : null,
+          last_verified_at: quarantined ? null : rec.last_checked_at,
+          verification_status: (quarantined ? "REVIEW_REQUIRED" : shared.verification_status) as VerificationState,
+          is_verified: quarantined ? false : shared.is_verified,
+          is_active: publish && !quarantined,
         };
+        const completeness = scoreVenueCompleteness(base);
+        const payload = { ...base, completeness_score: completeness.score, missing_fields: completeness.missing };
+        if (quarantined) {
+          await db
+            .from("source_records")
+            .update({ review_status: "needs_review", error_message: `Quarantined: ${geo.reasons.join("; ")}`.slice(0, 500) })
+            .eq("id", rec.id);
+          await trackIngestion(db, "venue_quarantined", { source: rec.source_name, reason: geo.reasons[0] ?? "outside Mumbai" });
+        }
         if (existingId) {
           await db.from("venues").update(payload).eq("id", existingId);
           counters.updated += 1;
@@ -763,4 +794,142 @@ export async function orchestrate(db: DB, options: OrchestrateOptions = {}) {
   });
 
   return { mode, sources: perSource, promoted, totals, published, duplicates: dupes, verified, crossVerified, discovery, expired };
+}
+
+/**
+ * Venue-profile columns from a normalised record.
+ * Only fields the source actually stated are written, so a later run by a source that
+ * stays silent about (say) opening hours never erases what another source published.
+ */
+export function venueProfileColumns(normalised: NormalisedRecord): Record<string, unknown> {
+  const p = normalised.venue;
+  if (!p) return {};
+  const candidate: Record<string, unknown> = {
+    phone: p.phone,
+    email: p.email,
+    contact_url: p.contactUrl,
+    reservation_url: p.reservationUrl,
+    booking_provider: p.bookingProvider,
+    menu_url: p.menuUrl,
+    events_url: p.eventsUrl,
+    map_url: p.mapUrl,
+    locality: p.locality ?? normalised.areaHint,
+    social_urls: Object.keys(p.socialUrls).length ? p.socialUrls : null,
+    opening_hours: p.openingHours,
+    special_hours: p.specialHours,
+    reservations_available: p.reservationsAvailable,
+    cuisines: p.cuisines.length ? p.cuisines : null,
+    dietary_options: p.dietaryOptions.length ? p.dietaryOptions : null,
+    service_type: p.serviceType,
+    amenities: p.amenities.length ? p.amenities : null,
+    dress_code: p.dressCode,
+    accessibility: p.accessibility,
+    parking: p.parking,
+    age_restriction: p.ageRestriction,
+    pet_policy: p.petPolicy,
+    price_band: p.priceBand,
+    cover_charge: p.coverCharge,
+    currency: normalised.currency,
+  };
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(candidate)) {
+    if (value !== null && value !== undefined) out[key] = value;
+  }
+  return out;
+}
+
+export interface VenueAuditReport {
+  checked: number;
+  valid: number;
+  unverified: number;
+  quarantined: number;
+  released: number;
+  averageCompleteness: number;
+  incomplete: number;
+  rows: { id: string; name: string; geoStatus: string; completeness: number; missing: string[]; quarantineReason: string | null }[];
+}
+
+/**
+ * Re-check every venue already in the catalogue: Mumbai geography, profile completeness and
+ * freshness. Out-of-region venues are deactivated and stamped with a reason; their source
+ * records and discovery evidence are left untouched so the decision stays auditable.
+ */
+export async function auditVenues(db: DB, limit = 500): Promise<VenueAuditReport> {
+  const jobId = await startJob(db, null, "audit-venues");
+  const counters = emptyCounters();
+  const report: VenueAuditReport = {
+    checked: 0, valid: 0, unverified: 0, quarantined: 0, released: 0, averageCompleteness: 0, incomplete: 0, rows: [],
+  };
+  const { data: venues } = await db
+    .from("venues")
+    .select(
+      "id,name,slug,address,locality,lat,lng,website_url,source_url,phone,email,contact_url,opening_hours,reservation_url,booking_url,menu_url,price_min,price_max,price_band,description,category_id,service_type,cuisines,moods,tags,group_types,best_times,image_url,source_last_checked_at,verification_status,is_active,geo_status,quarantined_at",
+    )
+    .limit(limit);
+
+  const nowIso = new Date().toISOString();
+  let scoreTotal = 0;
+
+  for (const v of venues ?? []) {
+    counters.fetched += 1;
+    const geo = validateMumbaiVenue({
+      name: v.name,
+      address: v.address,
+      locality: v.locality,
+      lat: v.lat,
+      lng: v.lng,
+      websiteUrl: v.website_url,
+    });
+    const completeness = scoreVenueCompleteness(v);
+    const quarantine = geo.status === "OUT_OF_REGION";
+    const wasQuarantined = !!v.quarantined_at;
+
+    const update: Record<string, unknown> = {
+      geo_status: geo.status,
+      geo_notes: geo.reasons.join("; ").slice(0, 400),
+      completeness_score: completeness.score,
+      missing_fields: completeness.missing,
+    };
+    if (quarantine) {
+      update["is_active"] = false;
+      update["is_verified"] = false;
+      update["verification_status"] = "REVIEW_REQUIRED";
+      update["quarantined_at"] = v.quarantined_at ?? nowIso;
+      update["quarantine_reason"] = geo.reasons.join("; ").slice(0, 300);
+      report.quarantined += 1;
+      if (!wasQuarantined) await trackIngestion(db, "venue_quarantined", { venue: v.name, reason: geo.reasons[0] ?? "outside Mumbai" });
+    } else if (wasQuarantined) {
+      // The record now checks out: clear the quarantine stamp but leave activation to the gates.
+      update["quarantined_at"] = null;
+      update["quarantine_reason"] = null;
+      report.released += 1;
+    }
+    if (geo.status === "VALID") report.valid += 1;
+    if (geo.status === "UNVERIFIED") report.unverified += 1;
+    if (completeness.score < 60) report.incomplete += 1;
+    scoreTotal += completeness.score;
+
+    const { error } = await db.from("venues").update(update as never).eq("id", v.id);
+    if (error) counters.failed += 1;
+    else counters.updated += 1;
+    report.checked += 1;
+    report.rows.push({
+      id: v.id,
+      name: v.name,
+      geoStatus: geo.status,
+      completeness: completeness.score,
+      missing: completeness.missing,
+      quarantineReason: quarantine ? geo.reasons.join("; ") : null,
+    });
+  }
+
+  report.averageCompleteness = report.checked ? Number((scoreTotal / report.checked).toFixed(1)) : 0;
+  await finishJob(db, jobId, counters, counters.failed ? "partial" : "success", null, {
+    valid: report.valid,
+    unverified: report.unverified,
+    quarantined: report.quarantined,
+    released: report.released,
+    average_completeness: report.averageCompleteness,
+  });
+  return report;
 }

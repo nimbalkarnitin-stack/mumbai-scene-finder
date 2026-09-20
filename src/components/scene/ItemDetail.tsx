@@ -10,6 +10,7 @@ import { itemImage } from "@/lib/scene-images";
 import type { SceneItem } from "@/lib/scene-types";
 import { formatPrice, formatWhen, openOutboundMonetised, resolveOutboundLink, track } from "@/lib/track";
 import { AffiliateDisclosure } from "./Disclosure";
+import { VenueInfo } from "./VenueInfo";
 import { cn } from "@/lib/utils";
 
 export function ItemDetail({ item, related }: { item: SceneItem; related: SceneItem[] }) {
@@ -63,6 +64,7 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
             {item.groupTypes.map((g) => <span key={g} className="rounded-full border border-teal/30 bg-teal/10 px-3 py-1 text-xs capitalize text-teal">{g}</span>)}
             {item.tags.map((t) => <span key={t} className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">{t}</span>)}
           </div>
+          {item.type === "venue" && <VenueInfo item={item} />}
           <Link to="/concierge" search={{ q: `Tell me about ${item.name}${item.areaName ? ` in ${item.areaName}` : ""} and what to pair it with for a full evening.` }} className="flex items-center justify-between rounded-2xl border border-teal/25 bg-teal/5 px-4 py-3 text-sm transition hover:bg-teal/10">
             <span className="inline-flex items-center gap-2 text-teal"><MessageCircle className="size-4" /> Ask the concierge about this</span>
             <span className="text-muted-foreground">→</span>
@@ -83,9 +85,15 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
           <div className="space-y-1 border-t border-border pt-3 text-[11px] text-muted-foreground">
             <p>{item.isVerified ? "Checked by a SceneAI editor" : "Not yet checked by a SceneAI editor"}</p>
             {item.updatedAt && <p>Record last updated {new Date(item.updatedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })}</p>}
+            {item.venue?.lastVerifiedAt && (
+              <p>Details last checked against the source {new Date(item.venue.lastVerifiedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })}</p>
+            )}
             {item.sourceUrl && (
               <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-teal hover:underline">Source <ExternalLink className="size-3" /></a>
             )}
+{item.type === "venue" && !(item.venue?.hours && (item.venue?.phone || item.venue?.email) && (item.venue?.menuUrl || item.venue?.reservationUrl)) ? (
+              <p className="text-muted-foreground">Some venue details (hours, contact, menu) aren't published by the source yet.</p>
+            ) : null}
           </div>
         </aside>
       </div>

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const TASKS = ["orchestrate", "ingest-source", "normalise-record", "deduplicate-records", "verify-catalogue", "expire-events", "health", "google-discovery", "resolve-sources", "promote-candidates"] as const;
+const TASKS = ["orchestrate", "ingest-source", "normalise-record", "deduplicate-records", "verify-catalogue", "expire-events", "health", "google-discovery", "resolve-sources", "promote-candidates", "audit-venues"] as const;
 type Task = (typeof TASKS)[number];
 
 /**
@@ -99,6 +99,13 @@ export const Route = createFileRoute("/api/public/ingestion/$task")({
               const discovery = await import("@/lib/ingestion/discovery.server");
               const result = await discovery.runDiscoveryResolver(supabaseAdmin, limit);
               return Response.json({ ok: true, task, limit, ...result });
+            }
+            case "audit-venues": {
+              const raw = Number(body["limit"]);
+              const limit = Number.isFinite(raw) ? Math.min(Math.max(Math.trunc(raw), 1), 1000) : 500;
+              const result = await pipeline.auditVenues(supabaseAdmin, limit);
+              const detail = body["detail"] === true;
+              return Response.json({ ok: true, task, limit, ...result, rows: detail ? result.rows : undefined });
             }
             case "promote-candidates": {
               const raw = Number(body["limit"]);

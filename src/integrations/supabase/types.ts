@@ -2306,16 +2306,31 @@ export type Database = {
       }
       venues: {
         Row: {
+          accessibility: string | null
           address: string | null
           affiliate_link_id: string | null
+          age_restriction: string | null
+          amenities: string[]
           area_id: string | null
           best_times: string[]
+          booking_provider: string | null
           booking_url: string | null
           category_id: string | null
           city_id: string
+          completeness_score: number | null
+          contact_url: string | null
+          cover_charge: string | null
           created_at: string
+          cuisines: string[]
+          currency: string
           description: string | null
+          dietary_options: string[]
+          dress_code: string | null
+          email: string | null
+          events_url: string | null
           first_seen_at: string
+          geo_notes: string | null
+          geo_status: string
           group_types: string[]
           id: string
           image_url: string | null
@@ -2323,21 +2338,37 @@ export type Database = {
           is_sponsored: boolean
           is_verified: boolean
           last_seen_at: string | null
+          last_verified_at: string | null
           lat: number | null
           lng: number | null
+          locality: string | null
+          map_url: string | null
+          menu_url: string | null
+          missing_fields: string[]
           moods: string[]
           name: string
           next_refresh_at: string | null
           opening_hours: Json | null
+          parking: string | null
+          pet_policy: string | null
+          phone: string | null
           popularity_score: number
+          price_band: string | null
           price_max: number | null
           price_min: number | null
           quality_score: number | null
+          quarantine_reason: string | null
+          quarantined_at: string | null
+          reservation_url: string | null
+          reservations_available: boolean | null
+          service_type: string | null
           slug: string
+          social_urls: Json
           source_last_checked_at: string | null
           source_name: string | null
           source_record_id: string | null
           source_url: string | null
+          special_hours: Json | null
           sponsor_id: string | null
           tags: string[]
           updated_at: string
@@ -2345,16 +2376,31 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
+          accessibility?: string | null
           address?: string | null
           affiliate_link_id?: string | null
+          age_restriction?: string | null
+          amenities?: string[]
           area_id?: string | null
           best_times?: string[]
+          booking_provider?: string | null
           booking_url?: string | null
           category_id?: string | null
           city_id: string
+          completeness_score?: number | null
+          contact_url?: string | null
+          cover_charge?: string | null
           created_at?: string
+          cuisines?: string[]
+          currency?: string
           description?: string | null
+          dietary_options?: string[]
+          dress_code?: string | null
+          email?: string | null
+          events_url?: string | null
           first_seen_at?: string
+          geo_notes?: string | null
+          geo_status?: string
           group_types?: string[]
           id?: string
           image_url?: string | null
@@ -2362,21 +2408,37 @@ export type Database = {
           is_sponsored?: boolean
           is_verified?: boolean
           last_seen_at?: string | null
+          last_verified_at?: string | null
           lat?: number | null
           lng?: number | null
+          locality?: string | null
+          map_url?: string | null
+          menu_url?: string | null
+          missing_fields?: string[]
           moods?: string[]
           name: string
           next_refresh_at?: string | null
           opening_hours?: Json | null
+          parking?: string | null
+          pet_policy?: string | null
+          phone?: string | null
           popularity_score?: number
+          price_band?: string | null
           price_max?: number | null
           price_min?: number | null
           quality_score?: number | null
+          quarantine_reason?: string | null
+          quarantined_at?: string | null
+          reservation_url?: string | null
+          reservations_available?: boolean | null
+          service_type?: string | null
           slug: string
+          social_urls?: Json
           source_last_checked_at?: string | null
           source_name?: string | null
           source_record_id?: string | null
           source_url?: string | null
+          special_hours?: Json | null
           sponsor_id?: string | null
           tags?: string[]
           updated_at?: string
@@ -2384,16 +2446,31 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
+          accessibility?: string | null
           address?: string | null
           affiliate_link_id?: string | null
+          age_restriction?: string | null
+          amenities?: string[]
           area_id?: string | null
           best_times?: string[]
+          booking_provider?: string | null
           booking_url?: string | null
           category_id?: string | null
           city_id?: string
+          completeness_score?: number | null
+          contact_url?: string | null
+          cover_charge?: string | null
           created_at?: string
+          cuisines?: string[]
+          currency?: string
           description?: string | null
+          dietary_options?: string[]
+          dress_code?: string | null
+          email?: string | null
+          events_url?: string | null
           first_seen_at?: string
+          geo_notes?: string | null
+          geo_status?: string
           group_types?: string[]
           id?: string
           image_url?: string | null
@@ -2401,21 +2478,37 @@ export type Database = {
           is_sponsored?: boolean
           is_verified?: boolean
           last_seen_at?: string | null
+          last_verified_at?: string | null
           lat?: number | null
           lng?: number | null
+          locality?: string | null
+          map_url?: string | null
+          menu_url?: string | null
+          missing_fields?: string[]
           moods?: string[]
           name?: string
           next_refresh_at?: string | null
           opening_hours?: Json | null
+          parking?: string | null
+          pet_policy?: string | null
+          phone?: string | null
           popularity_score?: number
+          price_band?: string | null
           price_max?: number | null
           price_min?: number | null
           quality_score?: number | null
+          quarantine_reason?: string | null
+          quarantined_at?: string | null
+          reservation_url?: string | null
+          reservations_available?: boolean | null
+          service_type?: string | null
           slug?: string
+          social_urls?: Json
           source_last_checked_at?: string | null
           source_name?: string | null
           source_record_id?: string | null
           source_url?: string | null
+          special_hours?: Json | null
           sponsor_id?: string | null
           tags?: string[]
           updated_at?: string
