@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Bookmark, ExternalLink, Share2, MapPin, Clock, BadgeCheck } from "lucide-react";
+import { Bookmark, CalendarCheck, ExternalLink, Share2, MapPin, Clock, BadgeCheck } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,7 @@ export function SceneCard({ item, index = 0, compact = false, monetisation }: { 
   };
 
   const link = resolveOutboundLink(item);
+  const supportsLiveReservation = item.type === "venue" && ["restaurants", "cafes", "nightlife"].includes(item.categorySlug ?? "") && item.venue?.lat != null && item.venue?.lng != null;
   const book = () => { void openOutboundMonetised(item, { placement: "card", ...(monetisation ?? {}) }); };
 
   const detailProps = item.type === "venue" ? { to: "/v/$slug" as const } : item.type === "event" ? { to: "/e/$slug" as const } : { to: "/x/$slug" as const };
@@ -95,9 +96,17 @@ export function SceneCard({ item, index = 0, compact = false, monetisation }: { 
           <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-saffron">Details unverified · confirm with venue</p>
         )}
         <div className="flex gap-2">
-          <Button variant="ember" className="flex-1" onClick={book}>
-            {link.label} <ExternalLink className="size-3.5" />
-          </Button>
+          {supportsLiveReservation && link.kind !== "booking" && !item.venue?.reservationUrl ? (
+            <Button variant="ember" className="flex-1" asChild>
+              <Link {...detailProps} params={{ slug: item.slug }} onClick={() => track("booking_start", { itemType: item.type, itemId: item.id, metadata: { provider: "swiggy_dineout", placement: "card" } })}>
+                Reserve <CalendarCheck className="size-3.5" />
+              </Link>
+            </Button>
+          ) : (
+            <Button variant="ember" className="flex-1" onClick={book}>
+              {link.kind === "booking" ? "Book" : "Booking options"} <ExternalLink className="size-3.5" />
+            </Button>
+          )}
           <Button variant="glass" size="icon" aria-label={saved ? "Remove from saved" : "Save"} onClick={() => toggle(item.type, item.id)}>
             <Bookmark className={cn("size-4", saved && "fill-primary-glow text-primary-glow")} />
           </Button>

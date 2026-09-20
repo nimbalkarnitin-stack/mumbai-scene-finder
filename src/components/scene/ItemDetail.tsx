@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Bookmark, ExternalLink, Share2, MapPin, Clock, BadgeCheck, MessageCircle, ArrowLeft } from "lucide-react";
+import { Bookmark, CalendarCheck, ExternalLink, Share2, MapPin, Clock, BadgeCheck, MessageCircle, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "./AppShell";
 import { Tag } from "./Chip";
@@ -28,7 +28,16 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
   const saved = isSaved(item.type, item.id);
 
   const link = resolveOutboundLink(item);
+  const supportsLiveReservation = item.type === "venue" && FOOD_CATEGORIES.has(item.categorySlug ?? "") && item.venue?.lat != null && item.venue?.lng != null;
   const book = () => { void openOutboundMonetised(item, { placement: "detail" }); };
+  const openBooking = () => {
+    if (supportsLiveReservation && link.kind !== "booking" && !item.venue?.reservationUrl) {
+      track("booking_start", { itemType: item.type, itemId: item.id, metadata: { provider: "swiggy_dineout", placement: "detail" } });
+      document.getElementById("reservations")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    book();
+  };
   const share = async () => {
     track("share", { itemType: item.type, itemId: item.id });
     const url = window.location.href;
@@ -77,7 +86,7 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
           {item.type === "event" && <EventInfo item={item} />}
           {item.type === "venue" && <VenueInfo item={item} />}
           {item.type === "venue" && FOOD_CATEGORIES.has(item.categorySlug ?? "") && item.venue?.lat != null && item.venue?.lng != null && (
-            <DineoutVenueLive venueName={item.name} area={item.areaName} latitude={item.venue.lat} longitude={item.venue.lng} />
+            <DineoutVenueLive itemId={item.id} venueName={item.name} area={item.areaName} latitude={item.venue.lat} longitude={item.venue.lng} />
           )}
           {item.type === "venue" && FOOD_CATEGORIES.has(item.categorySlug ?? "") && <SwiggyVenueLive venueName={item.name} />}
           <Link to="/concierge" search={{ q: `Tell me about ${item.name}${item.areaName ? ` in ${item.areaName}` : ""} and what to pair it with for a full evening.` }} className="flex items-center justify-between rounded-2xl border border-teal/25 bg-teal/5 px-4 py-3 text-sm transition hover:bg-teal/10">
@@ -88,10 +97,15 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
         <aside className="h-fit space-y-2 rounded-3xl border border-border bg-card p-4 md:sticky md:top-20">
           <p className="eyebrow">From</p>
           <p className="font-display text-3xl font-semibold">{formatPrice(item.priceMin, item.priceMax)}</p>
-          <Button variant="ember" size="lg" className="mt-2 w-full" onClick={book}>{link.kind === "booking" ? "Book now" : link.label} <ExternalLink className="size-4" /></Button>
-          {link.kind !== "booking" && (
-            <p className="text-[11px] text-muted-foreground">No booking link on file — this opens {link.kind === "website" ? "the venue's own site" : "a map search"}.</p>
-          )}
+          <Button variant="ember" size="lg" className="mt-2 w-full" onClick={openBooking}>
+            {supportsLiveReservation && link.kind !== "booking" && !item.venue?.reservationUrl ? "Reserve a table" : link.kind === "booking" ? "Book now" : "Check booking options"}
+            {supportsLiveReservation && link.kind !== "booking" && !item.venue?.reservationUrl ? <CalendarCheck className="size-4" /> : <ExternalLink className="size-4" />}
+          </Button>
+          {supportsLiveReservation && link.kind !== "booking" && !item.venue?.reservationUrl ? (
+            <p className="text-[11px] text-muted-foreground">Choose a live Swiggy Dineout time below and confirm your reservation without leaving vybz.</p>
+          ) : link.kind !== "booking" ? (
+            <p className="text-[11px] text-muted-foreground">No direct booking provider is connected; available options open from the source.</p>
+          ) : null}
           <div className="flex gap-2">
             <Button variant="glass" className="flex-1" onClick={() => toggle(item.type, item.id)}><Bookmark className={cn("size-4", saved && "fill-primary-glow text-primary-glow")} />{saved ? "Saved" : "Save"}</Button>
             <Button variant="glass" className="flex-1" onClick={share}><Share2 className="size-4" />Share</Button>

@@ -297,7 +297,7 @@ function todayInMumbai() {
   return `${value("year")}-${value("month")}-${value("day")}`;
 }
 
-function DineoutSlots({ restaurantId, latitude, longitude }: { restaurantId: string; latitude: number; longitude: number }) {
+function DineoutSlots({ itemId, restaurantId, latitude, longitude }: { itemId: string; restaurantId: string; latitude: number; longitude: number }) {
   const [guestCount, setGuestCount] = useState(2);
   const [confirmed, setConfirmed] = useState<{ slot: DineoutSlot; deal: DineoutSlotDeal } | null>(null);
   const slots = useQuery({
@@ -309,7 +309,10 @@ function DineoutSlots({ restaurantId, latitude, longitude }: { restaurantId: str
   const booking = useMutation({
     mutationFn: ({ slot, deal }: { slot: DineoutSlot; deal: DineoutSlotDeal }) =>
       bookDineoutTable({ data: { restaurantId, slotId: deal.slotId, itemId: deal.itemId, reservationTime: slot.reservationTime, guestCount, latitude, longitude } }),
-    onSuccess: () => setConfirmed(null),
+    onSuccess: (result) => {
+      track("conversion", { itemType: "venue", itemId, metadata: { provider: "swiggy_dineout", kind: "confirmed_reservation", orderId: result.booking.orderId } });
+      setConfirmed(null);
+    },
   });
 
   if (slots.isLoading) return <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="size-3 animate-spin" /> Checking live tables…</p>;
@@ -355,7 +358,10 @@ function DineoutSlots({ restaurantId, latitude, longitude }: { restaurantId: str
           <p>Reserve for {guestCount} at {confirmed.slot.displayTime}?</p>
           <p className="mt-1 text-xs text-muted-foreground">This creates a free reservation in your Swiggy account.</p>
           <div className="mt-3 flex gap-2">
-            <Button size="sm" variant="ember" disabled={booking.isPending} onClick={() => booking.mutate(confirmed)}>{booking.isPending && <Loader2 className="size-3.5 animate-spin" />}Confirm reservation</Button>
+            <Button size="sm" variant="ember" disabled={booking.isPending} onClick={() => {
+              track("booking_click", { itemType: "venue", itemId, metadata: { provider: "swiggy_dineout", kind: "free_reservation", guests: guestCount } });
+              booking.mutate(confirmed);
+            }}>{booking.isPending && <Loader2 className="size-3.5 animate-spin" />}Confirm reservation</Button>
             <Button size="sm" variant="glass" disabled={booking.isPending} onClick={() => setConfirmed(null)}>Cancel</Button>
           </div>
         </div>
@@ -372,7 +378,7 @@ function DineoutSlots({ restaurantId, latitude, longitude }: { restaurantId: str
   );
 }
 
-export function DineoutVenueLive({ venueName, area, latitude, longitude }: { venueName: string; area: string | null; latitude: number; longitude: number }) {
+export function DineoutVenueLive({ itemId, venueName, area, latitude, longitude }: { itemId: string; venueName: string; area: string | null; latitude: number; longitude: number }) {
   const { signedIn, status } = useSwiggyConnection();
   const connected = !!status.data?.connected;
   const [showSlots, setShowSlots] = useState(false);
@@ -386,7 +392,7 @@ export function DineoutVenueLive({ venueName, area, latitude, longitude }: { ven
 
   if (!signedIn) return null;
   return (
-    <section className="space-y-3 rounded-2xl border border-border bg-card/60 p-4">
+    <section id="reservations" className="scroll-mt-24 space-y-3 rounded-2xl border border-border bg-card/60 p-4">
       <div className="flex items-center justify-between gap-2">
         <h2 className="inline-flex items-center gap-2 font-semibold"><CalendarDays className="size-4 text-teal" /> Table reservations</h2>
         {match.data?.fetchedAt && <LiveFromSwiggyBadge fetchedAt={match.data.fetchedAt} />}
@@ -432,8 +438,11 @@ export function DineoutVenueLive({ venueName, area, latitude, longitude }: { ven
           {match.data.details?.deals && match.data.details.deals.length > 0 && (
             <div className="flex flex-wrap gap-2">{match.data.details.deals.slice(0, 3).map((deal) => <span key={deal.id} className="rounded-full border border-teal/30 bg-teal/10 px-2 py-1 text-[11px] text-teal">{deal.title}</span>)}</div>
           )}
-          <Button type="button" size="sm" variant="ember" onClick={() => setShowSlots((value) => !value)}>{showSlots ? "Hide times" : "Check live tables"}</Button>
-          {showSlots && <DineoutSlots restaurantId={match.data.match.id} latitude={match.data.latitude} longitude={match.data.longitude} />}
+          <Button type="button" size="sm" variant="ember" onClick={() => {
+            if (!showSlots) track("booking_start", { itemType: "venue", itemId, metadata: { provider: "swiggy_dineout", placement: "reservation_panel" } });
+            setShowSlots((value) => !value);
+          }}>{showSlots ? "Hide times" : "Choose date & time"}</Button>
+          {showSlots && <DineoutSlots itemId={itemId} restaurantId={match.data.match.id} latitude={match.data.latitude} longitude={match.data.longitude} />}
           <p className="text-[11px] text-muted-foreground">Restaurant details, offers and availability are live from Swiggy Dineout and are not stored in the vybz catalogue.</p>
         </>
       ) : (
