@@ -21,7 +21,7 @@ async function resolvePage(slug: string): Promise<PageDef | null> {
   const title = `Things to do in ${area.name}${budget ? ` under ₹${budget.toLocaleString("en-IN")}` : ""}`;
   return {
     title, h1: title,
-    description: `${title}, Mumbai — bars, cafés, gigs and experiences in ${area.name}${budget ? ` that fit a ₹${budget.toLocaleString("en-IN")} budget` : ""}, ranked by SceneAI.`,
+    description: `${title}, Mumbai — bars, cafés, gigs and experiences in ${area.name}${budget ? ` that fit a ₹${budget.toLocaleString("en-IN")} budget` : ""}, ranked by vybz.`,
     filters: { area: area.slug, ...(budget ? { budget: String(budget) } : {}) },
   };
 }
@@ -53,8 +53,8 @@ export const Route = createFileRoute("/mumbai/$slug")({
     return { title: data.page.title, description: data.page.description };
   },
   head: ({ loaderData }) => {
-    if (!loaderData) return { meta: [{ title: "Not found — SceneAI" }, { name: "robots", content: "noindex" }] };
-    const t = `${loaderData.title} — SceneAI`;
+    if (!loaderData) return { meta: [{ title: "Not found — vybz" }, { name: "robots", content: "noindex" }] };
+    const t = `${loaderData.title} — vybz`;
     return { meta: [{ title: t }, { name: "description", content: loaderData.description }, { property: "og:title", content: t }, { property: "og:description", content: loaderData.description }] };
   },
   notFoundComponent: () => (

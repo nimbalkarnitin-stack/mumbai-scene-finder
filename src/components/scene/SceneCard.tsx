@@ -24,7 +24,7 @@ export function SceneCard({ item, index = 0, compact = false, monetisation }: { 
     const url = `${window.location.origin}/${item.type === "venue" ? "v" : item.type === "event" ? "e" : "x"}/${item.slug}`;
     track("share", { itemType: item.type, itemId: item.id });
     try {
-      if (navigator.share) await navigator.share({ title: item.name, text: `${item.name} — found on SceneAI`, url });
+      if (navigator.share) await navigator.share({ title: item.name, text: `${item.name} — found on vybz`, url });
       else {
         await navigator.clipboard.writeText(url);
         toast.success("Link copied");
@@ -87,7 +87,7 @@ export function SceneCard({ item, index = 0, compact = false, monetisation }: { 
         {item.description && <p className="line-clamp-2 text-[13.5px] text-muted-foreground">{item.description}</p>}
         {reasons.length > 0 && (
           <div className="rounded-2xl border border-primary/25 bg-primary/10 px-3.5 py-2.5">
-            <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-primary-glow">Why SceneAI picked this</p>
+            <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-primary-glow">Why vybz picked this</p>
             <p className="mt-1 text-[13px] text-foreground/90">{reasons.join(" · ")}</p>
           </div>
         )}

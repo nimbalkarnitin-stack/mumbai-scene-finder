@@ -48,5 +48,5 @@ export function CategoryPage({ slug, title, description, category, type, sort = 
 }
 
 export function categoryHead(title: string, desc: string) {
-  return () => ({ meta: [{ title: `${title} — SceneAI` }, { name: "description", content: desc }, { property: "og:title", content: `${title} — SceneAI` }, { property: "og:description", content: desc }] });
+  return () => ({ meta: [{ title: `${title} — vybz` }, { name: "description", content: desc }, { property: "og:title", content: `${title} — vybz` }, { property: "og:description", content: desc }] });
 }

@@ -143,7 +143,7 @@ export async function ensureRegisteredClient(redirectUri: string): Promise<Swigg
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        client_name: "My Mood (SceneAI)",
+        client_name: "My Mood (vybz)",
         redirect_uris: [redirectUri],
         grant_types: ["authorization_code"],
         response_types: ["code"],

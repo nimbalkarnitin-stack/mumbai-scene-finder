@@ -7,7 +7,7 @@ import { ScenePickerFields, type SceneSelection } from "@/components/scene/Scene
 import { Button } from "@/components/ui/button";
 import { BUDGETS, GROUPS, MOODS, TIMINGS } from "@/lib/scene-constants";
 
-const TITLE = "Plan My Weekend — SceneAI Mumbai";
+const TITLE = "Plan My Weekend — vybz Mumbai";
 const DESC = "Generate a complete Mumbai itinerary in seconds, then edit it conversationally: make it cheaper, replace dinner, add live music, keep it near Bandra.";
 
 export const Route = createFileRoute("/plan")({
@@ -40,7 +40,7 @@ function PlanPage() {
       <PageHeader
         eyebrow="Plan My Weekend"
         title={sel ? "Your itinerary" : "Let's build your weekend"}
-        description={sel ? "Edit it like you'd text a friend — cheaper, closer, more romantic." : "Pick a vibe and SceneAI drafts a full plan you can reshape by chatting."}
+        description={sel ? "Edit it like you'd text a friend — cheaper, closer, more romantic." : "Pick a vibe and vybz drafts a full plan you can reshape by chatting."}
         action={sel ? <Button variant="glass" size="sm" onClick={() => setSel(null)}>Start over</Button> : undefined}
       />
       <div className="px-4 md:px-6">

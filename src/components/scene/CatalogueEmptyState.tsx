@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
- * Shown when nothing can be recommended. SceneAI never invents listings, so an
+ * Shown when nothing can be recommended. vybz never invents listings, so an
  * empty catalogue is explained plainly instead of being filled with samples.
  */
 export function CatalogueEmptyState({ filtered = false, onChangeFilters, className }: {
@@ -19,7 +19,7 @@ export function CatalogueEmptyState({ filtered = false, onChangeFilters, classNa
         {filtered ? "Nothing matches those filters yet" : "The Mumbai catalogue isn't populated yet"}
       </h2>
       <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-        SceneAI only shows places, dates and prices that come from a stored, source-backed listing — we never generate
+        vybz only shows places, dates and prices that come from a stored, source-backed listing — we never generate
         events or prices. As the Mumbai catalogue is filled in, recommendations appear here automatically, with
         unverified entries clearly flagged.
       </p>

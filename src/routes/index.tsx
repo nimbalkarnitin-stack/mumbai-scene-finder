@@ -11,8 +11,8 @@ import { CATEGORY_NAV, CONCIERGE_SUGGESTIONS } from "@/lib/scene-constants";
 import { CATEGORY_IMAGES, HERO_IMAGE } from "@/lib/scene-images";
 import { getTrending } from "@/lib/scene.functions";
 
-const TITLE = "SceneAI — What's your scene tonight in Mumbai?";
-const DESC = "AI-powered discovery for Mumbai. Tell SceneAI your mood, crew, budget and timing — get personalised picks and a full weekend plan.";
+const TITLE = "vybz — What's your scene tonight in Mumbai?";
+const DESC = "AI-powered discovery for Mumbai. Tell vybz your mood, crew, budget and timing — get personalised picks and a full weekend plan.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -41,7 +41,7 @@ function Index() {
             What's your <em className="text-gradient-ember not-italic">scene?</em>
           </h1>
           <p className="mt-4 max-w-md text-[15px] text-foreground/80">
-            Tell us the mood. SceneAI reads the city back to you — bars, gigs, comedy, dinners and things you've never tried.
+            Tell us the mood. vybz reads the city back to you — bars, gigs, comedy, dinners and things you've never tried.
           </p>
         </div>
       </section>
@@ -152,7 +152,7 @@ function Index() {
           ))}
         </div>
         <div className="mt-6">
-          <Button asChild variant="glass" size="sm"><Link to="/plus">Join SceneAI+ →</Link></Button>
+          <Button asChild variant="glass" size="sm"><Link to="/plus">Join vybz+ →</Link></Button>
         </div>
       </section>
     </AppShell>

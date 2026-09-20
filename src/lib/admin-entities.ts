@@ -69,7 +69,7 @@ export const ENTITIES: Record<string, EntityDef> = {
       { key: "title", label: "Title", kind: "text", required: true }, { key: "description", label: "Description", kind: "textarea" }, { key: "discount_text", label: "Discount label", kind: "text" },
       { key: "promo_code", label: "Promo code", kind: "text" }, { key: "url", label: "Redeem URL", kind: "text" }, { key: "valid_from", label: "Valid from", kind: "datetime" }, { key: "valid_until", label: "Valid until", kind: "datetime" },
       { key: "item_type", label: "Item type", kind: "select", options: "item_type" }, { key: "item_id", label: "Item ID", kind: "text" },
-      { key: "is_members_only", label: "SceneAI+ only", kind: "boolean" }, { key: "is_sponsored", label: "Sponsored", kind: "boolean" }, { key: "sponsor_id", label: "Sponsor", kind: "select", options: "sponsors" }, { key: "is_active", label: "Active", kind: "boolean" },
+      { key: "is_members_only", label: "vybz+ only", kind: "boolean" }, { key: "is_sponsored", label: "Sponsored", kind: "boolean" }, { key: "sponsor_id", label: "Sponsor", kind: "select", options: "sponsors" }, { key: "is_active", label: "Active", kind: "boolean" },
     ],
     defaults: { city_id: DEFAULT_CITY_ID, is_active: true },
   },

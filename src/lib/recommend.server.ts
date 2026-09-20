@@ -318,12 +318,12 @@ export function scoreItems(items: SceneItem[], q: SceneQuery): Recommendation[] 
     const ageDays = (now - new Date(item.createdAt).getTime()) / 86400000;
     let fresh = Math.max(0, 1 - ageDays / 60);
     if (q.mood === "something-new") fresh = Math.min(1, fresh + 0.3);
-    if (ageDays < 14) reasons.push("New on SceneAI");
+    if (ageDays < 14) reasons.push("New on vybz");
     b.freshness = fresh;
 
     // Popularity
     const pop = item.popularity / maxPop;
-    if (pop > 0.7) reasons.push("Trending with SceneAI users");
+    if (pop > 0.7) reasons.push("Trending with vybz users");
     b.popularity = pop;
 
     // History

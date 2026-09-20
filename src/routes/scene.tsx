@@ -28,8 +28,8 @@ export const Route = createFileRoute("/scene")({
   head: ({ match }) => {
     const s = match.search;
     const mood = MOODS.find((m) => m.id === s.mood)?.label;
-    const title = `${mood ? `${mood} picks` : "Your picks"} in Mumbai${s.timing ? ` · ${TIMINGS.find((t) => t.id === s.timing)?.label}` : ""} — SceneAI`;
-    const desc = "Personalised Mumbai recommendations from SceneAI based on your mood, crew, budget, timing and area.";
+    const title = `${mood ? `${mood} picks` : "Your picks"} in Mumbai${s.timing ? ` · ${TIMINGS.find((t) => t.id === s.timing)?.label}` : ""} — vybz`;
+    const desc = "Personalised Mumbai recommendations from vybz based on your mood, crew, budget, timing and area.";
     return { meta: [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }] };
   },
   component: ScenePage,

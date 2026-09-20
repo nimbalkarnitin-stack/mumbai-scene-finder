@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSaved } from "@/hooks/useSaved";
 import { getItemsByKeys } from "@/lib/scene.functions";
 
-const TITLE = "Saved scenes — SceneAI";
+const TITLE = "Saved scenes — vybz";
 const DESC = "Your saved venues, events and experiences in Mumbai.";
 
 export const Route = createFileRoute("/saved")({
