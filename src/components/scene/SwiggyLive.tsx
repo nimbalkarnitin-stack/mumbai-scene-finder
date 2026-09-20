@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Bike, CalendarDays, CheckCircle2, Clock, ExternalLink, Loader2, MapPin, Search, Utensils, Users } from "lucide-react";
+import { Bike, CalendarDays, Camera, CheckCircle2, Clock, ExternalLink, Loader2, MapPin, Search, Utensils, Users } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { swiggyErrorMessage, useSwiggyAddressId, useSwiggyAddresses, useSwiggyConnection } from "@/hooks/useSwiggy";
@@ -399,11 +399,36 @@ export function DineoutVenueLive({ venueName, area, latitude, longitude }: { ven
         <p className="text-xs text-saffron">{swiggyErrorMessage(match.error).message}</p>
       ) : match.data?.match ? (
         <>
+          {match.data.details && [match.data.details.imageUrl, ...match.data.details.mastheadImageUrls].filter((url): url is string => !!url).filter((url, index, rows) => rows.indexOf(url) === index).length > 0 && (
+            <div className="grid grid-cols-2 gap-2 overflow-hidden rounded-lg sm:grid-cols-3">
+              {[match.data.details.imageUrl, ...match.data.details.mastheadImageUrls].filter((url): url is string => !!url).filter((url, index, rows) => rows.indexOf(url) === index).slice(0, 6).map((url, index) => (
+                <img key={url} src={url} alt={`${match.data.match?.name ?? venueName} live Swiggy photo ${index + 1}`} loading="lazy" referrerPolicy="no-referrer" className={cn("h-28 w-full object-cover", index === 0 && "col-span-2 h-40 sm:col-span-2")} />
+              ))}
+            </div>
+          )}
           <div>
             <p className="font-medium">{match.data.match.name}</p>
-            <p className="text-xs text-muted-foreground">{[match.data.details?.cuisines.join(", "), match.data.details?.costForTwo, match.data.details?.rating != null ? `★ ${match.data.details.rating}` : null].filter(Boolean).join(" · ")}</p>
+            <p className="text-xs text-muted-foreground">{[match.data.details?.cuisines.join(", "), match.data.details?.costForTwo, match.data.details?.rating != null ? `★ ${match.data.details.rating}${match.data.details.totalRatings ? ` (${match.data.details.totalRatings})` : ""}` : null].filter(Boolean).join(" · ")}</p>
+            {match.data.details?.description && <p className="mt-2 text-sm text-muted-foreground">{match.data.details.description}</p>}
+            {match.data.details?.address && <p className="mt-2 inline-flex items-start gap-1.5 text-xs text-muted-foreground"><MapPin className="mt-0.5 size-3 shrink-0" />{match.data.details.address}</p>}
             {match.data.details?.timings && <p className="mt-1 text-xs text-muted-foreground">{match.data.details.timings}</p>}
           </div>
+          {match.data.details?.amenities && match.data.details.amenities.length > 0 && (
+            <div className="flex flex-wrap gap-2">{match.data.details.amenities.slice(0, 8).map((amenity) => <span key={amenity} className="rounded-full border border-border px-2 py-1 text-[11px] text-muted-foreground">{amenity}</span>)}</div>
+          )}
+          {match.data.details?.menuImages && match.data.details.menuImages.length > 0 && (
+            <div className="space-y-2">
+              <p className="inline-flex items-center gap-1.5 text-xs font-medium"><Camera className="size-3.5" /> Live menu photos</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {match.data.details.menuImages.slice(0, 6).map((image, index) => (
+                  <a key={image.imageUrl} href={image.imageUrl} target="_blank" rel="noreferrer" className="group overflow-hidden rounded-lg border border-border">
+                    <img src={image.imageUrl} alt={image.label ?? `${match.data.match?.name ?? venueName} menu ${index + 1}`} loading="lazy" referrerPolicy="no-referrer" className="h-36 w-full object-cover transition-transform group-hover:scale-[1.02]" />
+                    {image.label && <span className="block px-2 py-1.5 text-[11px] text-muted-foreground">{image.label}</span>}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
           {match.data.details?.deals && match.data.details.deals.length > 0 && (
             <div className="flex flex-wrap gap-2">{match.data.details.deals.slice(0, 3).map((deal) => <span key={deal.id} className="rounded-full border border-teal/30 bg-teal/10 px-2 py-1 text-[11px] text-teal">{deal.title}</span>)}</div>
           )}

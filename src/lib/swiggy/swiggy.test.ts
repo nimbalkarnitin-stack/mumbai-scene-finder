@@ -210,8 +210,9 @@ describe("Dineout live data", () => {
   });
 
   it("normalises details, bookable inventory, and confirmation", () => {
-    const details = normaliseDineoutDetails({ success: true, data: { statusCode: 0, data: { restaurantId: "d1", restaurant: { id: "d1", name: "Oye Kake", avgRating: 4.5, timings: "12 PM–11 PM", cuisines: ["Punjabi"], deals: [{ id: 5, title: "Free booking", coverCharge: 0 }] }, amenities: ["Family friendly"] } } });
-    expect(details).toMatchObject({ id: "d1", name: "Oye Kake", rating: 4.5, amenities: ["Family friendly"] });
+    const details = normaliseDineoutDetails({ success: true, data: { statusCode: 0, data: { restaurantId: "d1", restaurant: { id: "d1", name: "Oye Kake", description: "Punjabi dining", address: "Fort, Mumbai", locality: "Fort", area: "South Mumbai", avgRating: 4.5, totalRatings: "1K+", timings: "12 PM–11 PM", cuisines: ["Punjabi"], imageUrl: "https://images.example/main.jpg", mastheadImageUrls: ["https://images.example/room.jpg", "javascript:bad"], deals: [{ id: 5, title: "Free booking", coverCharge: 0 }] }, menuImages: [{ imageUrl: "https://images.example/menu.jpg", label: "Food menu" }], menuImageGroups: [{ title: "Bar menu", images: [{ imageUrl: "https://images.example/bar.jpg" }] }], amenities: ["Family friendly"] } } });
+    expect(details).toMatchObject({ id: "d1", name: "Oye Kake", description: "Punjabi dining", address: "Fort, Mumbai", locality: "Fort", area: "South Mumbai", rating: 4.5, totalRatings: "1K+", imageUrl: "https://images.example/main.jpg", mastheadImageUrls: ["https://images.example/room.jpg"], amenities: ["Family friendly"] });
+    expect(details?.menuImages).toEqual([{ imageUrl: "https://images.example/menu.jpg", label: "Food menu" }, { imageUrl: "https://images.example/bar.jpg", label: "Bar menu" }]);
 
     const slots = normaliseDineoutSlots({ success: true, data: { restaurantId: "d1", latitude: 19.06, longitude: 72.83, slots: [
       { dateStr: "2026-09-20", displayTime: "8:00 PM", reservationTime: 1789911000, availableInventory: 3, deals: [{ itemId: "d1-ticket-1", slotId: 1, isFree: true, bookingPrice: 0, availableInventoryCount: 3 }] },
