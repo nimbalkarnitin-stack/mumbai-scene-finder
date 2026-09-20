@@ -2256,6 +2256,179 @@ export type Database = {
         }
         Relationships: []
       }
+      swiggy_call_metrics: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_class: string | null
+          http_status: number | null
+          id: string
+          outcome: string
+          retries: number
+          server: string
+          tool: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_class?: string | null
+          http_status?: number | null
+          id?: string
+          outcome: string
+          retries?: number
+          server: string
+          tool: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_class?: string | null
+          http_status?: number | null
+          id?: string
+          outcome?: string
+          retries?: number
+          server?: string
+          tool?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      swiggy_clients: {
+        Row: {
+          authorization_endpoint: string
+          client_id: string
+          client_secret: string | null
+          created_at: string
+          id: string
+          issuer: string
+          redirect_uri: string
+          registration_client_uri: string | null
+          scope: string | null
+          token_endpoint: string
+          updated_at: string
+        }
+        Insert: {
+          authorization_endpoint: string
+          client_id: string
+          client_secret?: string | null
+          created_at?: string
+          id?: string
+          issuer: string
+          redirect_uri: string
+          registration_client_uri?: string | null
+          scope?: string | null
+          token_endpoint: string
+          updated_at?: string
+        }
+        Update: {
+          authorization_endpoint?: string
+          client_id?: string
+          client_secret?: string | null
+          created_at?: string
+          id?: string
+          issuer?: string
+          redirect_uri?: string
+          registration_client_uri?: string | null
+          scope?: string | null
+          token_endpoint?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      swiggy_connections: {
+        Row: {
+          access_token: string
+          connected_at: string
+          created_at: string
+          expires_at: string
+          id: string
+          last_error_class: string | null
+          last_used_at: string | null
+          revoked_at: string | null
+          scope: string | null
+          token_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          connected_at?: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          last_error_class?: string | null
+          last_used_at?: string | null
+          revoked_at?: string | null
+          scope?: string | null
+          token_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          connected_at?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          last_error_class?: string | null
+          last_used_at?: string | null
+          revoked_at?: string | null
+          scope?: string | null
+          token_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      swiggy_oauth_states: {
+        Row: {
+          client_row_id: string | null
+          code_verifier: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          redirect_uri: string
+          return_path: string | null
+          state: string
+          user_id: string
+        }
+        Insert: {
+          client_row_id?: string | null
+          code_verifier: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          redirect_uri: string
+          return_path?: string | null
+          state: string
+          user_id: string
+        }
+        Update: {
+          client_row_id?: string | null
+          code_verifier?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          redirect_uri?: string
+          return_path?: string | null
+          state?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "swiggy_oauth_states_client_row_id_fkey"
+            columns: ["client_row_id"]
+            isOneToOne: false
+            referencedRelation: "swiggy_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_preferences: {
         Row: {
           budget_max: number | null
