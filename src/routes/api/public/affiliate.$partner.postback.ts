@@ -49,7 +49,7 @@ export const Route = createFileRoute("/api/public/affiliate/$partner/postback")(
 
         const externalId = str("conversion_id") ?? str("external_id") ?? str("id");
         if (!externalId) return Response.json({ error: "Missing conversion id" }, { status: 400 });
-        const subid = str("subid") ?? str("sub_id") ?? str("sceneai_ref");
+        const subid = str("subid") ?? str("sub_id") ?? str("vybz_ref") ?? str("sceneai_ref");
 
         const { reconcileConversion } = await import("@/lib/monetisation/attribution");
         const { loadMonetisationSettings } = await import("@/lib/monetisation/monetisation.server");

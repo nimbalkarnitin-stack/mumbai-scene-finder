@@ -1,4 +1,4 @@
-# SceneAI ingestion engine — roadmap
+# vybz ingestion engine — roadmap
 
 - [x] Ingestion schema: source_records, ingestion_sources, ingestion_jobs, duplicate_candidates, ingestion_settings, cron tokens, provenance/freshness columns, event lifecycle + timezone, indexes, RLS
 - [x] Shared ingestion libs: types, Asia/Kolkata timezone, URL/SSRF guard, quality scoring, dedupe, safe fetch with retry + rate limit
@@ -58,7 +58,7 @@ Open (blocked on external input):
   section on restaurant/cafe/nightlife pages with "Live from Swiggy" badge, connect/reconnect card,
   privacy note. Address id kept in sessionStorage only.
 - Concierge tool `search_food_delivery` uses the signed-in user's own session; falls back to the
-  SceneAI catalogue when not connected.
+  vybz catalogue when not connected.
 - Admin: /admin/swiggy — connection counts, success rate, latency, retries, error classes, tool usage.
   No tokens or response bodies stored.
 - Tests: 22 Swiggy tests (131 total). Dineout is structured for later via the same session.

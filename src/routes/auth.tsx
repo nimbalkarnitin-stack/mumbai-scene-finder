@@ -9,8 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
 
-const TITLE = "Sign in — SceneAI";
-const DESC = "Sign in to SceneAI to sync saved places, keep itineraries across devices and unlock SceneAI+.";
+const TITLE = "Sign in — vybz";
+const DESC = "Sign in to vybz to sync saved places, keep itineraries across devices and unlock vybz+.";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: z.object({ next: z.string().optional() }),
@@ -80,7 +80,7 @@ function AuthPage() {
         ) : (
           <div className="mt-10 rounded-3xl border border-border bg-card p-6">
             <h1 className="text-2xl font-semibold">{mode === "in" ? "Welcome back" : "Create your account"}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Sync saves, keep itineraries, unlock SceneAI+.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Sync saves, keep itineraries, unlock vybz+.</p>
             <Button variant="glass" className="mt-5 w-full" onClick={google}>
               <svg viewBox="0 0 24 24" className="size-4" aria-hidden><path fill="currentColor" d="M21.35 11.1H12v2.9h5.35c-.25 1.4-1.6 4.1-5.35 4.1-3.2 0-5.85-2.65-5.85-5.9s2.65-5.9 5.85-5.9c1.85 0 3.1.8 3.8 1.45l2.6-2.5C16.75 3.75 14.6 2.8 12 2.8 6.9 2.8 2.8 6.9 2.8 12s4.1 9.2 9.2 9.2c5.3 0 8.85-3.75 8.85-9 0-.6-.05-1.05-.15-1.5z" /></svg>
               Continue with Google

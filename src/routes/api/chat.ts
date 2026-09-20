@@ -6,7 +6,7 @@ import { createPublicClient } from "@/lib/public-db.server";
 import { fetchCityItems, getCityId, scoreItems } from "@/lib/recommend.server";
 import { DEFAULT_CITY_SLUG } from "@/lib/scene-constants";
 
-const SYSTEM = `You are SceneAI's concierge for Mumbai — a sharp, warm local friend who knows the city's bars, cafés, gigs, comedy rooms, restaurants and experiences.
+const SYSTEM = `You are vybz's concierge for Mumbai — a sharp, warm local friend who knows the city's bars, cafés, gigs, comedy rooms, restaurants and experiences.
 
 HARD RULES
 - Only recommend places, events and experiences returned by the search_listings tool. Never invent venues, event dates, showtimes, prices or availability. If the tool returns nothing suitable, say so plainly and suggest loosening a filter.
@@ -20,8 +20,8 @@ HARD RULES
 
 FOOD DELIVERY
 - For food delivery, dish, menu or "what can I order right now" questions, call search_food_delivery. It reads the user's own connected Swiggy session and only ever returns restaurants Swiggy reports as OPEN.
-- If that tool reports notConnected, do not guess: say live delivery needs their Swiggy account connected, point them to the /food page, and answer from the SceneAI catalogue instead.
-- Label live Swiggy results as "live from Swiggy" and never invent a delivery time, price, dish or availability. Swiggy live data is for this answer only — never present it as a SceneAI verified listing.`;
+- If that tool reports notConnected, do not guess: say live delivery needs their Swiggy account connected, point them to the /food page, and answer from the vybz catalogue instead.
+- Label live Swiggy results as "live from Swiggy" and never invent a delivery time, price, dish or availability. Swiggy live data is for this answer only — never present it as a vybz verified listing.`;
 
 export const Route = createFileRoute("/api/chat")({
   server: {
@@ -41,7 +41,7 @@ export const Route = createFileRoute("/api/chat")({
         const cityId = await getCityId(db, (ctx["city"] as string) ?? DEFAULT_CITY_SLUG);
 
         const searchListings = tool({
-          description: "Search SceneAI's active Mumbai listings (venues, events, experiences) ranked by mood, budget, timing, area and group. Results mix editor-verified and unverified listings: each item carries a `verified` flag and an optional `sourceUrl`. Verified items rank higher; unverified items must be flagged when mentioned. Always call this before recommending anything.",
+          description: "Search vybz's active Mumbai listings (venues, events, experiences) ranked by mood, budget, timing, area and group. Results mix editor-verified and unverified listings: each item carries a `verified` flag and an optional `sourceUrl`. Verified items rank higher; unverified items must be flagged when mentioned. Always call this before recommending anything.",
           inputSchema: z.object({
             mood: z.enum(["party", "romantic", "live-music", "comedy", "food", "outdoors", "chill", "something-new"]).nullable().describe("Primary mood"),
             group: z.enum(["solo", "couple", "friends", "family"]).nullable(),
@@ -78,7 +78,7 @@ export const Route = createFileRoute("/api/chat")({
         });
 
         const listAreas = tool({
-          description: "List Mumbai neighbourhoods SceneAI covers, with slugs.",
+          description: "List Mumbai neighbourhoods vybz covers, with slugs.",
           inputSchema: z.object({}),
           execute: async () => {
             if (!cityId) return { areas: [] };
@@ -106,7 +106,7 @@ export const Route = createFileRoute("/api/chat")({
 
         const searchFoodDelivery = tool({
           description:
-            "Search live Mumbai food-delivery restaurants and dishes from the signed-in user's own connected Swiggy account. Returns only restaurants Swiggy reports as OPEN right now, with whatever delivery time, distance and cost Swiggy supplies. Use for delivery, dish, menu and 'order now' questions. Never store or restate these results as SceneAI catalogue listings.",
+            "Search live Mumbai food-delivery restaurants and dishes from the signed-in user's own connected Swiggy account. Returns only restaurants Swiggy reports as OPEN right now, with whatever delivery time, distance and cost Swiggy supplies. Use for delivery, dish, menu and 'order now' questions. Never store or restate these results as vybz catalogue listings.",
           inputSchema: z.object({
             query: z.string().describe("What to search for, e.g. biryani, pizza, South Indian"),
             dish: z.boolean().nullable().describe("True to search dishes across restaurants instead of restaurants"),
@@ -174,7 +174,7 @@ export const Route = createFileRoute("/api/chat")({
               sendReasoning: true,
               onError: (err) => {
                 const msg = err instanceof Error ? err.message : String(err);
-                if (/402|credits/i.test(msg)) return "SceneAI's AI credits are exhausted. Please add credits to continue.";
+                if (/402|credits/i.test(msg)) return "vybz's AI credits are exhausted. Please add credits to continue.";
                 if (/429|rate/i.test(msg)) return "The concierge is busy — try again in a moment.";
                 return "The concierge hit a snag. Please try again.";
               },

@@ -1,15 +1,17 @@
 import { trackInteraction } from "./scene.functions";
 import type { ItemType } from "./scene-types";
 
-const KEY = "sceneai.session";
+const KEY = "vybz.session";
+const LEGACY_KEY = "sceneai.session";
 
 export function getSessionId(): string | undefined {
   if (typeof window === "undefined") return undefined;
-  let id = window.localStorage.getItem(KEY);
+  let id = window.localStorage.getItem(KEY) ?? window.localStorage.getItem(LEGACY_KEY);
   if (!id) {
     id = `s_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
     window.localStorage.setItem(KEY, id);
   }
+  window.localStorage.removeItem(LEGACY_KEY);
   return id;
 }
 
@@ -41,9 +43,9 @@ export interface OutboundLink { url: string; kind: OutboundKind; label: string }
 function withTracking(base: string, affiliateLinkId: string | null) {
   try {
     const u = new URL(base);
-    u.searchParams.set("utm_source", "sceneai");
+    u.searchParams.set("utm_source", "vybz");
     u.searchParams.set("utm_medium", "referral");
-    if (affiliateLinkId) u.searchParams.set("sceneai_ref", affiliateLinkId);
+    if (affiliateLinkId) u.searchParams.set("vybz_ref", affiliateLinkId);
     return u.toString();
   } catch {
     return base;

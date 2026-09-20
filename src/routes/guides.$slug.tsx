@@ -14,9 +14,9 @@ export const Route = createFileRoute("/guides/$slug")({
     return { title: g.title, excerpt: g.excerpt, cover: g.cover_image_url };
   },
   head: ({ loaderData }) => {
-    if (!loaderData) return { meta: [{ title: "Guide not found — SceneAI" }, { name: "robots", content: "noindex" }] };
-    const t = `${loaderData.title} — SceneAI Mumbai Guide`;
-    const d = loaderData.excerpt ?? `${loaderData.title}: a SceneAI guide to Mumbai.`;
+    if (!loaderData) return { meta: [{ title: "Guide not found — vybz" }, { name: "robots", content: "noindex" }] };
+    const t = `${loaderData.title} — vybz Mumbai Guide`;
+    const d = loaderData.excerpt ?? `${loaderData.title}: a vybz guide to Mumbai.`;
     const img = loaderData.cover?.startsWith("https://") ? loaderData.cover : null;
     return { meta: [{ title: t }, { name: "description", content: d }, { property: "og:title", content: t }, { property: "og:description", content: d }, ...(img ? [{ property: "og:image", content: img }, { name: "twitter:image", content: img }] : [])] };
   },

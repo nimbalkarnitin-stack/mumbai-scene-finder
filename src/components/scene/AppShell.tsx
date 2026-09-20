@@ -19,7 +19,7 @@ const MORE = [
   { to: "/trending", label: "Trending" },
   { to: "/guides", label: "Guides" },
   { to: "/deals", label: "Deals" },
-  { to: "/plus", label: "SceneAI+" },
+  { to: "/plus", label: "vybz+" },
 ] as const;
 
 export function Logo({ className }: { className?: string }) {
@@ -28,9 +28,7 @@ export function Logo({ className }: { className?: string }) {
       <span className="relative grid size-7 place-items-center rounded-lg bg-ember-gradient shadow-ember">
         <Sparkles className="size-3.5 text-primary-foreground" />
       </span>
-      <span className="font-display text-[19px] font-semibold tracking-tight">
-        Scene<span className="text-primary-glow">AI</span>
-      </span>
+      <span className="font-display text-[19px] font-semibold text-primary-glow">vybz</span>
     </Link>
   );
 }
@@ -112,7 +110,7 @@ export function AppShell({ children, hideNav = false }: { children: ReactNode; h
 
       <footer className="mx-auto mt-16 hidden max-w-6xl px-6 pb-10 text-xs text-muted-foreground md:block">
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
-          <span>© {new Date().getFullYear()} SceneAI · Mumbai first, more cities soon.</span>
+          <span>© {new Date().getFullYear()} vybz · Mumbai first, more cities soon.</span>
           <div className="flex gap-4">
             <Link to="/mumbai/$slug" params={{ slug: "things-to-do-in-mumbai" }}>Things to do in Mumbai</Link>
             <Link to="/mumbai/$slug" params={{ slug: "mumbai-events-this-weekend" }}>This weekend</Link>

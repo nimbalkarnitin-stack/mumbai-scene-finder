@@ -17,9 +17,9 @@ export function makeItemRoute(type: ItemType) {
       return { name: data.item.name, description: data.item.description, area: data.item.areaName, image: data.item.imageUrl };
     },
     head: ({ loaderData }: { loaderData?: { name: string; description: string | null; area: string | null; image: string | null } | undefined }) => {
-      if (!loaderData) return { meta: [{ title: `${label} not found — SceneAI` }, { name: "robots", content: "noindex" }] };
-      const title = `${loaderData.name}${loaderData.area ? `, ${loaderData.area}` : ""} — SceneAI Mumbai`;
-      const desc = loaderData.description?.slice(0, 155) ?? `${loaderData.name} on SceneAI — Mumbai's AI-powered city guide.`;
+      if (!loaderData) return { meta: [{ title: `${label} not found — vybz` }, { name: "robots", content: "noindex" }] };
+      const title = `${loaderData.name}${loaderData.area ? `, ${loaderData.area}` : ""} — vybz Mumbai`;
+      const desc = loaderData.description?.slice(0, 155) ?? `${loaderData.name} on vybz — Mumbai's AI-powered city guide.`;
       const img = loaderData.image?.startsWith("https://") ? loaderData.image : null;
       return {
         meta: [

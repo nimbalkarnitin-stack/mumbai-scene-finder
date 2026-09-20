@@ -22,7 +22,7 @@ import {
 import { getAccessToken, noteConnectionUse } from "./oauth.server";
 
 const PROTOCOL_VERSION = "2025-06-18";
-const CLIENT_INFO = { name: "my-mood-sceneai", version: "1.0.0" };
+const CLIENT_INFO = { name: "vybz", version: "1.0.0" };
 
 /** Short-lived MCP session reuse, keyed per user+server. Sessions are not persisted. */
 const sessions = new Map<string, { sessionId: string | null; at: number }>();

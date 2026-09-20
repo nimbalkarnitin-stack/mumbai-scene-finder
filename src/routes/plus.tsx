@@ -7,7 +7,7 @@ import { HERO_IMAGE } from "@/lib/scene-images";
 import { listProducts } from "@/lib/scene.functions";
 import { track } from "@/lib/track";
 
-const TITLE = "SceneAI+ — Mumbai's concierge, upgraded";
+const TITLE = "vybz+ — Mumbai's concierge, upgraded";
 const DESC = "Unlimited AI itineraries, members-only deals, early access to events and curated city guides.";
 
 export const Route = createFileRoute("/plus")({
@@ -32,7 +32,7 @@ function PlusPage() {
         <img src={HERO_IMAGE} alt="" className="absolute inset-0 size-full object-cover opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
         <div className="relative mx-auto max-w-2xl px-4 pb-10 pt-24 text-center md:pt-32">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-saffron/40 bg-saffron/10 px-3 py-1 text-xs font-medium text-saffron"><Crown className="size-3.5" /> SceneAI+</span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-saffron/40 bg-saffron/10 px-3 py-1 text-xs font-medium text-saffron"><Crown className="size-3.5" /> vybz+</span>
           <h1 className="mt-4 text-5xl font-medium leading-[0.98] md:text-7xl">Your city,<br /><em className="text-gradient-ember not-italic">on retainer.</em></h1>
           <p className="mx-auto mt-4 max-w-md text-muted-foreground">One membership. Every weekend planned, every deal unlocked, every list curated for how you actually go out.</p>
         </div>
@@ -46,7 +46,7 @@ function PlusPage() {
         </ul>
         <aside className="h-fit rounded-3xl border border-saffron/30 bg-gradient-to-b from-saffron/10 to-card p-6 md:sticky md:top-20">
           <p className="eyebrow text-saffron">Membership</p>
-          <p className="mt-2 text-sm text-muted-foreground">Pricing and checkout for SceneAI+ open soon. Join the list and we'll tell you first.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Pricing and checkout for vybz+ open soon. Join the list and we'll tell you first.</p>
           <Button asChild variant="ember" size="lg" className="mt-5 w-full"><Link to="/auth" search={{ next: "/plus" }} onClick={() => track("conversion", { metadata: { intent: "plus_waitlist" } })}>Join the waitlist</Link></Button>
           <p className="mt-3 text-center font-mono text-[10px] uppercase tracking-wider text-muted-foreground">No charge until launch</p>
         </aside>

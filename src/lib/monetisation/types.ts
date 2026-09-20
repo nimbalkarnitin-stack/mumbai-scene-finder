@@ -44,7 +44,7 @@ export const CONVERSION_STATUS_LABEL: Record<ConversionStatus, string> = {
 /** Fallback disclosures. Live copy is stored in monetisation_settings.disclosure. */
 export const DEFAULT_DISCLOSURE = {
   affiliate:
-    "Some links on SceneAI are affiliate links. If you book through them SceneAI may earn a commission at no extra cost to you.",
+    "Some links on vybz are affiliate links. If you book through them vybz may earn a commission at no extra cost to you.",
   sponsored:
     "Sponsored placement — paid for by the partner. It is always labelled and kept separate from organic recommendations.",
 } as const;

@@ -5,13 +5,14 @@ import { useAuth } from "./useAuth";
 import { track } from "@/lib/track";
 import type { ItemType } from "@/lib/scene-types";
 
-const LS_KEY = "sceneai.saved";
+const LS_KEY = "vybz.saved";
+const LEGACY_LS_KEY = "sceneai.saved";
 type Key = `${ItemType}:${string}`;
 
 function readLocal(): Key[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = JSON.parse(window.localStorage.getItem(LS_KEY) ?? "[]");
+    const raw = JSON.parse(window.localStorage.getItem(LS_KEY) ?? window.localStorage.getItem(LEGACY_LS_KEY) ?? "[]");
     return Array.isArray(raw) ? (raw.filter((k) => typeof k === "string") as Key[]) : [];
   } catch {
     return [];
@@ -22,6 +23,7 @@ function writeLocal(keys: Key[]) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(LS_KEY, JSON.stringify(Array.from(new Set(keys))));
+    window.localStorage.removeItem(LEGACY_LS_KEY);
   } catch {
     /* storage unavailable */
   }
@@ -69,6 +71,7 @@ export function useSaved() {
           toast("Some device saves couldn't sync", { description: "They're still saved on this device — we'll retry." });
         } else if (typeof window !== "undefined") {
           window.localStorage.removeItem(LS_KEY);
+          window.localStorage.removeItem(LEGACY_LS_KEY);
         }
         failed.forEach((k) => merged.add(k));
       }

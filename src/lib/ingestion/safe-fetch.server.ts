@@ -27,7 +27,7 @@ export class FetchBlockedError extends Error {
   }
 }
 
-const USER_AGENT = "SceneAI-Ingest/1.0 (+https://sceneai.app; contact: ops@sceneai.app)";
+const USER_AGENT = "vybz-Ingest/1.0 (+https://vybz.co.in)";
 const robotsCache = new Map<string, { allowedCheck: (path: string) => boolean; at: number }>();
 
 async function robotsAllows(url: URL, timeoutMs: number): Promise<boolean> {

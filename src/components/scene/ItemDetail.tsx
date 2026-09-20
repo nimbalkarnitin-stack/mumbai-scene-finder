@@ -65,7 +65,7 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
         <div className="space-y-6">
           {!item.isVerified && (
             <p className="rounded-2xl border border-saffron/30 bg-saffron/10 px-4 py-3 text-sm text-saffron">
-              Details unverified — SceneAI hasn't confirmed hours, prices or availability with this venue yet. Please check before you go.
+              Details unverified — vybz hasn't confirmed hours, prices or availability with this venue yet. Please check before you go.
             </p>
           )}
           {item.description && <p className="text-[15.5px] leading-relaxed text-foreground/90">{stripHtml(item.description)}</p>}
@@ -95,7 +95,7 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
           </div>
           {link.kind !== "map" && <AffiliateDisclosure className="mt-2" />}
           <div className="space-y-1 border-t border-border pt-3 text-[11px] text-muted-foreground">
-            <p>{item.isVerified ? "Checked by a SceneAI editor" : "Not yet checked by a SceneAI editor"}</p>
+            <p>{item.isVerified ? "Checked by a vybz editor" : "Not yet checked by a vybz editor"}</p>
             {item.updatedAt && <p>Record last updated {new Date(item.updatedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })}</p>}
             {item.venue?.lastVerifiedAt && (
               <p>Details last checked against the source {new Date(item.venue.lastVerifiedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })}</p>

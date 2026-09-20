@@ -99,7 +99,7 @@ export interface TrackedLink {
 function withDefaultParams(destination: string, subid: string, subidParam: string | null): string {
   try {
     const u = new URL(destination);
-    u.searchParams.set("utm_source", "sceneai");
+    u.searchParams.set("utm_source", "vybz");
     u.searchParams.set("utm_medium", "referral");
     if (subidParam) u.searchParams.set(subidParam, subid);
     return u.toString();
@@ -128,10 +128,10 @@ export function buildTrackedUrl(args: { destinationUrl: string; subid: string; p
   }
   if (!valid) return { url: destinationUrl, partnerApplied: false, partnerSlug: partner?.slug ?? null, reason: "invalid_destination" };
 
-  if (!partner) return { url: withDefaultParams(destinationUrl, subid, "sceneai_ref"), partnerApplied: false, partnerSlug: null, reason: "partner_missing" };
-  if (!partner.enabled) return { url: withDefaultParams(destinationUrl, subid, "sceneai_ref"), partnerApplied: false, partnerSlug: partner.slug, reason: "partner_disabled" };
+  if (!partner) return { url: withDefaultParams(destinationUrl, subid, "vybz_ref"), partnerApplied: false, partnerSlug: null, reason: "partner_missing" };
+  if (!partner.enabled) return { url: withDefaultParams(destinationUrl, subid, "vybz_ref"), partnerApplied: false, partnerSlug: partner.slug, reason: "partner_disabled" };
   if (partner.status !== "active")
-    return { url: withDefaultParams(destinationUrl, subid, "sceneai_ref"), partnerApplied: false, partnerSlug: partner.slug, reason: "partner_unconfigured" };
+    return { url: withDefaultParams(destinationUrl, subid, "vybz_ref"), partnerApplied: false, partnerSlug: partner.slug, reason: "partner_unconfigured" };
 
   const template = partner.config?.deep_link_template ?? null;
   if (template) {
@@ -142,7 +142,7 @@ export function buildTrackedUrl(args: { destinationUrl: string; subid: string; p
   const subidParam = partner.config?.subid_param ?? null;
   if (subidParam) return { url: withDefaultParams(destinationUrl, subid, subidParam), partnerApplied: true, partnerSlug: partner.slug, reason: null };
 
-  return { url: withDefaultParams(destinationUrl, subid, "sceneai_ref"), partnerApplied: false, partnerSlug: partner.slug, reason: "no_template" };
+  return { url: withDefaultParams(destinationUrl, subid, "vybz_ref"), partnerApplied: false, partnerSlug: partner.slug, reason: "no_template" };
 }
 
 /** Setup checklist shown in /admin/monetization. */

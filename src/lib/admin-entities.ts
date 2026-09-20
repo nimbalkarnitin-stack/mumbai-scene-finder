@@ -69,7 +69,7 @@ export const ENTITIES: Record<string, EntityDef> = {
       { key: "title", label: "Title", kind: "text", required: true }, { key: "description", label: "Description", kind: "textarea" }, { key: "discount_text", label: "Discount label", kind: "text" },
       { key: "promo_code", label: "Promo code", kind: "text" }, { key: "url", label: "Redeem URL", kind: "text" }, { key: "valid_from", label: "Valid from", kind: "datetime" }, { key: "valid_until", label: "Valid until", kind: "datetime" },
       { key: "item_type", label: "Item type", kind: "select", options: "item_type" }, { key: "item_id", label: "Item ID", kind: "text" },
-      { key: "is_members_only", label: "SceneAI+ only", kind: "boolean" }, { key: "is_sponsored", label: "Sponsored", kind: "boolean" }, { key: "sponsor_id", label: "Sponsor", kind: "select", options: "sponsors" }, { key: "is_active", label: "Active", kind: "boolean" },
+      { key: "is_members_only", label: "vybz+ only", kind: "boolean" }, { key: "is_sponsored", label: "Sponsored", kind: "boolean" }, { key: "sponsor_id", label: "Sponsor", kind: "select", options: "sponsors" }, { key: "is_active", label: "Active", kind: "boolean" },
     ],
     defaults: { city_id: DEFAULT_CITY_ID, is_active: true },
   },
@@ -95,7 +95,7 @@ export const ENTITIES: Record<string, EntityDef> = {
   },
   affiliate_links: {
     table: "affiliate_links", label: "Affiliate links", singular: "Affiliate link", orderBy: "created_at", listCols: ["partner_name", "base_url", "commission_rate", "is_active"],
-    fields: [{ key: "partner_name", label: "Partner", kind: "text", required: true }, { key: "base_url", label: "Base URL", kind: "text", required: true }, { key: "tracking_param", label: "Tracking param", kind: "text", help: "e.g. ref=sceneai" }, { key: "commission_rate", label: "Commission %", kind: "number" }, { key: "is_active", label: "Active", kind: "boolean" }],
+    fields: [{ key: "partner_name", label: "Partner", kind: "text", required: true }, { key: "base_url", label: "Base URL", kind: "text", required: true }, { key: "tracking_param", label: "Tracking param", kind: "text", help: "e.g. ref=vybz" }, { key: "commission_rate", label: "Commission %", kind: "number" }, { key: "is_active", label: "Active", kind: "boolean" }],
     defaults: { is_active: true, commission_rate: 0 },
   },
   digital_products: {

@@ -63,7 +63,7 @@ export const SEO_PAGES: Record<
   "things-to-do-in-mumbai": {
     title: "Things to do in Mumbai",
     h1: "Things to do in Mumbai",
-    description: "The best things to do in Mumbai right now, picked by SceneAI — bars, cafés, gigs, comedy, experiences and more.",
+    description: "The best things to do in Mumbai right now, picked by vybz — bars, cafés, gigs, comedy, experiences and more.",
     filters: {},
   },
   "mumbai-events-this-weekend": {
