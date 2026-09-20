@@ -84,7 +84,9 @@ function pickHours(hours: OpeningHours): OpeningHours | null {
 }
 
 /** Build a normalised record with safe defaults; every unknown fact stays null. */
-export function buildNormalised(partial: Partial<NormalisedRecord> & { kind: NormalisedRecord["kind"]; name: string }): NormalisedRecord {
+export function buildNormalised(
+  partial: Omit<Partial<NormalisedRecord>, "venue"> & { kind: NormalisedRecord["kind"]; name: string; venue?: Partial<VenueProfile> | null },
+): NormalisedRecord {
   const name = sanitiseText(partial.name, 200) ?? "";
   return {
     kind: partial.kind,
