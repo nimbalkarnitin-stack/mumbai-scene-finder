@@ -202,12 +202,19 @@ export interface DineoutRestaurant {
 export interface DineoutDetails {
   id: string;
   name: string;
+  description: string | null;
   address: string | null;
+  locality: string | null;
+  area: string | null;
   timings: string | null;
   rating: number | null;
+  totalRatings: string | null;
   costForTwo: string | null;
   cuisines: string[];
   amenities: string[];
+  imageUrl: string | null;
+  mastheadImageUrls: string[];
+  menuImages: { imageUrl: string; label: string | null }[];
   deals: { id: string; title: string; description: string | null; coverCharge: number | null; offerCategory: string | null }[];
   locationMapUrl: string | null;
 }
@@ -259,6 +266,17 @@ function num(...values: unknown[]): number | null {
     if (typeof v === "string" && v.trim() && Number.isFinite(Number(v))) return Number(v);
   }
   return null;
+}
+
+function httpsUrl(value: unknown): string | null {
+  const candidate = str(value);
+  if (!candidate) return null;
+  try {
+    const url = new URL(candidate);
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 function list(value: unknown): unknown[] {
@@ -348,12 +366,31 @@ export function normaliseDineoutDetails(payload: unknown): DineoutDetails | null
   return {
     id,
     name,
+    description: str(r["description"]),
     address: str(r["address"]),
+    locality: str(r["locality"]),
+    area: str(r["area"]),
     timings: str(r["timings"]),
     rating: num(r["avgRating"]),
+    totalRatings: str(r["totalRatings"]),
     costForTwo: str(r["costForTwo"]),
     cuisines: list(r["cuisines"]).map((v) => str(v) ?? "").filter(Boolean),
     amenities: list(data["amenities"]).map((v) => str(v) ?? "").filter(Boolean),
+    imageUrl: httpsUrl(r["imageUrl"]),
+    mastheadImageUrls: list(r["mastheadImageUrls"]).map(httpsUrl).filter((url): url is string => !!url),
+    menuImages: [
+      ...list(data["menuImages"]),
+      ...list(data["menuImageGroups"]).flatMap((group) => {
+        const g = asRecord(group);
+        const label = str(g["title"]);
+        return list(g["images"]).map((image) => ({ ...asRecord(image), inheritedLabel: label }));
+      }),
+    ].map((raw) => {
+      const image = asRecord(raw);
+      const imageUrl = httpsUrl(image["imageUrl"]);
+      return imageUrl ? { imageUrl, label: str(image["label"], image["inheritedLabel"]) } : null;
+    }).filter((image): image is { imageUrl: string; label: string | null } => image !== null)
+      .filter((image, index, rows) => rows.findIndex((row) => row.imageUrl === image.imageUrl) === index),
     deals: list(r["deals"]).map((raw) => {
       const d = asRecord(raw);
       return { id: str(d["id"]) ?? "", title: str(d["title"]) ?? "Offer", description: str(d["description"]), coverCharge: num(d["coverCharge"]), offerCategory: str(d["offerCategory"]) };

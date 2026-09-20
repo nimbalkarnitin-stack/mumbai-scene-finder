@@ -57,7 +57,9 @@ Open (blocked on external input):
 - UI: `/food` live search (restaurants + dishes, pagination, OPEN-only), venue "Food delivery"
   and Dineout table-reservation sections on restaurant/cafe/nightlife pages with "Live from Swiggy"
   badges, connect/reconnect card, live seven-day slots, guest selection, and confirmed free bookings.
-  Paid pre-book deals are displayed but not transacted. Address id is kept in sessionStorage only.
+  Live Dineout profiles include sourced descriptions, address, ratings, hours, amenities, venue photos,
+  and menu photos. Paid pre-book deals are displayed but not transacted. Address id is kept in
+  sessionStorage only; Swiggy profile details and photos are never persisted to the catalogue.
 - Concierge tool `search_food_delivery` uses the signed-in user's own session; falls back to the
   vybz catalogue when not connected.
 - Admin: /admin/swiggy — connection counts, success rate, latency, retries, error classes, tool usage.
