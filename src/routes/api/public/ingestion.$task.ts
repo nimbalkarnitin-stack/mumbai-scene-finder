@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const TASKS = ["orchestrate", "ingest-source", "normalise-record", "deduplicate-records", "verify-catalogue", "expire-events", "health", "google-discovery", "resolve-sources", "promote-candidates", "audit-venues"] as const;
+const TASKS = ["orchestrate", "ingest-source", "normalise-record", "deduplicate-records", "verify-catalogue", "expire-events", "health", "google-discovery", "resolve-sources", "promote-candidates", "audit-venues", "backfill-websites"] as const;
 type Task = (typeof TASKS)[number];
 
 /**
@@ -95,9 +95,18 @@ export const Route = createFileRoute("/api/public/ingestion/$task")({
             }
             case "resolve-sources": {
               const raw = Number(body["limit"]);
-              const limit = Number.isFinite(raw) ? Math.min(Math.max(Math.trunc(raw), 1), 100) : 25;
+              const limit = Number.isFinite(raw) ? Math.min(Math.max(Math.trunc(raw), 1), 400) : 25;
+              const conc = Number(body["concurrency"]);
+              const concurrency = Number.isFinite(conc) ? Math.min(Math.max(Math.trunc(conc), 1), 6) : 4;
               const discovery = await import("@/lib/ingestion/discovery.server");
-              const result = await discovery.runDiscoveryResolver(supabaseAdmin, limit);
+              const result = await discovery.runDiscoveryResolver(supabaseAdmin, limit, concurrency);
+              return Response.json({ ok: true, task, limit, concurrency, ...result });
+            }
+            case "backfill-websites": {
+              const raw = Number(body["limit"]);
+              const limit = Number.isFinite(raw) ? Math.min(Math.max(Math.trunc(raw), 1), 300) : 50;
+              const discovery = await import("@/lib/ingestion/discovery.server");
+              const result = await discovery.backfillCandidateWebsites(supabaseAdmin, limit);
               return Response.json({ ok: true, task, limit, ...result });
             }
             case "audit-venues": {
@@ -109,7 +118,7 @@ export const Route = createFileRoute("/api/public/ingestion/$task")({
             }
             case "promote-candidates": {
               const raw = Number(body["limit"]);
-              const limit = Number.isFinite(raw) ? Math.min(Math.max(Math.trunc(raw), 1), 200) : 50;
+              const limit = Number.isFinite(raw) ? Math.min(Math.max(Math.trunc(raw), 1), 600) : 50;
               const discovery = await import("@/lib/ingestion/discovery.server");
               const result = await discovery.promoteValidatedCandidates(supabaseAdmin, limit);
               return Response.json({ ok: true, task, limit, ...result });

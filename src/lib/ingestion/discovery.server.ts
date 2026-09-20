@@ -284,28 +284,57 @@ export async function resolveCandidate(db: DB, candidateId: string): Promise<{ s
   return { status, error: lastError };
 }
 
-/** Resolve every candidate that is due for a check. */
-export async function runDiscoveryResolver(db: DB, limit = 10): Promise<DiscoveryCounters> {
+/**
+ * Resolve every candidate that is due for a check.
+ * Candidates that already know a first-party website are resolved first (they can actually
+ * produce a source), and work runs through a small worker pool so larger batches stay safe:
+ * each worker fetches one host at a time and safeFetch keeps robots/rate-limit protection.
+ */
+export async function runDiscoveryResolver(db: DB, limit = 10, concurrency = 4): Promise<DiscoveryCounters> {
   const counters = emptyDiscoveryCounters();
   const nowIso = new Date().toISOString();
   const { data: rows } = await db
     .from("discovery_candidates")
     .select("id")
     .in("status", ["DISCOVERED", "SOURCE_FOUND", "VALIDATED"])
+    .not("official_website_url", "is", null)
     .or(`next_check_at.is.null,next_check_at.lte.${nowIso}`)
     .limit(limit);
 
-  for (const row of rows ?? []) {
-    counters.scanned += 1;
-    try {
-      const res = await resolveCandidate(db, row.id);
-      if (res.status === "VALIDATED") counters.validated += 1;
-      else if (res.status === "SOURCE_FOUND") counters.sources_found += 1;
-      if (res.error) counters.failed += 1;
-    } catch {
-      counters.failed += 1;
-    }
+  const queue = [...(rows ?? [])];
+  if (queue.length < limit) {
+    // Top the batch up with candidates that have no website yet, so they still get a verdict.
+    const { data: rest } = await db
+      .from("discovery_candidates")
+      .select("id")
+      .in("status", ["DISCOVERED", "SOURCE_FOUND", "VALIDATED"])
+      .is("official_website_url", null)
+      .or(`next_check_at.is.null,next_check_at.lte.${nowIso}`)
+      .limit(limit - queue.length);
+    queue.push(...(rest ?? []));
   }
+
+  const workers = Math.min(Math.max(concurrency, 1), 6);
+  let cursor = 0;
+  await Promise.all(
+    Array.from({ length: workers }, async () => {
+      for (;;) {
+        const index = cursor;
+        cursor += 1;
+        const row = queue[index];
+        if (!row) return;
+        counters.scanned += 1;
+        try {
+          const res = await resolveCandidate(db, row.id);
+          if (res.status === "VALIDATED") counters.validated += 1;
+          else if (res.status === "SOURCE_FOUND") counters.sources_found += 1;
+          if (res.error) counters.failed += 1;
+        } catch {
+          counters.failed += 1;
+        }
+      }
+    }),
+  );
   return counters;
 }
 
@@ -557,8 +586,8 @@ export async function promoteCandidateToSource(db: DB, candidateId: string): Pro
   const host = new URL(url).hostname;
   const nextConfig = {
     ...config,
-    pages: [...new Set([...pages, url])].slice(0, 500),
-    allow_hosts: [...new Set([...allow, host])].slice(0, 500),
+    pages: [...new Set([...pages, url])].slice(0, 2000),
+    allow_hosts: [...new Set([...allow, host])].slice(0, 2000),
   };
   await db.from("ingestion_sources").update({ config: nextConfig as never }).eq("id", source.id);
   await db.from("discovery_candidates").update({ linked_source_id: source.id, status: "VALIDATED", notes: `Promoted to official pages source: ${url}` }).eq("id", candidateId);
@@ -599,11 +628,14 @@ export async function promoteValidatedCandidates(
   }
   if (promoted > 0) await track(db, "discovery_promoted_batch", { promoted, skipped });
   const structured = await promoteStructuredSourcePages(db, Math.max(limit - promoted, 0));
+  // Last pass: confident official home pages, so a venue with no what's-on page and no
+  // structured data still reaches the authorised reader for its own published details.
+  const home = await promoteOfficialHomePages(db, Math.max(limit - promoted - structured.promoted, 0));
   return {
-    scanned: (rows ?? []).length + structured.scanned,
-    promoted: promoted + structured.promoted,
-    skipped: skipped + structured.skipped,
-    errors: [...errors, ...structured.errors].slice(0, 10),
+    scanned: (rows ?? []).length + structured.scanned + home.scanned,
+    promoted: promoted + structured.promoted + home.promoted,
+    skipped: skipped + structured.skipped + home.skipped,
+    errors: [...errors, ...structured.errors, ...home.errors].slice(0, 10),
   };
 }
 
@@ -650,5 +682,143 @@ export async function promoteStructuredSourcePages(
     }
   }
   if (promoted > 0) await track(db, "discovery_promoted_structured_batch", { promoted, skipped });
+  return { scanned: (rows ?? []).length, promoted, skipped, errors };
+}
+
+/**
+ * Backfill the first-party website of candidates Google Text Search returned without one.
+ * Uses Places Details with an explicit FieldMask limited to identity + the business' own
+ * website link: no ratings, reviews, photos or editorial content are stored, and Google is
+ * never treated as the catalogue authority. Candidates that genuinely publish no website are
+ * closed as REJECTED with a reason instead of being retried forever.
+ */
+export async function backfillCandidateWebsites(
+  db: DB,
+  limit = 50,
+): Promise<{ scanned: number; websites_found: number; no_website: number; failed: number; api_requests: number; errors: string[] }> {
+  const cred = googleCredential();
+  if (!cred.key) throw new AdapterDisabledError(`Places credential missing — add ${GOOGLE_KEY_ENV_NAMES.join(" or ")} in Project Settings → Secrets.`);
+
+  const usage = await googleRequestUsage(db);
+  let remaining = requestsRemaining({ ...usage, dailyLimit: 2000, monthlyLimit: 20000 });
+  const { data: rows } = await db
+    .from("discovery_candidates")
+    .select("id,google_place_id,name")
+    .is("official_website_url", null)
+    .not("google_place_id", "is", null)
+    .in("status", ["DISCOVERED", "SOURCE_FOUND"])
+    .limit(limit);
+
+  let found = 0;
+  let none = 0;
+  let failed = 0;
+  let apiRequests = 0;
+  const errors: string[] = [];
+
+  for (const row of rows ?? []) {
+    if (remaining <= 0) {
+      errors.push("Stopped early: Google request budget reached.");
+      break;
+    }
+    const placeId = row.google_place_id!;
+    try {
+      let website: string | null = null;
+      let ok = false;
+      for (let attempt = 1; attempt <= 3; attempt += 1) {
+        const res = await safeFetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
+          skipRobots: true,
+          timeoutMs: 12000,
+          headers: { "X-Goog-Api-Key": cred.key, "X-Goog-FieldMask": "id,websiteUri,businessStatus" },
+        });
+        apiRequests += 1;
+        remaining -= 1;
+        ok = res.status >= 200 && res.status < 300;
+        await db.from("google_api_requests").insert({
+          endpoint: "places:details",
+          http_status: res.status,
+          place_count: ok ? 1 : 0,
+          error: ok ? null : sanitiseText(res.body, 400),
+        });
+        if (ok) {
+          const parsed = JSON.parse(res.body) as { websiteUri?: string };
+          website = sanitiseUrl(parsed.websiteUri ?? null);
+          break;
+        }
+        if (!isRetryableStatus(res.status)) throw new AdapterDisabledError(`Google Places Details rejected the request (HTTP ${res.status})`);
+        if (attempt < 3) await new Promise((r) => setTimeout(r, backoffDelayMs(attempt)));
+      }
+      if (!ok) throw new Error("Google Places Details unavailable after retries");
+
+      if (website && !isAggregatorDomain(website)) {
+        await db
+          .from("discovery_candidates")
+          .update({
+            official_website_url: website,
+            domain: registrableDomain(website),
+            last_checked_at: new Date().toISOString(),
+            next_check_at: null,
+            last_error: null,
+          })
+          .eq("id", row.id);
+        found += 1;
+      } else {
+        await db
+          .from("discovery_candidates")
+          .update({
+            status: "REJECTED",
+            last_checked_at: new Date().toISOString(),
+            next_check_at: null,
+            last_error: website ? "Only an aggregator/social link is published — no first-party website to verify." : "No first-party website published for this place.",
+            notes: "Closed by website backfill: no authoritative source available.",
+          })
+          .eq("id", row.id);
+        none += 1;
+      }
+    } catch (error) {
+      failed += 1;
+      const message = error instanceof Error ? error.message : String(error);
+      if (errors.length < 10) errors.push(`${row.name}: ${message}`);
+      await db.from("discovery_candidates").update({ last_error: message.slice(0, 400), last_checked_at: new Date().toISOString() }).eq("id", row.id);
+      if (error instanceof AdapterDisabledError) break;
+    }
+  }
+
+  await track(db, "discovery_website_backfill", { scanned: (rows ?? []).length, found, none, failed, api_requests: apiRequests });
+  return { scanned: (rows ?? []).length, websites_found: found, no_website: none, failed, api_requests: apiRequests, errors: errors.slice(0, 10) };
+}
+
+/**
+ * Third promotion pass: a candidate whose own domain is confidently its official site becomes
+ * an authorised source page even when the resolver found no dedicated what's-on URL and no
+ * structured data. The official-site adapter still only reads what that page itself publishes.
+ */
+export async function promoteOfficialHomePages(
+  db: DB,
+  limit = 50,
+): Promise<{ scanned: number; promoted: number; skipped: number; errors: string[] }> {
+  if (limit <= 0) return { scanned: 0, promoted: 0, skipped: 0, errors: [] };
+  const { data: rows } = await db
+    .from("discovery_candidates")
+    .select("id,official_website_url,confidence")
+    .in("status", ["VALIDATED", "SOURCE_FOUND"])
+    .is("linked_source_id", null)
+    .not("official_website_url", "is", null)
+    .gte("confidence", 0.5)
+    .limit(limit);
+
+  let promoted = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+  for (const row of rows ?? []) {
+    try {
+      await promoteCandidateToSource(db, row.id);
+      promoted += 1;
+    } catch (error) {
+      skipped += 1;
+      const message = error instanceof Error ? error.message : String(error);
+      if (errors.length < 10) errors.push(`${row.id}: ${message}`);
+    }
+  }
+  if (promoted > 0) await track(db, "discovery_promoted_home_batch", { promoted, skipped });
   return { scanned: (rows ?? []).length, promoted, skipped, errors };
 }
