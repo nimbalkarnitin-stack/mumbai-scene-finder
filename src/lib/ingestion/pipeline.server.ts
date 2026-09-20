@@ -363,6 +363,7 @@ export async function publishReadyRecords(db: DB, settings: Settings, limit = 50
           ends_at: normalised.endsAt,
           timezone: normalised.timezone,
           currency: normalised.currency,
+          organiser: normalised.organiser,
           website_url: normalised.websiteUrl,
           age_min: normalised.ageMin,
           language: normalised.language,

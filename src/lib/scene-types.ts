@@ -40,6 +40,23 @@ export interface VenueDetails {
   lastVerifiedAt: string | null;
 }
 
+/**
+ * Event-specific facts, exactly as stored from a permitted source.
+ * Nullable throughout: the UI renders only what the source published.
+ */
+export interface EventDetails {
+  timezone: string;
+  sourceName: string | null;
+  organiser: string | null;
+  venueName: string | null;
+  venueSlug: string | null;
+  venueAddress: string | null;
+  venueLat: number | null;
+  venueLng: number | null;
+  venueMapUrl: string | null;
+  venueWebsiteUrl: string | null;
+}
+
 export interface SceneItem {
   id: string;
   type: ItemType;
@@ -75,6 +92,8 @@ export interface SceneItem {
   createdAt: string;
   /** Present for venues only, and only with the fields a source published. */
   venue?: VenueDetails | null;
+  /** Present for events only: sourced schedule/venue/organiser facts. */
+  event?: EventDetails | null;
 }
 
 export interface Recommendation extends SceneItem {

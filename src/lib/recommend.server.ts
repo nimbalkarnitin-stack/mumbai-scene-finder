@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import type { ItemType, Recommendation, SceneItem, SceneQuery, ScoreBreakdown, VenueDetails } from "./scene-types";
+import type { EventDetails, ItemType, Recommendation, SceneItem, SceneQuery, ScoreBreakdown, VenueDetails } from "./scene-types";
 
 type DB = SupabaseClient<Database>;
 
@@ -8,7 +8,8 @@ const SELECT_VENUE =
   "id,slug,name,description,image_url,price_min,price_max,moods,group_types,tags,best_times,opening_hours,booking_url,website_url,source_url,affiliate_link_id,is_sponsored,popularity_score,is_verified,created_at,updated_at,categories(slug,name),areas(slug,name),sponsors(name)" +
   ",address,lat,lng,locality,map_url,phone,email,contact_url,reservation_url,booking_provider,reservations_available,menu_url,events_url,social_urls,special_hours,cuisines,dietary_options,service_type,amenities,dress_code,accessibility,parking,age_restriction,pet_policy,price_band,cover_charge,completeness_score,missing_fields,geo_status,last_verified_at";
 const SELECT_EVENT =
-  "id,slug,name,description,image_url,price_min,price_max,moods,group_types,tags,starts_at,ends_at,booking_url,source_url,affiliate_link_id,is_sponsored,popularity_score,is_verified,created_at,updated_at,categories(slug,name),areas(slug,name),sponsors(name)";
+  "id,slug,name,description,image_url,price_min,price_max,moods,group_types,tags,starts_at,ends_at,booking_url,source_url,affiliate_link_id,is_sponsored,popularity_score,is_verified,created_at,updated_at,categories(slug,name),areas(slug,name),sponsors(name)" +
+  ",timezone,source_name,organiser,website_url,venues(name,slug,address,lat,lng,map_url,website_url)";
 const SELECT_EXPERIENCE =
   "id,slug,name,description,image_url,price_min,price_max,moods,group_types,tags,best_times,schedule_note,booking_url,source_url,affiliate_link_id,is_sponsored,popularity_score,is_verified,created_at,updated_at,categories(slug,name),areas(slug,name),sponsors(name)";
 
@@ -46,6 +47,24 @@ function normalize(row: any, type: ItemType): SceneItem {
     updatedAt: row.updated_at ?? null,
     createdAt: row.created_at,
     venue: type === "venue" ? venueDetails(row) : null,
+    event: type === "event" ? eventDetails(row) : null,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function eventDetails(row: any): EventDetails {
+  const v = row.venues ?? null;
+  return {
+    timezone: row.timezone ?? "Asia/Kolkata",
+    sourceName: row.source_name ?? null,
+    organiser: row.organiser ?? null,
+    venueName: v?.name ?? null,
+    venueSlug: v?.slug ?? null,
+    venueAddress: v?.address ?? null,
+    venueLat: v?.lat ?? null,
+    venueLng: v?.lng ?? null,
+    venueMapUrl: v?.map_url ?? null,
+    venueWebsiteUrl: v?.website_url ?? null,
   };
 }
 
