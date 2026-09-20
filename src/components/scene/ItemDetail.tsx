@@ -91,7 +91,7 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
             {item.sourceUrl && (
               <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-teal hover:underline">Source <ExternalLink className="size-3" /></a>
             )}
-            {item.venue?.missingFields?.length ? (
+{item.type === "venue" && !(item.venue?.openingHours && (item.venue?.phone || item.venue?.email) && (item.venue?.menuUrl || item.venue?.reservationUrl)) ? (
               <p className="text-muted-foreground">Some venue details (hours, contact, menu) aren't published by the source yet.</p>
             ) : null}
           </div>
