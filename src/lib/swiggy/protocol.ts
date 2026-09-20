@@ -376,9 +376,9 @@ export function normaliseDineoutSlots(payload: unknown): { restaurantId: string 
       if (!itemId || slotId === null) return null;
       const bookingPrice = num(d["bookingPrice"], d["coverCharge"]);
       return { itemId, slotId, title: str(d["title"]), isFree: d["isFree"] === true || bookingPrice === 0, bookingPrice, displayFee: str(d["displayFee"]), availableInventory: num(d["availableInventoryCount"], d["availableInventory"]) } satisfies DineoutSlotDeal;
-    }).filter((d): d is DineoutSlotDeal => d !== null);
+    }).filter((d): d is DineoutSlotDeal => d !== null && d.availableInventory !== 0);
     return { date: str(s["dateStr"]), displayTime, reservationTime, slotGroupName: str(s["slotGroupName"]), availableInventory: num(s["availableInventory"]), deals } satisfies DineoutSlot;
-  }).filter((s): s is DineoutSlot => s !== null && s.deals.length > 0);
+  }).filter((s): s is DineoutSlot => s !== null && s.availableInventory !== 0 && s.deals.length > 0);
   return { restaurantId: str(data["restaurantId"]), latitude: num(data["latitude"]), longitude: num(data["longitude"]), slots };
 }
 

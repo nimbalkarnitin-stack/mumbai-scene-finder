@@ -3,17 +3,26 @@ import {
   MENU_PAGE_SIZE_MAX,
   SwiggyError,
   backoffDelayMs,
+  bookDineoutTableArgs,
   classifyHttpStatus,
+  dineoutRestaurantDetailsArgs,
+  dineoutSlotsArgs,
   isRetryable,
   isTokenExpired,
+  matchDineoutRestaurantToVenue,
   matchRestaurantToVenue,
   needsReauthorization,
   normaliseAddresses,
+  normaliseDineoutBooking,
+  normaliseDineoutDetails,
+  normaliseDineoutSearch,
+  normaliseDineoutSlots,
   normaliseMenuPage,
   normaliseRestaurantPage,
   openRestaurants,
   parseToolResult,
   restaurantMenuArgs,
+  searchDineoutRestaurantsArgs,
   searchMenuArgs,
   searchRestaurantsArgs,
 } from "./protocol";
@@ -47,6 +56,18 @@ describe("Swiggy tool arguments", () => {
       offset: 10,
     });
     expect(searchMenuArgs({ addressId: "a1", query: "paneer" })).toEqual({ addressId: "a1", query: "paneer" });
+  });
+
+  it("builds Dineout calls with only documented parameters", () => {
+    expect(searchDineoutRestaurantsArgs({ query: " Oye Kake ", latitude: 19.06, longitude: 72.83, limit: 50 })).toEqual({ query: "Oye Kake", latitude: 19.06, longitude: 72.83, limit: 30 });
+    expect(dineoutRestaurantDetailsArgs({ restaurantId: "r1", latitude: 19.06, longitude: 72.83 })).toEqual({ restaurantId: "r1", latitude: 19.06, longitude: 72.83 });
+    expect(dineoutSlotsArgs({ restaurantId: "r1", date: "2026-09-20", latitude: 19.06, longitude: 72.83 })).toEqual({ restaurantId: "r1", date: "2026-09-20", latitude: 19.06, longitude: 72.83 });
+    expect(bookDineoutTableArgs({ restaurantId: "r1", slotId: 9, itemId: "r1-ticket-2", reservationTime: 1789911000, guestCount: 4, latitude: 19.06, longitude: 72.83 })).toEqual({ restaurantId: "r1", slotId: 9, itemId: "r1-ticket-2", reservationTime: 1789911000, guestCount: 4, latitude: 19.06, longitude: 72.83 });
+  });
+
+  it("rejects invalid Dineout dates and party sizes", () => {
+    expect(() => dineoutSlotsArgs({ restaurantId: "r1", date: "20/09/2026", latitude: 19.06, longitude: 72.83 })).toThrow(SwiggyError);
+    expect(() => bookDineoutTableArgs({ restaurantId: "r1", slotId: 9, itemId: "i1", reservationTime: 1, guestCount: 21, latitude: 19.06, longitude: 72.83 })).toThrow(SwiggyError);
   });
 });
 
@@ -176,6 +197,38 @@ describe("venue matching", () => {
   it("never guesses an unrelated venue", () => {
     expect(matchRestaurantToVenue("Soho House Juhu", list)).toBeNull();
     expect(matchRestaurantToVenue("Oy", list)).toBeNull();
+  });
+});
+
+describe("Dineout live data", () => {
+  const search = normaliseDineoutSearch({ success: true, data: { latitude: 19.06, longitude: 72.83, restaurants: [{ id: "d1", name: "Oye Kake Fort", cuisine: ["Punjabi"], locality: "Fort", rating: { value: "4.5" }, offers: [{ offerTitle: "Flat 10%" }] }] } });
+
+  it("normalises search and conservatively matches the venue", () => {
+    expect(search.restaurants[0]).toMatchObject({ id: "d1", name: "Oye Kake Fort", rating: "4.5", offers: ["Flat 10%"] });
+    expect(matchDineoutRestaurantToVenue("Oye Kake", "Fort", search.restaurants)?.id).toBe("d1");
+    expect(matchDineoutRestaurantToVenue("Unrelated", "Fort", search.restaurants)).toBeNull();
+  });
+
+  it("normalises details, bookable inventory, and confirmation", () => {
+    const details = normaliseDineoutDetails({ success: true, data: { statusCode: 0, data: { restaurantId: "d1", restaurant: { id: "d1", name: "Oye Kake", avgRating: 4.5, timings: "12 PM–11 PM", cuisines: ["Punjabi"], deals: [{ id: 5, title: "Free booking", coverCharge: 0 }] }, amenities: ["Family friendly"] } } });
+    expect(details).toMatchObject({ id: "d1", name: "Oye Kake", rating: 4.5, amenities: ["Family friendly"] });
+
+    const slots = normaliseDineoutSlots({ success: true, data: { restaurantId: "d1", latitude: 19.06, longitude: 72.83, slots: [
+      { dateStr: "2026-09-20", displayTime: "8:00 PM", reservationTime: 1789911000, availableInventory: 3, deals: [{ itemId: "d1-ticket-1", slotId: 1, isFree: true, bookingPrice: 0, availableInventoryCount: 3 }] },
+      { dateStr: "2026-09-20", displayTime: "9:00 PM", reservationTime: 1789914600, availableInventory: 0, deals: [{ itemId: "d1-ticket-2", slotId: 2, isFree: true, bookingPrice: 0 }] },
+    ] } });
+    expect(slots.slots).toHaveLength(1);
+    expect(slots.slots[0]?.deals[0]).toMatchObject({ itemId: "d1-ticket-1", slotId: 1, isFree: true });
+    expect(normaliseDineoutBooking({ success: true, data: { orderId: "order-1", isDineout: true, restaurantName: "Oye Kake", guestCount: 2, status: "CONFIRMED" } })).toMatchObject({ orderId: "order-1", guestCount: 2, status: "CONFIRMED" });
+  });
+
+  it("never sends credentials as Dineout tool arguments", () => {
+    const calls = [
+      searchDineoutRestaurantsArgs({ query: "Oye Kake", latitude: 19.06, longitude: 72.83 }),
+      dineoutRestaurantDetailsArgs({ restaurantId: "d1", latitude: 19.06, longitude: 72.83 }),
+      dineoutSlotsArgs({ restaurantId: "d1", date: "2026-09-20", latitude: 19.06, longitude: 72.83 }),
+    ];
+    for (const args of calls) expect(Object.keys(args)).not.toContain("token");
   });
 });
 
