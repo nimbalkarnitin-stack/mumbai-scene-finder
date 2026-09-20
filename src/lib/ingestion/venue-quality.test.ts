@@ -24,7 +24,7 @@ describe("Mumbai geography validation", () => {
   });
 
   it("flags an address/coordinate mismatch for review instead of publishing it", () => {
-    const v = validateMumbaiVenue({ name: "X", address: "Colaba, Mumbai", lat: 12.97, lng: 77.59 });
+    const v = validateMumbaiVenue({ name: "X", address: "Colaba, Mumbai", lat: 18.52, lng: 73.86 });
     expect(v.status).toBe("UNVERIFIED");
   });
 
