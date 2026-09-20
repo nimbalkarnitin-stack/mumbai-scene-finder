@@ -10,6 +10,8 @@ import { completenessOf, computeQualityScore, nextRefreshAt, passesPublishGate, 
 import { isTransient } from "./safe-fetch.server";
 import { crossSourceState, detectFieldConflicts, fieldValuesFrom, PROVENANCE_FIELDS, type FieldObservation } from "./provenance";
 import { promoteValidatedCandidates, runDiscoveryResolver } from "./discovery.server";
+import { validateMumbaiVenue } from "./mumbai-geo";
+import { scoreVenueCompleteness } from "./venue-profile";
 import {
   DEFAULT_CADENCE,
   DEFAULT_GATE,
