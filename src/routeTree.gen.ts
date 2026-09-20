@@ -37,6 +37,7 @@ import { Route as AdminDataReviewRouteImport } from './routes/admin/data-review'
 import { Route as AdminDiscoveryRouteImport } from './routes/admin/discovery'
 import { Route as AdminMonetizationRouteImport } from './routes/admin/monetization'
 import { Route as AdminSourcesRouteImport } from './routes/admin/sources'
+import { Route as AdminSwiggyRouteImport } from './routes/admin/swiggy'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ESlugRouteImport } from './routes/e.$slug'
@@ -188,6 +189,11 @@ const AdminSourcesRoute = AdminSourcesRouteImport.update({
   path: '/sources',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminSwiggyRoute = AdminSwiggyRouteImport.update({
+  id: '/swiggy',
+  path: '/swiggy',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -268,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/admin/discovery': typeof AdminDiscoveryRoute
   '/admin/monetization': typeof AdminMonetizationRoute
   '/admin/sources': typeof AdminSourcesRoute
+  '/admin/swiggy': typeof AdminSwiggyRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/e/$slug': typeof ESlugRoute
@@ -307,6 +314,7 @@ export interface FileRoutesByTo {
   '/admin/discovery': typeof AdminDiscoveryRoute
   '/admin/monetization': typeof AdminMonetizationRoute
   '/admin/sources': typeof AdminSourcesRoute
+  '/admin/swiggy': typeof AdminSwiggyRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/e/$slug': typeof ESlugRoute
@@ -348,6 +356,7 @@ export interface FileRoutesById {
   '/admin/discovery': typeof AdminDiscoveryRoute
   '/admin/monetization': typeof AdminMonetizationRoute
   '/admin/sources': typeof AdminSourcesRoute
+  '/admin/swiggy': typeof AdminSwiggyRoute
   '/admin/users': typeof AdminUsersRoute
   '/api/chat': typeof ApiChatRoute
   '/e/$slug': typeof ESlugRoute
@@ -390,6 +399,7 @@ export interface FileRouteTypes {
     | '/admin/discovery'
     | '/admin/monetization'
     | '/admin/sources'
+    | '/admin/swiggy'
     | '/admin/users'
     | '/api/chat'
     | '/e/$slug'
@@ -429,6 +439,7 @@ export interface FileRouteTypes {
     | '/admin/discovery'
     | '/admin/monetization'
     | '/admin/sources'
+    | '/admin/swiggy'
     | '/admin/users'
     | '/api/chat'
     | '/e/$slug'
@@ -469,6 +480,7 @@ export interface FileRouteTypes {
     | '/admin/discovery'
     | '/admin/monetization'
     | '/admin/sources'
+    | '/admin/swiggy'
     | '/admin/users'
     | '/api/chat'
     | '/e/$slug'
@@ -711,6 +723,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSourcesRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/swiggy': {
+      id: '/admin/swiggy'
+      path: '/swiggy'
+      fullPath: '/admin/swiggy'
+      preLoaderRoute: typeof AdminSwiggyRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
@@ -792,6 +811,7 @@ interface AdminRouteRouteChildren {
   AdminDiscoveryRoute: typeof AdminDiscoveryRoute
   AdminMonetizationRoute: typeof AdminMonetizationRoute
   AdminSourcesRoute: typeof AdminSourcesRoute
+  AdminSwiggyRoute: typeof AdminSwiggyRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -804,6 +824,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminDiscoveryRoute: AdminDiscoveryRoute,
   AdminMonetizationRoute: AdminMonetizationRoute,
   AdminSourcesRoute: AdminSourcesRoute,
+  AdminSwiggyRoute: AdminSwiggyRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
