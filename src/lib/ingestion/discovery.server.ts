@@ -628,11 +628,14 @@ export async function promoteValidatedCandidates(
   }
   if (promoted > 0) await track(db, "discovery_promoted_batch", { promoted, skipped });
   const structured = await promoteStructuredSourcePages(db, Math.max(limit - promoted, 0));
+  // Last pass: confident official home pages, so a venue with no what's-on page and no
+  // structured data still reaches the authorised reader for its own published details.
+  const home = await promoteOfficialHomePages(db, Math.max(limit - promoted - structured.promoted, 0));
   return {
-    scanned: (rows ?? []).length + structured.scanned,
-    promoted: promoted + structured.promoted,
-    skipped: skipped + structured.skipped,
-    errors: [...errors, ...structured.errors].slice(0, 10),
+    scanned: (rows ?? []).length + structured.scanned + home.scanned,
+    promoted: promoted + structured.promoted + home.promoted,
+    skipped: skipped + structured.skipped + home.skipped,
+    errors: [...errors, ...structured.errors, ...home.errors].slice(0, 10),
   };
 }
 
