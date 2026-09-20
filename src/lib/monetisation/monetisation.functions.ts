@@ -137,6 +137,8 @@ export const recordAffiliateClick = createServerFn({ method: "POST" })
       subid,
       clickId,
       partnerApplied: link.partnerApplied,
+      partnerSlug: link.partnerSlug ?? partner?.slug ?? null,
+      fallbackReason: link.reason ?? null,
       disclosure: data.isSponsored ? "sponsored" : link.partnerApplied || partner ? "affiliate" : "none",
       deduped,
     };
