@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
 export function SwiggyPrivacyNote({ className }: { className?: string }) {
   return (
     <p className={cn("text-[11px] leading-relaxed text-muted-foreground", className)}>
-      Live Swiggy results are fetched to answer your current request only. My Mood keeps them for this session,
+      Live Swiggy results are fetched to answer your current request only. vybz keeps them for this session,
       does not add them to its own catalogue, and does not use them for analytics, advertising or model training.
-      Your Swiggy sign-in stays on My Mood's server and is never shown in your browser.
+      Your Swiggy sign-in stays on vybz's server and is never shown in your browser.
     </p>
   );
 }

@@ -1,10 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Bike, Clock, ExternalLink, Loader2, MapPin, Search, Utensils } from "lucide-react";
+import { Bike, CalendarDays, CheckCircle2, Clock, ExternalLink, Loader2, MapPin, Search, Utensils, Users } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { swiggyErrorMessage, useSwiggyAddressId, useSwiggyAddresses, useSwiggyConnection } from "@/hooks/useSwiggy";
-import { findSwiggyMatchForVenue, getSwiggyMenu, searchSwiggyDishes, searchSwiggyRestaurants } from "@/lib/swiggy/swiggy.functions";
-import type { SwiggyRestaurant } from "@/lib/swiggy/protocol";
+import { bookDineoutTable, findDineoutMatchForVenue, findSwiggyMatchForVenue, getDineoutSlots, getSwiggyMenu, searchSwiggyDishes, searchSwiggyRestaurants } from "@/lib/swiggy/swiggy.functions";
+import type { DineoutSlot, DineoutSlotDeal, SwiggyRestaurant } from "@/lib/swiggy/protocol";
 import { track } from "@/lib/track";
 import { cn } from "@/lib/utils";
 import { SwiggyConnect } from "./SwiggyConnect";
@@ -286,6 +286,133 @@ export function SwiggyVenueLive({ venueName }: { venueName: string }) {
         </>
       ) : (
         <p className="text-xs text-muted-foreground">No matching Swiggy restaurant found for this venue.</p>
+      )}
+    </section>
+  );
+}
+
+function todayInMumbai() {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${value("year")}-${value("month")}-${value("day")}`;
+}
+
+function DineoutSlots({ restaurantId, latitude, longitude }: { restaurantId: string; latitude: number; longitude: number }) {
+  const [guestCount, setGuestCount] = useState(2);
+  const [confirmed, setConfirmed] = useState<{ slot: DineoutSlot; deal: DineoutSlotDeal } | null>(null);
+  const slots = useQuery({
+    queryKey: ["swiggy-dineout-slots", restaurantId, latitude, longitude],
+    queryFn: () => getDineoutSlots({ data: { restaurantId, date: todayInMumbai(), latitude, longitude } }),
+    retry: false,
+    staleTime: 60_000,
+  });
+  const booking = useMutation({
+    mutationFn: ({ slot, deal }: { slot: DineoutSlot; deal: DineoutSlotDeal }) =>
+      bookDineoutTable({ data: { restaurantId, slotId: deal.slotId, itemId: deal.itemId, reservationTime: slot.reservationTime, guestCount, latitude, longitude } }),
+    onSuccess: () => setConfirmed(null),
+  });
+
+  if (slots.isLoading) return <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="size-3 animate-spin" /> Checking live tables…</p>;
+  if (slots.error) return <p className="text-xs text-saffron">{swiggyErrorMessage(slots.error).message}</p>;
+  const available = slots.data?.slots ?? [];
+  if (available.length === 0) return <p className="text-xs text-muted-foreground">Swiggy Dineout has no bookable tables for the next seven days.</p>;
+
+  const byDate = available.reduce<Record<string, DineoutSlot[]>>((groups, slot) => {
+    const date = slot.date ?? new Date(slot.reservationTime * 1000).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+    (groups[date] ??= []).push(slot);
+    return groups;
+  }, {});
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Users className="size-3.5 text-muted-foreground" />
+        <span className="text-xs text-muted-foreground">Guests</span>
+        <div className="flex gap-1">
+          {[1, 2, 3, 4, 5, 6].map((count) => (
+            <Button key={count} type="button" size="sm" variant={guestCount === count ? "ember" : "glass"} className="size-8 p-0" onClick={() => setGuestCount(count)}>{count}</Button>
+          ))}
+        </div>
+      </div>
+      {Object.entries(byDate).map(([date, dateSlots]) => (
+        <div key={date}>
+          <p className="mb-2 text-xs font-medium">{new Date(`${date}T12:00:00+05:30`).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short" })}</p>
+          <div className="flex flex-wrap gap-2">
+            {dateSlots.flatMap((slot) => slot.deals.map((deal) => {
+              const selected = confirmed?.slot.reservationTime === slot.reservationTime && confirmed.deal.itemId === deal.itemId;
+              const disabled = !deal.isFree;
+              return (
+                <Button key={`${slot.reservationTime}-${deal.itemId}`} type="button" size="sm" variant={selected ? "ember" : "glass"} disabled={disabled || booking.isPending} onClick={() => setConfirmed({ slot, deal })}>
+                  {slot.displayTime}{deal.isFree ? "" : ` · ${deal.displayFee ?? (deal.bookingPrice != null ? `₹${deal.bookingPrice}` : "Paid")}`}
+                </Button>
+              );
+            }))}
+          </div>
+        </div>
+      ))}
+      {confirmed && (
+        <div className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-sm">
+          <p>Reserve for {guestCount} at {confirmed.slot.displayTime}?</p>
+          <p className="mt-1 text-xs text-muted-foreground">This creates a free reservation in your Swiggy account.</p>
+          <div className="mt-3 flex gap-2">
+            <Button size="sm" variant="ember" disabled={booking.isPending} onClick={() => booking.mutate(confirmed)}>{booking.isPending && <Loader2 className="size-3.5 animate-spin" />}Confirm reservation</Button>
+            <Button size="sm" variant="glass" disabled={booking.isPending} onClick={() => setConfirmed(null)}>Cancel</Button>
+          </div>
+        </div>
+      )}
+      {booking.error && <p className="text-xs text-saffron">{swiggyErrorMessage(booking.error).message}</p>}
+      {booking.data?.booking && (
+        <div className="flex items-start gap-2 rounded-xl border border-teal/30 bg-teal/10 p-3 text-sm text-teal">
+          <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+          <span>Reservation {booking.data.booking.status ?? "confirmed"} for {booking.data.booking.guestCount ?? guestCount}. Swiggy reference: {booking.data.booking.orderId}</span>
+        </div>
+      )}
+      <p className="text-[11px] text-muted-foreground">Paid pre-book deals are shown but must be completed in Swiggy. Availability can change until confirmed.</p>
+    </div>
+  );
+}
+
+export function DineoutVenueLive({ venueName, area, latitude, longitude }: { venueName: string; area: string | null; latitude: number; longitude: number }) {
+  const { signedIn, status } = useSwiggyConnection();
+  const connected = !!status.data?.connected;
+  const [showSlots, setShowSlots] = useState(false);
+  const match = useQuery({
+    queryKey: ["swiggy-dineout-match", venueName, area, latitude, longitude],
+    queryFn: () => findDineoutMatchForVenue({ data: { venueName, area, latitude, longitude } }),
+    enabled: connected,
+    retry: false,
+    staleTime: 60_000,
+  });
+
+  if (!signedIn) return null;
+  return (
+    <section className="space-y-3 rounded-2xl border border-border bg-card/60 p-4">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="inline-flex items-center gap-2 font-semibold"><CalendarDays className="size-4 text-teal" /> Table reservations</h2>
+        {match.data?.fetchedAt && <LiveFromSwiggyBadge fetchedAt={match.data.fetchedAt} />}
+      </div>
+      {!connected ? (
+        <SwiggyConnect returnPath={window.location.pathname} compact />
+      ) : match.isLoading ? (
+        <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="size-3 animate-spin" /> Checking Swiggy Dineout…</p>
+      ) : match.error ? (
+        <p className="text-xs text-saffron">{swiggyErrorMessage(match.error).message}</p>
+      ) : match.data?.match ? (
+        <>
+          <div>
+            <p className="font-medium">{match.data.match.name}</p>
+            <p className="text-xs text-muted-foreground">{[match.data.details?.cuisines.join(", "), match.data.details?.costForTwo, match.data.details?.rating != null ? `★ ${match.data.details.rating}` : null].filter(Boolean).join(" · ")}</p>
+            {match.data.details?.timings && <p className="mt-1 text-xs text-muted-foreground">{match.data.details.timings}</p>}
+          </div>
+          {match.data.details?.deals && match.data.details.deals.length > 0 && (
+            <div className="flex flex-wrap gap-2">{match.data.details.deals.slice(0, 3).map((deal) => <span key={deal.id} className="rounded-full border border-teal/30 bg-teal/10 px-2 py-1 text-[11px] text-teal">{deal.title}</span>)}</div>
+          )}
+          <Button type="button" size="sm" variant="ember" onClick={() => setShowSlots((value) => !value)}>{showSlots ? "Hide times" : "Check live tables"}</Button>
+          {showSlots && <DineoutSlots restaurantId={match.data.match.id} latitude={match.data.latitude} longitude={match.data.longitude} />}
+          <p className="text-[11px] text-muted-foreground">Restaurant details, offers and availability are live from Swiggy Dineout and are not stored in the vybz catalogue.</p>
+        </>
+      ) : (
+        <p className="text-xs text-muted-foreground">No confident Swiggy Dineout match was found for this venue.</p>
       )}
     </section>
   );
