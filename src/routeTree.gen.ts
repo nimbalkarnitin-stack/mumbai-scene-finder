@@ -19,6 +19,7 @@ import { Route as DealsRouteImport } from './routes/deals'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as ExperiencesRouteImport } from './routes/experiences'
 import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as FoodRouteImport } from './routes/food'
 import { Route as GuidesRouteImport } from './routes/guides'
 import { Route as LiveMusicRouteImport } from './routes/live-music'
 import { Route as NightlifeRouteImport } from './routes/nightlife'
@@ -95,6 +96,11 @@ const ExperiencesRoute = ExperiencesRouteImport.update({
 const ExploreRoute = ExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FoodRoute = FoodRouteImport.update({
+  id: '/food',
+  path: '/food',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuidesRoute = GuidesRouteImport.update({
@@ -245,6 +251,7 @@ export interface FileRoutesByFullPath {
   '/events': typeof EventsRoute
   '/experiences': typeof ExperiencesRoute
   '/explore': typeof ExploreRoute
+  '/food': typeof FoodRoute
   '/guides': typeof GuidesRouteWithChildren
   '/live-music': typeof LiveMusicRoute
   '/nightlife': typeof NightlifeRoute
@@ -283,6 +290,7 @@ export interface FileRoutesByTo {
   '/events': typeof EventsRoute
   '/experiences': typeof ExperiencesRoute
   '/explore': typeof ExploreRoute
+  '/food': typeof FoodRoute
   '/guides': typeof GuidesRouteWithChildren
   '/live-music': typeof LiveMusicRoute
   '/nightlife': typeof NightlifeRoute
@@ -323,6 +331,7 @@ export interface FileRoutesById {
   '/events': typeof EventsRoute
   '/experiences': typeof ExperiencesRoute
   '/explore': typeof ExploreRoute
+  '/food': typeof FoodRoute
   '/guides': typeof GuidesRouteWithChildren
   '/live-music': typeof LiveMusicRoute
   '/nightlife': typeof NightlifeRoute
@@ -364,6 +373,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/experiences'
     | '/explore'
+    | '/food'
     | '/guides'
     | '/live-music'
     | '/nightlife'
@@ -402,6 +412,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/experiences'
     | '/explore'
+    | '/food'
     | '/guides'
     | '/live-music'
     | '/nightlife'
@@ -441,6 +452,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/experiences'
     | '/explore'
+    | '/food'
     | '/guides'
     | '/live-music'
     | '/nightlife'
@@ -481,6 +493,7 @@ export interface RootRouteChildren {
   EventsRoute: typeof EventsRoute
   ExperiencesRoute: typeof ExperiencesRoute
   ExploreRoute: typeof ExploreRoute
+  FoodRoute: typeof FoodRoute
   GuidesRoute: typeof GuidesRouteWithChildren
   LiveMusicRoute: typeof LiveMusicRoute
   NightlifeRoute: typeof NightlifeRoute
@@ -570,6 +583,13 @@ declare module '@tanstack/react-router' {
       path: '/explore'
       fullPath: '/explore'
       preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/food': {
+      id: '/food'
+      path: '/food'
+      fullPath: '/food'
+      preLoaderRoute: typeof FoodRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guides': {
@@ -814,6 +834,7 @@ const rootRouteChildren: RootRouteChildren = {
   EventsRoute: EventsRoute,
   ExperiencesRoute: ExperiencesRoute,
   ExploreRoute: ExploreRoute,
+  FoodRoute: FoodRoute,
   GuidesRoute: GuidesRouteWithChildren,
   LiveMusicRoute: LiveMusicRoute,
   NightlifeRoute: NightlifeRoute,
