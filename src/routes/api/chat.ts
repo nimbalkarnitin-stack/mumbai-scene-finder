@@ -16,7 +16,12 @@ HARD RULES
 - Respond in concise markdown. For itineraries use a numbered timeline: **time — Place (Area)** then one line why it fits, plus an estimated cost line per stop and a total budget line at the end.
 - When the user asks to modify a plan ("make it cheaper", "replace dinner", "add live music", "keep everything near Bandra", "make it more romantic"), re-run search_listings with adjusted filters and return the full updated itinerary, keeping stops that still fit.
 - Link each recommendation as [Name](/v/slug) for venues, [Name](/e/slug) for events, [Name](/x/slug) for experiences.
-- Currency is INR (₹). Keep answers under ~250 words unless building a full itinerary.`;
+- Currency is INR (₹). Keep answers under ~250 words unless building a full itinerary.
+
+FOOD DELIVERY
+- For food delivery, dish, menu or "what can I order right now" questions, call search_food_delivery. It reads the user's own connected Swiggy session and only ever returns restaurants Swiggy reports as OPEN.
+- If that tool reports notConnected, do not guess: say live delivery needs their Swiggy account connected, point them to the /food page, and answer from the SceneAI catalogue instead.
+- Label live Swiggy results as "live from Swiggy" and never invent a delivery time, price, dish or availability. Swiggy live data is for this answer only — never present it as a SceneAI verified listing.`;
 
 export const Route = createFileRoute("/api/chat")({
   server: {
@@ -82,6 +87,67 @@ export const Route = createFileRoute("/api/chat")({
           },
         });
 
+        // Live Swiggy tools act as the signed-in user, using their own MCP session.
+        const authHeader = request.headers.get("authorization");
+        const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+        let swiggyUserId: string | null = null;
+        if (bearer && bearer.split(".").length === 3) {
+          try {
+            const { createClient } = await import("@supabase/supabase-js");
+            const authClient = createClient(process.env["SUPABASE_URL"]!, process.env["SUPABASE_PUBLISHABLE_KEY"]!, {
+              auth: { persistSession: false, autoRefreshToken: false },
+            });
+            const { data } = await authClient.auth.getClaims(bearer);
+            swiggyUserId = (data?.claims?.sub as string | undefined) ?? null;
+          } catch {
+            swiggyUserId = null;
+          }
+        }
+
+        const searchFoodDelivery = tool({
+          description:
+            "Search live Mumbai food-delivery restaurants and dishes from the signed-in user's own connected Swiggy account. Returns only restaurants Swiggy reports as OPEN right now, with whatever delivery time, distance and cost Swiggy supplies. Use for delivery, dish, menu and 'order now' questions. Never store or restate these results as SceneAI catalogue listings.",
+          inputSchema: z.object({
+            query: z.string().describe("What to search for, e.g. biryani, pizza, South Indian"),
+            dish: z.boolean().nullable().describe("True to search dishes across restaurants instead of restaurants"),
+          }),
+          execute: async (input) => {
+            if (!swiggyUserId) return { notConnected: true, reason: "not_signed_in" };
+            try {
+              const { callSwiggyTool } = await import("@/lib/swiggy/client.server");
+              const protocol = await import("@/lib/swiggy/protocol");
+              const addressesPayload = await callSwiggyTool({ userId: swiggyUserId, tool: "get_addresses", args: {} });
+              const addresses = protocol.normaliseAddresses(addressesPayload);
+              const addressId = addresses[0]?.id;
+              if (!addressId) return { notConnected: false, noAddress: true };
+              if (input.dish) {
+                const payload = await callSwiggyTool({
+                  userId: swiggyUserId,
+                  tool: "search_menu",
+                  args: protocol.searchMenuArgs({ addressId, query: input.query }),
+                });
+                const page = protocol.normaliseMenuPage(payload, 1);
+                return { source: "swiggy_live", dishes: page.categories.slice(0, 6), fetchedAt: new Date().toISOString() };
+              }
+              const payload = await callSwiggyTool({
+                userId: swiggyUserId,
+                tool: "search_restaurants",
+                args: protocol.searchRestaurantsArgs({ addressId, query: input.query }),
+              });
+              const page = protocol.normaliseRestaurantPage(payload);
+              return {
+                source: "swiggy_live",
+                restaurants: protocol.openRestaurants(page.restaurants).slice(0, 8),
+                fetchedAt: new Date().toISOString(),
+              };
+            } catch (err) {
+              const cls = err && typeof err === "object" && "errorClass" in err ? String((err as { errorClass: unknown }).errorClass) : "UNKNOWN";
+              if (cls === "NOT_CONNECTED" || cls === "SESSION_EXPIRED" || cls === "UNAUTHORIZED") return { notConnected: true, reason: cls };
+              return { error: cls };
+            }
+          },
+        });
+
         const contextLine = Object.keys(ctx).length ? `\n\nUser's current selections: ${JSON.stringify(ctx)}. Use them as defaults.` : "";
 
         try {
@@ -89,7 +155,7 @@ export const Route = createFileRoute("/api/chat")({
             model: lovable.responses("openai/gpt-6-astra"),
             system: SYSTEM + contextLine,
             messages: await convertToModelMessages(messages),
-            tools: { search_listings: searchListings, list_areas: listAreas },
+            tools: { search_listings: searchListings, list_areas: listAreas, search_food_delivery: searchFoodDelivery },
             stopWhen: stepCountIs(50),
             abortSignal: request.signal,
             providerOptions: {
