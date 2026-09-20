@@ -12,7 +12,16 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   MENU_PAGE_SIZE_MAX,
   SwiggyError,
+  bookDineoutTableArgs,
+  dineoutRestaurantDetailsArgs,
+  dineoutSlotsArgs,
+  matchDineoutRestaurantToVenue,
   matchRestaurantToVenue,
+  normaliseDineoutBooking,
+  normaliseDineoutDetails,
+  normaliseDineoutSearch,
+  normaliseDineoutSlots,
+  searchDineoutRestaurantsArgs,
   normaliseAddresses,
   normaliseMenuPage,
   normaliseRestaurantPage,
@@ -177,6 +186,58 @@ export const findSwiggyMatchForVenue = createServerFn({ method: "POST" })
       const page = normaliseRestaurantPage(payload);
       const match: SwiggyRestaurant | null = matchRestaurantToVenue(data.venueName, page.restaurants);
       return { match, fetchedAt: new Date().toISOString() };
+    } catch (err) {
+      return fail(err);
+    }
+  });
+
+export const findDineoutMatchForVenue = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ venueName: z.string().min(2).max(160), area: z.string().max(120).nullable().optional(), latitude: z.number(), longitude: z.number() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { callSwiggyTool } = await import("./client.server");
+    try {
+      const searchPayload = await callSwiggyTool({
+        userId: context.userId,
+        server: "dineout",
+        tool: "search_restaurants_dineout",
+        args: searchDineoutRestaurantsArgs({ query: data.venueName, latitude: data.latitude, longitude: data.longitude, limit: 10 }),
+      });
+      const search = normaliseDineoutSearch(searchPayload);
+      const match = matchDineoutRestaurantToVenue(data.venueName, data.area, search.restaurants);
+      if (!match) return { match: null, details: null, latitude: search.latitude ?? data.latitude, longitude: search.longitude ?? data.longitude, fetchedAt: new Date().toISOString() };
+      const latitude = search.latitude ?? data.latitude;
+      const longitude = search.longitude ?? data.longitude;
+      const detailsPayload = await callSwiggyTool({ userId: context.userId, server: "dineout", tool: "get_restaurant_details", args: dineoutRestaurantDetailsArgs({ restaurantId: match.id, latitude, longitude }) });
+      return { match, details: normaliseDineoutDetails(detailsPayload), latitude, longitude, fetchedAt: new Date().toISOString() };
+    } catch (err) {
+      return fail(err);
+    }
+  });
+
+export const getDineoutSlots = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ restaurantId: z.string().min(1), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), latitude: z.number(), longitude: z.number() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { callSwiggyTool } = await import("./client.server");
+    try {
+      const payload = await callSwiggyTool({ userId: context.userId, server: "dineout", tool: "get_available_slots", args: dineoutSlotsArgs(data) });
+      return { ...normaliseDineoutSlots(payload), fetchedAt: new Date().toISOString() };
+    } catch (err) {
+      return fail(err);
+    }
+  });
+
+export const bookDineoutTable = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ restaurantId: z.string().min(1), slotId: z.number().int(), itemId: z.string().min(1), reservationTime: z.number().int(), guestCount: z.number().int().min(1).max(20), latitude: z.number(), longitude: z.number() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { callSwiggyTool } = await import("./client.server");
+    try {
+      const payload = await callSwiggyTool({ userId: context.userId, server: "dineout", tool: "book_table", args: bookDineoutTableArgs(data) });
+      const booking = normaliseDineoutBooking(payload);
+      if (!booking) throw new SwiggyError("TOOL_ERROR", "Swiggy did not return a booking confirmation.");
+      return { booking, fetchedAt: new Date().toISOString() };
     } catch (err) {
       return fail(err);
     }
