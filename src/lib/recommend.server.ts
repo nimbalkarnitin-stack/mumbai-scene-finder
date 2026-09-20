@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import type { ItemType, Recommendation, SceneItem, SceneQuery, ScoreBreakdown, VenueDetails } from "./scene-types";
+import type { EventDetails, ItemType, Recommendation, SceneItem, SceneQuery, ScoreBreakdown, VenueDetails } from "./scene-types";
 
 type DB = SupabaseClient<Database>;
 
@@ -52,7 +52,7 @@ function normalize(row: any, type: ItemType): SceneItem {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function eventDetails(row: any): SceneItem["event"] {
+function eventDetails(row: any): EventDetails {
   const v = row.venues ?? null;
   return {
     timezone: row.timezone ?? "Asia/Kolkata",
