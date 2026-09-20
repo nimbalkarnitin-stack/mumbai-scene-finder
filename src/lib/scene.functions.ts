@@ -209,7 +209,13 @@ export const getTrending = createServerFn({ method: "GET" })
 export const trackInteraction = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z.object({
-      eventType: z.enum(["search", "recommendation_view", "item_view", "save", "unsave", "share", "booking_click", "discovery_click", "conversion", "itinerary_generated", "concierge_message", "preference_set"]),
+      eventType: z.enum([
+        "search", "recommendation_view", "item_view", "save", "unsave", "share", "booking_click",
+        "discovery_click", "conversion", "itinerary_generated", "concierge_message", "preference_set",
+        "recommendation_impression", "affiliate_click", "booking_start", "conversion_received",
+        "commission_approved", "commission_paid", "sponsored_impression", "sponsored_click",
+        "reservation_start", "reservation_click", "reservation_conversion",
+      ]),
       itemType: itemType.optional(),
       itemId: z.string().uuid().optional(),
       sessionId: z.string().max(80).optional(),
