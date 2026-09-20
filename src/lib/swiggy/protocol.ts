@@ -1,15 +1,13 @@
 /**
  * Swiggy MCP protocol helpers — pure, browser-safe, no secrets.
  *
- * Everything here follows the Swiggy Builders Club reference exactly:
- * Food server tools are `search_restaurants`, `get_restaurant_menu`, `search_menu` and
- * `get_addresses`; session credentials come from the authenticated MCP session and are never
- * tool arguments. No endpoint, tool, parameter or error code is invented here.
+ * Everything here follows the Swiggy Builders Club reference exactly. Food and Dineout share
+ * one OAuth session; credentials come from that session and are never tool arguments.
  */
 
 export const SWIGGY_SERVERS = {
   food: "https://mcp.swiggy.com/food",
-  // Documented sibling server; the same OAuth session is valid for it. Not called yet.
+  // The documented combined flow uses the same OAuth session for Food and Dineout.
   dineout: "https://mcp.swiggy.com/dineout",
 } as const;
 
@@ -113,6 +111,49 @@ export function searchMenuArgs(input: {
   return args;
 }
 
+export function searchDineoutRestaurantsArgs(input: {
+  query: string;
+  latitude: number;
+  longitude: number;
+  limit?: number | null;
+  offset?: number | null;
+}): Record<string, unknown> {
+  if (!input.query?.trim()) throw new SwiggyError("INVALID_REQUEST", "A restaurant query is required.");
+  if (!Number.isFinite(input.latitude) || !Number.isFinite(input.longitude)) throw new SwiggyError("INVALID_REQUEST", "Valid venue coordinates are required.");
+  const args: Record<string, unknown> = { query: input.query.trim(), latitude: input.latitude, longitude: input.longitude };
+  if (typeof input.limit === "number" && input.limit > 0) args["limit"] = Math.min(Math.trunc(input.limit), 30);
+  if (typeof input.offset === "number" && input.offset > 0) args["offset"] = Math.trunc(input.offset);
+  return args;
+}
+
+export function dineoutRestaurantDetailsArgs(input: { restaurantId: string; latitude: number; longitude: number }): Record<string, unknown> {
+  if (!input.restaurantId) throw new SwiggyError("INVALID_REQUEST", "A Swiggy Dineout restaurantId is required.");
+  if (!Number.isFinite(input.latitude) || !Number.isFinite(input.longitude)) throw new SwiggyError("INVALID_REQUEST", "Valid venue coordinates are required.");
+  return { restaurantId: input.restaurantId, latitude: input.latitude, longitude: input.longitude };
+}
+
+export function dineoutSlotsArgs(input: { restaurantId: string; date: string; latitude: number; longitude: number }): Record<string, unknown> {
+  if (!input.restaurantId) throw new SwiggyError("INVALID_REQUEST", "A Swiggy Dineout restaurantId is required.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) throw new SwiggyError("INVALID_REQUEST", "A date in YYYY-MM-DD format is required.");
+  if (!Number.isFinite(input.latitude) || !Number.isFinite(input.longitude)) throw new SwiggyError("INVALID_REQUEST", "Valid venue coordinates are required.");
+  return { restaurantId: input.restaurantId, date: input.date, latitude: input.latitude, longitude: input.longitude };
+}
+
+export function bookDineoutTableArgs(input: {
+  restaurantId: string;
+  slotId: number;
+  itemId: string;
+  reservationTime: number;
+  guestCount: number;
+  latitude: number;
+  longitude: number;
+}): Record<string, unknown> {
+  if (!input.restaurantId || !input.itemId || !Number.isFinite(input.slotId) || !Number.isFinite(input.reservationTime)) throw new SwiggyError("INVALID_REQUEST", "A live Swiggy reservation slot is required.");
+  if (!Number.isInteger(input.guestCount) || input.guestCount < 1 || input.guestCount > 20) throw new SwiggyError("INVALID_REQUEST", "Guest count must be between 1 and 20.");
+  if (!Number.isFinite(input.latitude) || !Number.isFinite(input.longitude)) throw new SwiggyError("INVALID_REQUEST", "Valid venue coordinates are required.");
+  return { restaurantId: input.restaurantId, slotId: input.slotId, itemId: input.itemId, reservationTime: input.reservationTime, guestCount: input.guestCount, latitude: input.latitude, longitude: input.longitude };
+}
+
 /* ------------------------------------------------------------------ response reading */
 
 export interface SwiggyAddress {
@@ -143,6 +184,61 @@ export interface SwiggyMenuItem {
   hasVariants: boolean;
   hasAddons: boolean;
   category: string | null;
+}
+
+export interface DineoutRestaurant {
+  id: string;
+  name: string;
+  cuisines: string[];
+  locality: string | null;
+  area: string | null;
+  rating: string | null;
+  costForTwo: string | null;
+  distance: string | null;
+  highlights: string[];
+  offers: string[];
+}
+
+export interface DineoutDetails {
+  id: string;
+  name: string;
+  address: string | null;
+  timings: string | null;
+  rating: number | null;
+  costForTwo: string | null;
+  cuisines: string[];
+  amenities: string[];
+  deals: { id: string; title: string; description: string | null; coverCharge: number | null; offerCategory: string | null }[];
+  locationMapUrl: string | null;
+}
+
+export interface DineoutSlotDeal {
+  itemId: string;
+  slotId: number;
+  title: string | null;
+  isFree: boolean;
+  bookingPrice: number | null;
+  displayFee: string | null;
+  availableInventory: number | null;
+}
+
+export interface DineoutSlot {
+  date: string | null;
+  displayTime: string;
+  reservationTime: number;
+  slotGroupName: string | null;
+  availableInventory: number | null;
+  deals: DineoutSlotDeal[];
+}
+
+export interface DineoutBooking {
+  orderId: string;
+  restaurantName: string | null;
+  restaurantLocation: string | null;
+  reservationDate: string | null;
+  reservationTime: string | null;
+  guestCount: number | null;
+  status: string | null;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -204,6 +300,93 @@ function firstArray(payload: unknown, keys: string[]): unknown[] {
     }
   }
   return [];
+}
+
+function dataRecord(payload: unknown): Record<string, unknown> {
+  let value = asRecord(payload);
+  for (let depth = 0; depth < 3; depth++) {
+    const next = asRecord(value["data"]);
+    if (Object.keys(next).length === 0) break;
+    value = next;
+  }
+  return value;
+}
+
+export function normaliseDineoutSearch(payload: unknown): { restaurants: DineoutRestaurant[]; latitude: number | null; longitude: number | null; nextOffset: number | null } {
+  const root = asRecord(payload);
+  const data = asRecord(root["data"]);
+  const restaurants = firstArray(data, ["restaurants"])
+    .map((raw) => {
+      const r = asRecord(raw);
+      const id = str(r["id"], r["restaurantId"]);
+      const name = str(r["name"], r["restaurantName"]);
+      if (!id || !name) return null;
+      const rating = asRecord(r["rating"]);
+      return {
+        id,
+        name,
+        cuisines: list(r["cuisine"] ?? r["cuisines"]).map((v) => str(v) ?? "").filter(Boolean),
+        locality: str(r["locality"]),
+        area: str(r["area"]),
+        rating: str(rating["value"], r["avgRating"]),
+        costForTwo: str(r["costForTwo"]),
+        distance: str(r["distance"]),
+        highlights: list(r["highlights"]).map((v) => str(v) ?? "").filter(Boolean),
+        offers: list(r["offers"]).map((v) => str(asRecord(v)["offerTitle"])).filter((v): v is string => !!v),
+      } satisfies DineoutRestaurant;
+    })
+    .filter((r): r is DineoutRestaurant => r !== null);
+  return { restaurants, latitude: num(data["latitude"], root["latitude"]), longitude: num(data["longitude"], root["longitude"]), nextOffset: num(data["nextOffset"]) };
+}
+
+export function normaliseDineoutDetails(payload: unknown): DineoutDetails | null {
+  const data = dataRecord(payload);
+  const r = asRecord(data["restaurant"] ?? data);
+  const id = str(r["id"], r["restaurantId"], data["restaurantId"]);
+  const name = str(r["name"]);
+  if (!id || !name) return null;
+  return {
+    id,
+    name,
+    address: str(r["address"]),
+    timings: str(r["timings"]),
+    rating: num(r["avgRating"]),
+    costForTwo: str(r["costForTwo"]),
+    cuisines: list(r["cuisines"]).map((v) => str(v) ?? "").filter(Boolean),
+    amenities: list(data["amenities"]).map((v) => str(v) ?? "").filter(Boolean),
+    deals: list(r["deals"]).map((raw) => {
+      const d = asRecord(raw);
+      return { id: str(d["id"]) ?? "", title: str(d["title"]) ?? "Offer", description: str(d["description"]), coverCharge: num(d["coverCharge"]), offerCategory: str(d["offerCategory"]) };
+    }).filter((d) => !!d.id),
+    locationMapUrl: str(data["locationMapUrl"]),
+  };
+}
+
+export function normaliseDineoutSlots(payload: unknown): { restaurantId: string | null; latitude: number | null; longitude: number | null; slots: DineoutSlot[] } {
+  const data = dataRecord(payload);
+  const slots = list(data["slots"]).map((raw) => {
+    const s = asRecord(raw);
+    const reservationTime = num(s["reservationTime"]);
+    const displayTime = str(s["displayTime"]);
+    if (reservationTime === null || !displayTime) return null;
+    const deals = list(s["deals"]).map((rawDeal) => {
+      const d = asRecord(rawDeal);
+      const itemId = str(d["itemId"]);
+      const slotId = num(d["slotId"]);
+      if (!itemId || slotId === null) return null;
+      const bookingPrice = num(d["bookingPrice"], d["coverCharge"]);
+      return { itemId, slotId, title: str(d["title"]), isFree: d["isFree"] === true || bookingPrice === 0, bookingPrice, displayFee: str(d["displayFee"]), availableInventory: num(d["availableInventoryCount"], d["availableInventory"]) } satisfies DineoutSlotDeal;
+    }).filter((d): d is DineoutSlotDeal => d !== null && d.availableInventory !== 0);
+    return { date: str(s["dateStr"]), displayTime, reservationTime, slotGroupName: str(s["slotGroupName"]), availableInventory: num(s["availableInventory"]), deals } satisfies DineoutSlot;
+  }).filter((s): s is DineoutSlot => s !== null && s.availableInventory !== 0 && s.deals.length > 0);
+  return { restaurantId: str(data["restaurantId"]), latitude: num(data["latitude"]), longitude: num(data["longitude"]), slots };
+}
+
+export function normaliseDineoutBooking(payload: unknown): DineoutBooking | null {
+  const data = dataRecord(payload);
+  const orderId = str(data["orderId"]);
+  if (!orderId) return null;
+  return { orderId, restaurantName: str(data["restaurantName"]), restaurantLocation: str(data["restaurantLocation"]), reservationDate: str(data["reservationDate"]), reservationTime: str(data["reservationTime"]), guestCount: num(data["guestCount"]), status: str(data["status"]) };
 }
 
 export function normaliseAddresses(payload: unknown): SwiggyAddress[] {
@@ -319,4 +502,16 @@ export function matchRestaurantToVenue(venueName: string, restaurants: SwiggyRes
       return n.length >= 4 && (n.startsWith(`${target} `) || target.startsWith(`${n} `));
     }) ?? null
   );
+}
+
+export function matchDineoutRestaurantToVenue(venueName: string, area: string | null | undefined, restaurants: DineoutRestaurant[]): DineoutRestaurant | null {
+  const target = normaliseName(venueName);
+  const areaName = area ? normaliseName(area) : "";
+  const nameMatches = restaurants.filter((r) => {
+    const name = normaliseName(r.name);
+    return name === target || (name.length >= 4 && (name.startsWith(`${target} `) || target.startsWith(`${name} `)));
+  });
+  if (nameMatches.length === 1) return nameMatches[0] ?? null;
+  if (!areaName) return null;
+  return nameMatches.find((r) => [r.area, r.locality].some((v) => v && normaliseName(v).includes(areaName))) ?? null;
 }

@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
 export function SwiggyPrivacyNote({ className }: { className?: string }) {
   return (
     <p className={cn("text-[11px] leading-relaxed text-muted-foreground", className)}>
-      Live Swiggy results are fetched to answer your current request only. My Mood keeps them for this session,
+      Live Swiggy results are fetched to answer your current request only. vybz keeps them for this session,
       does not add them to its own catalogue, and does not use them for analytics, advertising or model training.
-      Your Swiggy sign-in stays on My Mood's server and is never shown in your browser.
+      Your Swiggy sign-in stays on vybz's server and is never shown in your browser.
     </p>
   );
 }
@@ -22,8 +22,8 @@ export function SwiggyConnect({ returnPath, compact = false }: { returnPath: str
   if (!signedIn) {
     return (
       <div className="rounded-2xl border border-border bg-card p-4">
-        <p className="text-sm font-medium">Sign in to use live Swiggy delivery</p>
-        <p className="mt-1 text-xs text-muted-foreground">Your Swiggy session is linked to your My Mood account.</p>
+        <p className="text-sm font-medium">Sign in to use live Swiggy</p>
+        <p className="mt-1 text-xs text-muted-foreground">Your Swiggy session is linked to your vybz account.</p>
         <Button asChild size="sm" variant="ember" className="mt-3"><Link to="/auth">Sign in</Link></Button>
       </div>
     );
@@ -43,10 +43,10 @@ export function SwiggyConnect({ returnPath, compact = false }: { returnPath: str
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
             {connected
-              ? `Live delivery search is on${s?.expiresAt ? ` · session valid until ${formatIst(s.expiresAt)}` : ""}.`
+              ? `Live delivery and Dineout reservations are on${s?.expiresAt ? ` · session valid until ${formatIst(s.expiresAt)}` : ""}.`
               : s?.needsReconnect
                 ? "Swiggy sessions last 5 days and can't be renewed automatically — reconnect to continue."
-                : "See live restaurants, menus and dish prices from your own Swiggy account."}
+                : "See live restaurants, menus, Dineout availability and reservations from your own Swiggy account."}
           </p>
         </div>
         {connected ? (

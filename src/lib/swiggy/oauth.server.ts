@@ -207,6 +207,7 @@ export async function beginAuthorization(input: { userId: string; origin: string
   url.searchParams.set("state", state);
   url.searchParams.set("code_challenge", await codeChallengeS256(verifier));
   url.searchParams.set("code_challenge_method", "S256");
+  // Swiggy's documented combined flow shares one OAuth session across Food and Dineout.
   url.searchParams.set("resource", SWIGGY_SERVERS.food);
   if (client.scope) url.searchParams.set("scope", client.scope);
   return { authorizeUrl: url.toString() };
@@ -240,6 +241,7 @@ export async function completeAuthorization(input: { code: string; state: string
     redirect_uri: stateRow.redirect_uri,
     client_id: client.client_id,
     code_verifier: stateRow.code_verifier,
+    // The resulting session token is valid for both documented MCP servers.
     resource: SWIGGY_SERVERS.food,
   });
   const headers: Record<string, string> = { "content-type": "application/x-www-form-urlencoded", accept: "application/json" };
