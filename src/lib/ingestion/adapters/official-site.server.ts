@@ -39,7 +39,7 @@ export const officialSiteAdapter: SourceAdapter = {
           }),
         );
         const contacts = extractPageContacts(res.body, res.url);
-        const nodes = extractJsonLd(res.body).filter((n) => ["Event", "MusicEvent", "TheaterEvent", "ComedyEvent", "FoodEvent", "Festival", "Restaurant", "BarOrPub", "CafeOrCoffeeShop", "NightClub", "LocalBusiness", "TouristAttraction"].includes(jsonLdType(n)));
+        const nodes = extractJsonLd(res.body).filter((n) => isUsableNode(n));
         if (nodes.length === 0) ctx.log(`No schema.org records published on ${page}`);
         for (const node of nodes) {
           items.push({ raw: { ...node, __page: res.url, __lastModified: res.lastModified, __contacts: contacts }, sourceUrl: res.url });
@@ -63,7 +63,7 @@ export const officialSiteAdapter: SourceAdapter = {
 
   normalise(parsed) {
     const type = jsonLdType(parsed);
-    const isEvent = ["Event", "MusicEvent", "TheaterEvent", "ComedyEvent", "FoodEvent", "Festival"].includes(type);
+    const isEvent = EVENT_JSONLD_TYPES.includes(type);
     // An Event carries its place under `location`; a business node describes itself.
     const location = (isEvent ? parsed["location"] : parsed) as Record<string, unknown> | undefined ?? {};
     const address = (location["address"] ?? {}) as Record<string, unknown>;
@@ -120,6 +120,44 @@ export const officialSiteAdapter: SourceAdapter = {
     return isoOrNull(parsed["dateModified"]) ?? isoOrNull(parsed["__lastModified"]);
   },
 };
+
+/** schema.org types that describe a dated happening. */
+export const EVENT_JSONLD_TYPES = [
+  "Event", "MusicEvent", "TheaterEvent", "ComedyEvent", "FoodEvent", "Festival",
+  "DanceEvent", "ScreeningEvent", "ExhibitionEvent", "SocialEvent", "SportsEvent", "EducationEvent",
+];
+
+/** schema.org business/place types that describe a venue we can list. */
+export const VENUE_JSONLD_TYPES = [
+  "Restaurant", "BarOrPub", "CafeOrCoffeeShop", "NightClub", "LocalBusiness", "TouristAttraction",
+  "FoodEstablishment", "Bakery", "Brewery", "Winery", "IceCreamShop", "FastFoodRestaurant",
+  "Hotel", "Resort", "LodgingBusiness", "EventVenue", "PerformingArtsTheater", "MovieTheater",
+  "Museum", "ArtGallery", "Aquarium", "Zoo", "AmusementPark", "Park", "Casino",
+  "EntertainmentBusiness", "SportsActivityLocation", "HealthClub", "BowlingAlley", "StadiumOrArena",
+  "ExhibitionHall", "Library", "Church", "PlaceOfWorship", "ShoppingCenter", "Store",
+];
+
+/** Generic nodes are only usable when the page also publishes a real address for them. */
+const GENERIC_JSONLD_TYPES = ["Organization", "Place", "Corporation"];
+
+/**
+ * Decide whether a published JSON-LD node is something the catalogue can describe.
+ * Nothing is inferred here: a generic Organization/Place node is only accepted when the page
+ * itself publishes an address for it.
+ */
+export function isUsableNode(node: Record<string, unknown>): boolean {
+  const type = jsonLdType(node);
+  if (!type) return false;
+  if (EVENT_JSONLD_TYPES.includes(type) || VENUE_JSONLD_TYPES.includes(type)) return true;
+  if (!GENERIC_JSONLD_TYPES.includes(type)) return false;
+  const address = node["address"];
+  if (typeof address === "string") return address.trim().length > 8;
+  if (address && typeof address === "object") {
+    const a = address as Record<string, unknown>;
+    return Boolean(firstString(a["streetAddress"]) || firstString(a["addressLocality"]));
+  }
+  return false;
+}
 
 export interface PageContacts {
   phone: string | null;
