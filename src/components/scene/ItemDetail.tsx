@@ -14,6 +14,11 @@ import { VenueInfo } from "./VenueInfo";
 import { EventInfo } from "./EventInfo";
 import { cn } from "@/lib/utils";
 
+/** Source pages sometimes embed HTML in descriptions; display plain text only. */
+function stripHtml(s: string) {
+  return s.replace(/<[^>]*>/g, "").replace(/\s+\n/g, "\n").trim();
+}
+
 export function ItemDetail({ item, related }: { item: SceneItem; related: SceneItem[] }) {
   const { isSaved, toggle } = useSaved();
   const saved = isSaved(item.type, item.id);
@@ -59,7 +64,7 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
               Details unverified — SceneAI hasn't confirmed hours, prices or availability with this venue yet. Please check before you go.
             </p>
           )}
-          {item.description && <p className="text-[15.5px] leading-relaxed text-foreground/90">{item.description}</p>}
+          {item.description && <p className="text-[15.5px] leading-relaxed text-foreground/90">{stripHtml(item.description)}</p>}
           <div className="flex flex-wrap gap-2">
             {item.moods.map((m) => <span key={m} className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs capitalize text-primary-glow">{m.replace(/-/g, " ")}</span>)}
             {item.groupTypes.map((g) => <span key={g} className="rounded-full border border-teal/30 bg-teal/10 px-3 py-1 text-xs capitalize text-teal">{g}</span>)}
