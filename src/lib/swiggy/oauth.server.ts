@@ -226,6 +226,7 @@ export async function completeAuthorization(input: { code: string; state: string
   // Single-use: consume before exchanging so a replayed callback cannot mint a second token.
   await db.from("swiggy_oauth_states").update({ consumed_at: new Date().toISOString() }).eq("id", stateRow.id);
 
+  if (!stateRow.client_row_id) throw new SwiggyError("INVALID_REQUEST", "The Swiggy app registration is missing.");
   const { data: client } = await db
     .from("swiggy_clients")
     .select("id,client_id,client_secret,token_endpoint,scope")

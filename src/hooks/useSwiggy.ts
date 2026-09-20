@@ -52,7 +52,7 @@ export function useSwiggyConnection() {
   });
 
   const disconnect = useMutation({
-    mutationFn: () => disconnectSwiggy({ data: {} }),
+    mutationFn: () => disconnectSwiggy(),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["swiggy-status"] });
       sessionStorage.removeItem(ADDRESS_KEY);
