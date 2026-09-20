@@ -75,7 +75,7 @@ export function VenueInfo({ item }: { item: SceneItem }) {
             {v.phone && (
               <div className="flex gap-2">
                 <Phone className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                <dd><a href={`tel:${v.phone}`} className="hover:underline" onClick={() => track("outbound_click", { itemType: item.type, itemId: item.id, linkKind: "phone" })}>{v.phone}</a></dd>
+                <dd><a href={`tel:${v.phone}`} className="hover:underline" onClick={() => track("discovery_click", { itemType: item.type, itemId: item.id, metadata: { linkKind: "phone" } })}>{v.phone}</a></dd>
               </div>
             )}
             {v.email && (
