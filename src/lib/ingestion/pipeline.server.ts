@@ -10,7 +10,7 @@ import { completenessOf, computeQualityScore, nextRefreshAt, passesPublishGate, 
 import { isTransient } from "./safe-fetch.server";
 import { crossSourceState, detectFieldConflicts, fieldValuesFrom, PROVENANCE_FIELDS, type FieldObservation } from "./provenance";
 import { promoteValidatedCandidates, runDiscoveryResolver } from "./discovery.server";
-import { validateMumbaiVenue } from "./mumbai-geo";
+import { hostOf, validateMumbaiVenue } from "./mumbai-geo";
 import { scoreVenueCompleteness } from "./venue-profile";
 import {
   DEFAULT_CADENCE,
@@ -260,16 +260,42 @@ async function resolveArea(db: DB, cityId: string, hint: string | null): Promise
 }
 
 /**
- * Link an event to a venue already in the catalogue when the source states that venue's name.
- * Never creates a venue and never guesses: an unmatched name simply stays unlinked.
+ * Link an event to a venue already in the catalogue.
+ * Matches on the venue name the source states, or on the venue's own official domain when the
+ * event was published on that same first-party site. Never creates a venue and never guesses:
+ * an unmatched event simply stays unlinked.
  */
-async function resolveVenue(db: DB, cityId: string, venueName: string | null): Promise<string | null> {
-  if (!venueName) return null;
-  const slug = slugify(venueName);
-  if (!slug) return null;
-  const { data } = await db.from("venues").select("id,slug,name").eq("city_id", cityId).limit(500);
-  const match = (data ?? []).find((v) => v.slug === slug || slugify(v.name) === slug);
-  return match?.id ?? null;
+async function resolveVenue(
+  db: DB,
+  cityId: string,
+  venueName: string | null,
+  pageUrls: (string | null | undefined)[] = [],
+): Promise<string | null> {
+  const { data } = await db.from("venues").select("id,slug,name,website_url,source_url").eq("city_id", cityId).eq("is_active", true).limit(1000);
+  const venues = data ?? [];
+
+  const slug = venueName ? slugify(venueName) : "";
+  if (slug) {
+    const exact = venues.find((v) => v.slug === slug || slugify(v.name) === slug);
+    if (exact) return exact.id;
+    // A stated name that fully contains (or is contained by) a catalogue venue name is still
+    // that venue, e.g. "antisocial-mumbai" vs "antisocial".
+    const contained = venues.find((v) => {
+      const vs = slugify(v.name);
+      return vs.length >= 5 && (slug.startsWith(`${vs}-`) || slug.endsWith(`-${vs}`) || vs.startsWith(`${slug}-`) || vs.endsWith(`-${slug}`));
+    });
+    if (contained) return contained.id;
+  }
+
+  const hosts = new Set(pageUrls.map((u) => hostOf(u ?? null)).filter((h): h is string => Boolean(h)));
+  if (hosts.size > 0) {
+    const byDomain = venues.find((v) => {
+      const vh = hostOf(v.website_url) ?? hostOf(v.source_url);
+      return vh ? hosts.has(vh) : false;
+    });
+    if (byDomain) return byDomain.id;
+  }
+  return null;
 }
 
 async function resolveCategory(db: DB, hint: string | null): Promise<string | null> {
@@ -358,7 +384,7 @@ export async function publishReadyRecords(db: DB, settings: Settings, limit = 50
         const lifecycle = publish ? "ACTIVE" : "PENDING_REVIEW";
         const payload = {
           ...shared,
-          venue_id: await resolveVenue(db, cityId, normalised.venueName),
+          venue_id: await resolveVenue(db, cityId, normalised.venueName, [rec.source_url, normalised.websiteUrl]),
           starts_at: normalised.startsAt,
           ends_at: normalised.endsAt,
           timezone: normalised.timezone,
