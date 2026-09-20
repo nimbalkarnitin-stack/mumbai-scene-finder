@@ -3,13 +3,30 @@ import { Calendar, Clock, ExternalLink, MapPin, Ticket, User } from "lucide-reac
 import type { SceneItem } from "@/lib/scene-types";
 import { formatPrice, track } from "@/lib/track";
 
-const IST = "Asia/Kolkata";
+// IST is a fixed UTC+5:30 offset (no DST) — shifting the timestamp and reading
+// UTC fields gives identical output on server and client, avoiding hydration drift
+// from locale/ICU differences between Node and the browser.
+const IST_OFFSET_MS = 5.5 * 3600 * 1000;
+const WD = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MO = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
+function istDate(iso: string | number) {
+  return new Date(new Date(iso).getTime() + IST_OFFSET_MS);
+}
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-IN", { timeZone: IST, weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const d = istDate(iso);
+  return `${WD[d.getUTCDay()]}, ${d.getUTCDate()} ${MO[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("en-IN", { timeZone: IST, hour: "numeric", minute: "2-digit" });
+  const d = istDate(iso);
+  const h24 = d.getUTCHours();
+  const h = h24 % 12 === 0 ? 12 : h24 % 12;
+  const m = String(d.getUTCMinutes()).padStart(2, "0");
+  return `${h}:${m} ${h24 < 12 ? "AM" : "PM"}`;
+}
+function istDayKey(iso: string | number) {
+  const d = istDate(iso);
+  return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
 }
 
 /** Status relative to now, computed in Mumbai time. */
@@ -20,11 +37,9 @@ function eventStatus(item: SceneItem): { label: string; tone: "live" | "soon" | 
   const end = item.endsAt ? new Date(item.endsAt).getTime() : null;
   if (end !== null && now > end) return { label: "This event has ended", tone: "past" };
   if (now >= start && (end === null || now <= end)) return { label: "Happening now", tone: "live" };
-  const dayFmt = new Intl.DateTimeFormat("en-CA", { timeZone: IST, dateStyle: "short" });
-  const today = dayFmt.format(new Date(now));
-  if (dayFmt.format(new Date(start)) === today) return { label: `Today · starts ${fmtTime(item.startsAt)}`, tone: "live" };
-  const tomorrow = dayFmt.format(new Date(now + 86400000));
-  if (dayFmt.format(new Date(start)) === tomorrow) return { label: `Tomorrow · starts ${fmtTime(item.startsAt)}`, tone: "soon" };
+  const today = istDayKey(now);
+  if (istDayKey(start) === today) return { label: `Today · starts ${fmtTime(item.startsAt)}`, tone: "live" };
+  if (istDayKey(now + 86400000) === istDayKey(start)) return { label: `Tomorrow · starts ${fmtTime(item.startsAt)}`, tone: "soon" };
   return { label: `Coming up · ${fmtDate(item.startsAt)}`, tone: "soon" };
 }
 
