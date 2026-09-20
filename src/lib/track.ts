@@ -171,8 +171,28 @@ export async function openOutboundMonetised(
       },
     });
     url = res.url;
+    if (link.kind !== "map") {
+      // One affiliate_click per partner outcome, so each partner is measurable separately.
+      track("affiliate_click", {
+        itemType: item.type,
+        itemId: item.id,
+        metadata: {
+          ...meta,
+          partnerSlug: res.partnerSlug,
+          partnerApplied: res.partnerApplied,
+          fallbackReason: res.fallbackReason,
+          disclosure: res.disclosure,
+          clickId: res.clickId,
+          subid: res.subid,
+          deduped: res.deduped,
+        },
+      });
+    }
   } catch {
     // Monetisation must never block the user reaching the venue.
+    if (link.kind !== "map") {
+      track("affiliate_click", { itemType: item.type, itemId: item.id, metadata: { ...meta, partnerApplied: false, fallbackReason: "click_record_failed" } });
+    }
   }
 
   if (win) win.location.href = url;
