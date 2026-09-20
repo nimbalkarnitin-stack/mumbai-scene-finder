@@ -37,6 +37,10 @@ export interface AffiliateClickResult {
   subid: string;
   clickId: string | null;
   partnerApplied: boolean;
+  /** Which partner actually handled the click (null when none was resolved). */
+  partnerSlug: string | null;
+  /** Why no partner link was used, for per-partner analytics. */
+  fallbackReason: string | null;
   /** Which stored disclosure the surface must show alongside the link. */
   disclosure: "affiliate" | "sponsored" | "none";
   deduped: boolean;
