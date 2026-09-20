@@ -60,6 +60,8 @@ Open (blocked on external input):
   Live Dineout profiles include sourced descriptions, address, ratings, hours, amenities, venue photos,
   and menu photos. Paid pre-book deals are displayed but not transacted. Address id is kept in
   sessionStorage only; Swiggy profile details and photos are never persisted to the catalogue.
+- Primary food-venue actions now open the live in-app reservation flow instead of a generic website:
+  venue match → live slots → guests/date/time → explicit confirmation → Swiggy booking reference.
 - Concierge tool `search_food_delivery` uses the signed-in user's own session; falls back to the
   vybz catalogue when not connected.
 - Admin: /admin/swiggy — connection counts, success rate, latency, retries, error classes, tool usage.

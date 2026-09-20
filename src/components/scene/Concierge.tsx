@@ -1,7 +1,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { Link } from "@tanstack/react-router";
-import { ArrowUp, Sparkles, Square, Loader2, ChevronDown } from "lucide-react";
+import { ArrowUp, CalendarCheck, Sparkles, Square, Loader2, ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ interface ToolItem {
   id: string; type: "venue" | "event" | "experience"; slug: string; name: string; category: string | null; area: string | null;
   priceMin: number | null; priceMax: number | null; imageUrl: string | null; sponsored: boolean; verified: boolean;
 }
+
+const RESERVATION_CATEGORIES = new Set(["Restaurants", "Cafes", "Nightlife"]);
 
 export function Concierge({ context, initialPrompt, suggestions = CONCIERGE_SUGGESTIONS, className, autoStart = false, placeholder = "Ask the concierge anything about Mumbai…" }: {
   context?: Record<string, unknown> | undefined;
@@ -165,6 +167,7 @@ function MessageBubble({ message }: { message: UIMessage }) {
                 <div className="image-fade absolute inset-0" />
                 {it.sponsored && <span className="absolute left-2 top-2 rounded-full bg-saffron px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider text-saffron-foreground">Sponsored</span>}
                 {!it.verified && <span className="absolute right-2 top-2 rounded-full bg-background/80 px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider text-saffron">Unverified</span>}
+                {it.type === "venue" && it.category && RESERVATION_CATEGORIES.has(it.category) && <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-primary px-2 py-1 text-[10px] text-primary-foreground"><CalendarCheck className="size-3" /> Reserve</span>}
                 <div className="absolute inset-x-2 bottom-2">
                   <p className="line-clamp-1 font-display text-sm font-semibold">{it.name}</p>
                   <p className="text-[10px] text-foreground/80">{it.area} · {formatPrice(it.priceMin, it.priceMax)}</p>
