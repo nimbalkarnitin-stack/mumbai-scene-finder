@@ -284,28 +284,57 @@ export async function resolveCandidate(db: DB, candidateId: string): Promise<{ s
   return { status, error: lastError };
 }
 
-/** Resolve every candidate that is due for a check. */
-export async function runDiscoveryResolver(db: DB, limit = 10): Promise<DiscoveryCounters> {
+/**
+ * Resolve every candidate that is due for a check.
+ * Candidates that already know a first-party website are resolved first (they can actually
+ * produce a source), and work runs through a small worker pool so larger batches stay safe:
+ * each worker fetches one host at a time and safeFetch keeps robots/rate-limit protection.
+ */
+export async function runDiscoveryResolver(db: DB, limit = 10, concurrency = 4): Promise<DiscoveryCounters> {
   const counters = emptyDiscoveryCounters();
   const nowIso = new Date().toISOString();
   const { data: rows } = await db
     .from("discovery_candidates")
     .select("id")
     .in("status", ["DISCOVERED", "SOURCE_FOUND", "VALIDATED"])
+    .not("official_website_url", "is", null)
     .or(`next_check_at.is.null,next_check_at.lte.${nowIso}`)
     .limit(limit);
 
-  for (const row of rows ?? []) {
-    counters.scanned += 1;
-    try {
-      const res = await resolveCandidate(db, row.id);
-      if (res.status === "VALIDATED") counters.validated += 1;
-      else if (res.status === "SOURCE_FOUND") counters.sources_found += 1;
-      if (res.error) counters.failed += 1;
-    } catch {
-      counters.failed += 1;
-    }
+  const queue = [...(rows ?? [])];
+  if (queue.length < limit) {
+    // Top the batch up with candidates that have no website yet, so they still get a verdict.
+    const { data: rest } = await db
+      .from("discovery_candidates")
+      .select("id")
+      .in("status", ["DISCOVERED", "SOURCE_FOUND", "VALIDATED"])
+      .is("official_website_url", null)
+      .or(`next_check_at.is.null,next_check_at.lte.${nowIso}`)
+      .limit(limit - queue.length);
+    queue.push(...(rest ?? []));
   }
+
+  const workers = Math.min(Math.max(concurrency, 1), 6);
+  let cursor = 0;
+  await Promise.all(
+    Array.from({ length: workers }, async () => {
+      for (;;) {
+        const index = cursor;
+        cursor += 1;
+        const row = queue[index];
+        if (!row) return;
+        counters.scanned += 1;
+        try {
+          const res = await resolveCandidate(db, row.id);
+          if (res.status === "VALIDATED") counters.validated += 1;
+          else if (res.status === "SOURCE_FOUND") counters.sources_found += 1;
+          if (res.error) counters.failed += 1;
+        } catch {
+          counters.failed += 1;
+        }
+      }
+    }),
+  );
   return counters;
 }
 
@@ -557,8 +586,8 @@ export async function promoteCandidateToSource(db: DB, candidateId: string): Pro
   const host = new URL(url).hostname;
   const nextConfig = {
     ...config,
-    pages: [...new Set([...pages, url])].slice(0, 500),
-    allow_hosts: [...new Set([...allow, host])].slice(0, 500),
+    pages: [...new Set([...pages, url])].slice(0, 2000),
+    allow_hosts: [...new Set([...allow, host])].slice(0, 2000),
   };
   await db.from("ingestion_sources").update({ config: nextConfig as never }).eq("id", source.id);
   await db.from("discovery_candidates").update({ linked_source_id: source.id, status: "VALIDATED", notes: `Promoted to official pages source: ${url}` }).eq("id", candidateId);
