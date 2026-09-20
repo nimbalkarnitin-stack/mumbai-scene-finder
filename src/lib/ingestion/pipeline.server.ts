@@ -398,15 +398,44 @@ export async function publishReadyRecords(db: DB, settings: Settings, limit = 50
           counters.created += 1;
         }
       } else {
-        const payload = {
+        // A venue only joins the Mumbai catalogue when its own published address/coordinates
+        // put it in the Mumbai region. Anything else is quarantined, never silently listed.
+        const geo = validateMumbaiVenue({
+          name: normalised.name,
+          address: normalised.address,
+          locality: normalised.venue?.locality ?? normalised.areaHint,
+          lat: normalised.lat,
+          lng: normalised.lng,
+          websiteUrl: normalised.websiteUrl,
+        });
+        const quarantined = geo.status === "OUT_OF_REGION";
+        const profile = venueProfileColumns(normalised);
+        const base = {
           ...shared,
+          ...profile,
           address: normalised.address,
           lat: normalised.lat,
           lng: normalised.lng,
           website_url: normalised.websiteUrl,
           next_refresh_at: nextRefreshAt("venue", null, new Date(), settings.cadence),
-          is_active: publish,
+          geo_status: geo.status,
+          geo_notes: geo.reasons.join("; ").slice(0, 400),
+          quarantined_at: quarantined ? nowIso : null,
+          quarantine_reason: quarantined ? geo.reasons.join("; ").slice(0, 300) : null,
+          last_verified_at: quarantined ? null : rec.last_checked_at,
+          verification_status: (quarantined ? "REVIEW_REQUIRED" : shared.verification_status) as VerificationState,
+          is_verified: quarantined ? false : shared.is_verified,
+          is_active: publish && !quarantined,
         };
+        const completeness = scoreVenueCompleteness(base);
+        const payload = { ...base, completeness_score: completeness.score, missing_fields: completeness.missing };
+        if (quarantined) {
+          await db
+            .from("source_records")
+            .update({ review_status: "needs_review", error_message: `Quarantined: ${geo.reasons.join("; ")}`.slice(0, 500) })
+            .eq("id", rec.id);
+          await trackIngestion(db, "venue_quarantined", { source: rec.source_name, reason: geo.reasons[0] ?? "outside Mumbai" });
+        }
         if (existingId) {
           await db.from("venues").update(payload).eq("id", existingId);
           counters.updated += 1;
