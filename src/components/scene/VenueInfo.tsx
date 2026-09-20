@@ -26,8 +26,13 @@ export function VenueInfo({ item }: { item: SceneItem }) {
     v.petPolicy && { label: "Pets", value: v.petPolicy },
   ].filter(Boolean) as { label: string; value: string }[];
 
+  // A reservation link is a real booking intent; a map, menu or social link is discovery.
   const outbound = (kind: string, url: string) => {
-    track("outbound_click", { itemType: item.type, itemId: item.id, linkKind: kind, isBooking: kind === "reservation" });
+    track(kind === "reservation" ? "booking_click" : "discovery_click", {
+      itemType: item.type,
+      itemId: item.id,
+      metadata: { linkKind: kind, placement: "venue_info" },
+    });
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
