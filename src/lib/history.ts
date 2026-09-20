@@ -2,7 +2,8 @@
  * Lightweight, anonymous personalisation signal kept on this device only.
  * Stores nothing but mood / area / category slugs from recent searches and saves.
  */
-const KEY = "sceneai.history";
+const KEY = "vybz.history";
+const LEGACY_KEY = "sceneai.history";
 const MAX = 12;
 
 export interface HistorySignal {
@@ -22,7 +23,7 @@ const empty: Store = { moods: [], areas: [], categories: [] };
 function read(): Store {
   if (typeof window === "undefined") return empty;
   try {
-    const raw = JSON.parse(window.localStorage.getItem(KEY) ?? "null") as Partial<Store> | null;
+    const raw = JSON.parse(window.localStorage.getItem(KEY) ?? window.localStorage.getItem(LEGACY_KEY) ?? "null") as Partial<Store> | null;
     if (!raw) return empty;
     return {
       moods: Array.isArray(raw.moods) ? raw.moods.slice(0, MAX) : [],
@@ -49,6 +50,7 @@ export function recordHistory(patch: { mood?: string | null; area?: string | nul
   };
   try {
     window.localStorage.setItem(KEY, JSON.stringify(next));
+    window.localStorage.removeItem(LEGACY_KEY);
   } catch {
     /* storage unavailable */
   }

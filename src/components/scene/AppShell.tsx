@@ -28,9 +28,7 @@ export function Logo({ className }: { className?: string }) {
       <span className="relative grid size-7 place-items-center rounded-lg bg-ember-gradient shadow-ember">
         <Sparkles className="size-3.5 text-primary-foreground" />
       </span>
-      <span className="font-display text-[19px] font-semibold tracking-tight">
-        Scene<span className="text-primary-glow">AI</span>
-      </span>
+      <span className="font-display text-[19px] font-semibold text-primary-glow">vybz</span>
     </Link>
   );
 }

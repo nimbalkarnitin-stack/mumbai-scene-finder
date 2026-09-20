@@ -95,7 +95,7 @@ export const ENTITIES: Record<string, EntityDef> = {
   },
   affiliate_links: {
     table: "affiliate_links", label: "Affiliate links", singular: "Affiliate link", orderBy: "created_at", listCols: ["partner_name", "base_url", "commission_rate", "is_active"],
-    fields: [{ key: "partner_name", label: "Partner", kind: "text", required: true }, { key: "base_url", label: "Base URL", kind: "text", required: true }, { key: "tracking_param", label: "Tracking param", kind: "text", help: "e.g. ref=sceneai" }, { key: "commission_rate", label: "Commission %", kind: "number" }, { key: "is_active", label: "Active", kind: "boolean" }],
+    fields: [{ key: "partner_name", label: "Partner", kind: "text", required: true }, { key: "base_url", label: "Base URL", kind: "text", required: true }, { key: "tracking_param", label: "Tracking param", kind: "text", help: "e.g. ref=vybz" }, { key: "commission_rate", label: "Commission %", kind: "number" }, { key: "is_active", label: "Active", kind: "boolean" }],
     defaults: { is_active: true, commission_rate: 0 },
   },
   digital_products: {
