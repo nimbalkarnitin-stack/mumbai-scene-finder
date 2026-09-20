@@ -309,10 +309,7 @@ function DineoutSlots({ restaurantId, latitude, longitude }: { restaurantId: str
   const booking = useMutation({
     mutationFn: ({ slot, deal }: { slot: DineoutSlot; deal: DineoutSlotDeal }) =>
       bookDineoutTable({ data: { restaurantId, slotId: deal.slotId, itemId: deal.itemId, reservationTime: slot.reservationTime, guestCount, latitude, longitude } }),
-    onSuccess: (data) => {
-      track("booking_click", { metadata: { linkKind: "swiggy_dineout", placement: "venue_detail", orderId: data.booking.orderId } });
-      setConfirmed(null);
-    },
+    onSuccess: () => setConfirmed(null),
   });
 
   if (slots.isLoading) return <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="size-3 animate-spin" /> Checking live tables…</p>;
