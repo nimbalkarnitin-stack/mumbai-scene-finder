@@ -75,9 +75,89 @@ export function DataHealth() {
         </>
       )}
       <VenueQuality />
+      <DiscoveryPipelineHealth />
     </section>
   );
 }
+
+/** Read-only discovery + ingestion pipeline snapshot: candidate lifecycle, runs, errors, freshness. */
+function DiscoveryPipelineHealth() {
+  const q = useQuery({
+    queryKey: ["admin-discovery-pipeline-health"],
+    queryFn: async () => {
+      const candidateCount = async (status?: string) => {
+        const base = supabase.from("discovery_candidates").select("id", { count: "exact", head: true });
+        const { count } = await (status ? base.eq("status", status) : base);
+        return count ?? 0;
+      };
+      const [candidates, discovered, sourceFound, validated, rejected, ingested] = await Promise.all([
+        candidateCount(),
+        candidateCount("DISCOVERED"),
+        candidateCount("SOURCE_FOUND"),
+        candidateCount("VALIDATED"),
+        candidateCount("REJECTED"),
+        candidateCount("INGESTED"),
+      ]);
+      const [{ count: sourcePages }, { count: publishedSources }, { data: jobs }, { data: sources }] = await Promise.all([
+        supabase.from("discovery_source_candidates").select("id", { count: "exact", head: true }),
+        supabase.from("source_records").select("id", { count: "exact", head: true }).eq("review_status", "published"),
+        supabase.from("ingestion_jobs").select("job_type,status,started_at,finished_at,records_created,records_updated,records_failed,error_summary").order("started_at", { ascending: false }).limit(8),
+        supabase.from("ingestion_sources").select("slug,name,enabled,last_status,last_run_at,last_error").order("slug"),
+      ]);
+      return { candidates, discovered, sourceFound, validated, rejected, ingested, sourcePages: sourcePages ?? 0, publishedSources: publishedSources ?? 0, jobs: jobs ?? [], sources: sources ?? [] };
+    },
+  });
+
+  if (!q.data) return null;
+  const d = q.data;
+  const stat = (label: string, value: number) => (
+    <div key={label} className="rounded-xl border border-border px-3 py-2">
+      <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <p className="font-mono text-sm">{value}</p>
+    </div>
+  );
+
+  return (
+    <div className="mt-6 border-t border-border pt-4">
+      <h3 className="mb-3 text-sm font-semibold">Discovery pipeline</h3>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {stat("Candidates", d.candidates)}
+        {stat("Discovered", d.discovered)}
+        {stat("Source found", d.sourceFound)}
+        {stat("Validated", d.validated)}
+        {stat("Ingested", d.ingested)}
+        {stat("Rejected", d.rejected)}
+        {stat("Source pages", d.sourcePages)}
+        {stat("Published sources", d.publishedSources)}
+      </div>
+
+      <h4 className="mt-4 text-xs font-semibold">Recent runs</h4>
+      <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+        {d.jobs.length === 0 && <li>No runs recorded yet.</li>}
+        {d.jobs.map((j, i) => (
+          <li key={`${j.job_type}-${j.started_at}-${i}`}>
+            <span className="text-foreground">{j.job_type}</span> · {j.status} · {new Date(j.started_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} · +{j.records_created} new, {j.records_updated} updated, {j.records_failed} failed
+            {j.error_summary ? ` · ${j.error_summary.slice(0, 120)}` : ""}
+          </li>
+        ))}
+      </ul>
+
+      <h4 className="mt-4 text-xs font-semibold">Source freshness</h4>
+      <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+        {d.sources.map((s) => (
+          <li key={s.slug}>
+            <span className="text-foreground">{s.name}</span> · {s.enabled ? "enabled" : "disabled"} · last run{" "}
+            {s.last_run_at ? new Date(s.last_run_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) : "never"}
+            {s.last_status ? ` · ${s.last_status}` : ""}
+            {s.last_error ? ` · ${s.last_error.slice(0, 100)}` : ""}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-[11px] text-muted-foreground">Counts read live from the pipeline tables. Swiggy live data is never counted here — it is session-only and never stored.</p>
+    </div>
+  );
+}
+
 
 /** Read-only venue completeness + Mumbai-location snapshot. Figures come straight from the rows. */
 function VenueQuality() {
