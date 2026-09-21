@@ -78,28 +78,35 @@ export const Route = createFileRoute("/api/chat")({
             limit: z.number().nullable(),
           }),
           execute: async (input) => {
-            if (!cityId) return { items: [], note: "City not configured" };
-            const items = await fetchCityItems(db, cityId);
-            const ranked = scoreItems(items, {
-              mood: input.mood ?? undefined,
-              group: input.group ?? undefined,
-              budget: input.budget ?? undefined,
-              timing: input.timing ?? undefined,
-              area: input.area ?? undefined,
-              category: input.category ?? undefined,
-              limit: input.limit ?? 8,
-            });
-            return {
-              items: ranked.map((r) => ({
-                id: r.id, type: r.type, slug: r.slug, name: r.name, category: r.categoryName, area: r.areaName,
-                priceMin: r.priceMin, priceMax: r.priceMax, startsAt: r.startsAt, scheduleNote: r.scheduleNote,
-                description: r.description?.slice(0, 160), moods: r.moods, bookingUrl: r.bookingUrl,
-                sponsored: r.isSponsored, verified: r.isVerified, sourceUrl: r.sourceUrl, lastUpdatedAt: r.updatedAt,
-                why: r.reasons, imageUrl: r.imageUrl,
-              })),
-              totalCandidates: items.length,
-              verifiedCount: ranked.filter((r) => r.isVerified).length,
-            };
+            if (!db || !cityId) return { items: [], unavailable: true, note: "The vybz catalogue is unavailable right now. Tell the user you cannot list places at the moment and do not invent any." };
+            try {
+              const items = await fetchCityItems(db, cityId);
+              const ranked = scoreItems(items, {
+                mood: input.mood ?? undefined,
+                group: input.group ?? undefined,
+                budget: input.budget ?? undefined,
+                timing: input.timing ?? undefined,
+                area: input.area ?? undefined,
+                category: input.category ?? undefined,
+                limit: input.limit ?? 8,
+              });
+              return {
+                items: ranked.map((r) => ({
+                  id: r.id, type: r.type, slug: r.slug, name: r.name, category: r.categoryName, area: r.areaName,
+                  priceMin: r.priceMin, priceMax: r.priceMax, startsAt: r.startsAt, scheduleNote: r.scheduleNote,
+                  description: r.description?.slice(0, 160), moods: r.moods, bookingUrl: r.bookingUrl,
+                  sponsored: r.isSponsored, verified: r.isVerified, sourceUrl: r.sourceUrl, lastUpdatedAt: r.updatedAt,
+                  why: r.reasons, imageUrl: r.imageUrl,
+                })),
+                totalCandidates: items.length,
+                verifiedCount: ranked.filter((r) => r.isVerified).length,
+              };
+            } catch (err) {
+              // Controlled tool result — a catalogue fault must not kill the AI stream.
+              const info = classifyConciergeError(err);
+              logConciergeError(info, "tool:search_listings", runIdFetch.getRunId());
+              return { items: [], unavailable: true, note: "The vybz catalogue could not be read for this search. Tell the user listings are temporarily unavailable and suggest trying again shortly. Do not invent listings." };
+            }
           },
         });
 
@@ -107,9 +114,16 @@ export const Route = createFileRoute("/api/chat")({
           description: "List Mumbai neighbourhoods vybz covers, with slugs.",
           inputSchema: z.object({}),
           execute: async () => {
-            if (!cityId) return { areas: [] };
-            const { data } = await db.from("areas").select("slug,name,zone").eq("city_id", cityId).eq("is_active", true);
-            return { areas: data ?? [] };
+            if (!db || !cityId) return { areas: [], unavailable: true };
+            try {
+              const { data, error } = await db.from("areas").select("slug,name,zone").eq("city_id", cityId).eq("is_active", true);
+              if (error) throw new Error(error.message);
+              return { areas: data ?? [] };
+            } catch (err) {
+              const info = classifyConciergeError(err);
+              logConciergeError(info, "tool:list_areas", runIdFetch.getRunId());
+              return { areas: [], unavailable: true };
+            }
           },
         });
 
