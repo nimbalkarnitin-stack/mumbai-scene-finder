@@ -31,17 +31,40 @@ export const Route = createFileRoute("/api/chat")({
     handlers: {
       POST: async ({ request }) => {
         const apiKey = process.env["LOVABLE_API_KEY"];
-        if (!apiKey) return Response.json({ error: "AI is not configured yet." }, { status: 500 });
+        if (!apiKey) {
+          const info = classifyConciergeError(new Error("Missing LOVABLE_API_KEY"));
+          logConciergeError(info, "config");
+          return Response.json({ error: info.userMessage, kind: info.kind }, { status: 500 });
+        }
 
-        const body = (await request.json()) as { messages: UIMessage[]; context?: Record<string, unknown> };
-        const messages = body.messages ?? [];
-        const ctx = body.context ?? {};
+        let messages: UIMessage[] = [];
+        let ctx: Record<string, unknown> = {};
+        try {
+          const body = (await request.json()) as { messages?: UIMessage[]; context?: Record<string, unknown> };
+          if (!Array.isArray(body.messages)) throw new Error("validation: messages must be an array");
+          messages = body.messages;
+          ctx = body.context ?? {};
+        } catch (err) {
+          const info = classifyConciergeError(err);
+          logConciergeError(info, "request_body");
+          return Response.json({ error: info.userMessage, kind: info.kind }, { status: 400 });
+        }
 
         const runIdFetch = createLovableAiGatewayRunIdFetch(getLovableAiGatewayRunId(request));
         const lovable = createLovableResponsesProvider(apiKey, runIdFetch);
 
-        const db = createPublicClient();
-        const cityId = await getCityId(db, (ctx["city"] as string) ?? DEFAULT_CITY_SLUG);
+        // The catalogue connection must never break the stream: tools degrade instead.
+        let db: ReturnType<typeof createPublicClient> | null = null;
+        let cityId: string | null = null;
+        try {
+          db = createPublicClient();
+          cityId = await getCityId(db, (ctx["city"] as string) ?? DEFAULT_CITY_SLUG);
+        } catch (err) {
+          const info = classifyConciergeError(err);
+          logConciergeError(info, "catalogue_init", runIdFetch.getRunId());
+          db = null;
+          cityId = null;
+        }
 
         const searchListings = tool({
           description: "Search vybz's active Mumbai listings (venues, events, experiences) ranked by mood, budget, timing, area and group. Results mix editor-verified and unverified listings: each item carries a `verified` flag and an optional `sourceUrl`. Verified items rank higher; unverified items must be flagged when mentioned. Always call this before recommending anything.",
