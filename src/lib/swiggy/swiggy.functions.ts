@@ -191,6 +191,45 @@ export const findSwiggyMatchForVenue = createServerFn({ method: "POST" })
     }
   });
 
+/**
+ * Live, session-only delivery context for a handful of catalogue venues shown in
+ * recommendations. Returns nothing but open/ETA/cost hints keyed by My Mood's own venue id;
+ * no Swiggy payload is persisted and canonical venue facts are never overwritten.
+ */
+export const enrichVenuesWithSwiggy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        addressId: z.string().min(1),
+        venues: z.array(z.object({ id: z.string().uuid(), name: z.string().min(2).max(160) })).min(1).max(6),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { callSwiggyTool } = await import("./client.server");
+    const live: Record<string, { isOpen: boolean; deliveryTime: string | null; costForTwo: string | null; matchedName: string }> = {};
+    for (const venue of data.venues) {
+      try {
+        const payload = await callSwiggyTool({
+          userId: context.userId,
+          tool: "search_restaurants",
+          args: searchRestaurantsArgs({ addressId: data.addressId, query: venue.name }),
+        });
+        const match = matchRestaurantToVenue(venue.name, normaliseRestaurantPage(payload).restaurants);
+        // Only OPEN restaurants may be surfaced as currently available.
+        if (match && match.isOpen) {
+          live[venue.id] = { isOpen: true, deliveryTime: match.deliveryTime, costForTwo: match.costForTwo, matchedName: match.name };
+        }
+      } catch (err) {
+        // A Swiggy failure must never degrade canonical recommendations.
+        if (err instanceof SwiggyError && (err.errorClass === "NOT_CONNECTED" || err.errorClass === "SESSION_EXPIRED" || err.errorClass === "UNAUTHORIZED")) return fail(err);
+      }
+    }
+    return { live, fetchedAt: new Date().toISOString() };
+  });
+
+
 export const findDineoutMatchForVenue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ venueName: z.string().min(2).max(160), area: z.string().max(120).nullable().optional(), latitude: z.number(), longitude: z.number() }).parse(input))

@@ -13,7 +13,14 @@ import { useSaved } from "@/hooks/useSaved";
 
 type Item = SceneItem | Recommendation;
 
-export function SceneCard({ item, index = 0, compact = false, monetisation }: { item: Item; index?: number; compact?: boolean; monetisation?: MonetisedClickOptions }) {
+/** Session-only live delivery context from the signed-in user's own Swiggy account. */
+export interface SceneCardLive {
+  deliveryTime: string | null;
+  costForTwo: string | null;
+}
+
+export function SceneCard({ item, index = 0, compact = false, monetisation, live }: { item: Item; index?: number; compact?: boolean; monetisation?: MonetisedClickOptions; live?: SceneCardLive | null }) {
+
   const reasons = "reasons" in item ? item.reasons : [];
   const { isSaved, toggle } = useSaved();
   const saved = isSaved(item.type, item.id);
@@ -92,9 +99,18 @@ export function SceneCard({ item, index = 0, compact = false, monetisation }: { 
             <p className="mt-1 text-[13px] text-foreground/90">{reasons.join(" · ")}</p>
           </div>
         )}
+        {live && (
+          <div className="rounded-2xl border border-teal/30 bg-teal/10 px-3.5 py-2.5">
+            <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-teal">Live from Swiggy</p>
+            <p className="mt-1 text-[13px] text-foreground/90">
+              Open for delivery now{live.deliveryTime ? ` · ${live.deliveryTime}` : ""}{live.costForTwo ? ` · ${live.costForTwo}` : ""}
+            </p>
+          </div>
+        )}
         {!item.isVerified && (
           <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-saffron">Details unverified · confirm with venue</p>
         )}
+
         <div className="flex gap-2">
           {supportsLiveReservation && link.kind !== "booking" && !item.venue?.reservationUrl ? (
             <Button variant="ember" className="flex-1" asChild>

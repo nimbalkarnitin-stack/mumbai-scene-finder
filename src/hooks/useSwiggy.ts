@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
-import { disconnectSwiggy, getSwiggyStatus, listSwiggyAddresses, startSwiggyConnect } from "@/lib/swiggy/swiggy.functions";
+import { disconnectSwiggy, enrichVenuesWithSwiggy, getSwiggyStatus, listSwiggyAddresses, startSwiggyConnect } from "@/lib/swiggy/swiggy.functions";
 import { useAuth } from "./useAuth";
+
 
 /**
  * Swiggy delivery address for the current browsing session only.
@@ -71,3 +72,28 @@ export function useSwiggyAddresses(enabled: boolean) {
     staleTime: 5 * 60_000,
   });
 }
+
+/**
+ * Live delivery context for recommendation cards — a secondary signal only.
+ * Runs solely for a connected user with a chosen address; anything else returns no live data,
+ * and canonical My Mood facts stay untouched. Nothing is persisted.
+ */
+export function useSwiggyLiveVenues(venues: { id: string; name: string }[]) {
+  const { user } = useAuth();
+  const { status } = useSwiggyConnection();
+  const { addressId } = useSwiggyAddressId();
+  const connected = !!user && !!status.data?.connected && !!addressId;
+  const shortlist = venues.slice(0, 6);
+  const key = shortlist.map((v) => v.id).join(",");
+
+  const q = useQuery({
+    queryKey: ["swiggy-live-venues", addressId, key],
+    queryFn: () => enrichVenuesWithSwiggy({ data: { addressId: addressId!, venues: shortlist } }),
+    enabled: connected && shortlist.length > 0,
+    retry: false,
+    staleTime: 2 * 60_000,
+  });
+
+  return { live: q.data?.live ?? {}, fetchedAt: q.data?.fetchedAt ?? null, connected };
+}
+

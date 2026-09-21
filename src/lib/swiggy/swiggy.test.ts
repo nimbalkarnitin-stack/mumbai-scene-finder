@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   MENU_PAGE_SIZE_MAX,
@@ -259,5 +260,31 @@ describe("integration flow (mocked)", () => {
     // No credential is ever passed as a tool argument.
     for (const c of calls) expect(Object.keys(c.args)).not.toContain("token");
     expect(calls.map((c) => c.tool)).toEqual(["search_restaurants", "get_restaurant_menu", "search_menu"]);
+  });
+});
+
+describe("live enrichment boundaries", () => {
+  const source = readFileSync(new URL("./swiggy.functions.ts", import.meta.url), "utf8");
+
+  it("never writes Swiggy responses into the canonical catalogue", () => {
+    for (const table of ["venues", "events", "experiences", "source_records", "discovery_candidates"]) {
+      expect(source.includes(`from("${table}")`)).toBe(false);
+    }
+    expect(source.includes("supabaseAdmin")).toBe(false);
+  });
+
+  it("bounds the enrichment batch and requires an address", () => {
+    expect(source).toContain("enrichVenuesWithSwiggy");
+    expect(source).toMatch(/venues: z\.array\([\s\S]*?\)\.min\(1\)\.max\(6\)/);
+    expect(source).toContain("addressId: z.string().min(1)");
+  });
+
+  it("only surfaces OPEN restaurants as live delivery context", () => {
+    expect(source).toContain("match.isOpen");
+    const live = openRestaurants([
+      { id: "1", name: "A", availabilityStatus: "OPEN", isOpen: true, cuisines: [], area: null, distance: null, deliveryTime: "30 mins", costForTwo: null, url: null },
+      { id: "2", name: "B", availabilityStatus: "CLOSED", isOpen: false, cuisines: [], area: null, distance: null, deliveryTime: null, costForTwo: null, url: null },
+    ]);
+    expect(live.map((r) => r.id)).toEqual(["1"]);
   });
 });

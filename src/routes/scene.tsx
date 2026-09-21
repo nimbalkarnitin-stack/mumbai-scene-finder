@@ -14,6 +14,8 @@ import { getRecommendations } from "@/lib/scene.functions";
 import { BUDGETS, GROUPS, MOODS, TIMINGS } from "@/lib/scene-constants";
 import { getHistorySignal, recordHistory } from "@/lib/history";
 import { track } from "@/lib/track";
+import { useSwiggyLiveVenues } from "@/hooks/useSwiggy";
+
 
 const searchSchema = z.object({
   mood: z.string().optional(),
@@ -51,6 +53,14 @@ function ScenePage() {
     queryKey: ["recs", search, history],
     queryFn: () => getRecommendations({ data: { ...search, ...(history ? { history } : {}), limit: 10 } }),
   });
+
+  // Secondary, session-only signal: live delivery context for food venues, when the user's own
+  // Swiggy account is connected. Recommendations are unchanged when it isn't.
+  const foodVenues = (data?.items ?? [])
+    .filter((i) => i.type === "venue" && ["restaurants", "cafes", "nightlife"].includes(i.categorySlug ?? ""))
+    .map((i) => ({ id: i.id, name: i.name }));
+  const { live } = useSwiggyLiveVenues(foodVenues);
+
 
   useEffect(() => {
     if (!data) return;
@@ -97,7 +107,7 @@ function ScenePage() {
       <div className="mt-6 grid gap-4 px-4 sm:grid-cols-2 md:px-6 lg:grid-cols-3">
         {isLoading && Array.from({ length: 6 }).map((_, i) => <SceneCardSkeleton key={i} />)}
         {isError && <p className="col-span-full text-sm text-destructive">Couldn't load recommendations. Please try again.</p>}
-        {data?.items.map((item, i) => <SceneCard key={item.id} item={item} index={i} />)}
+        {data?.items.map((item, i) => <SceneCard key={item.id} item={item} index={i} live={live[item.id] ?? null} />)}
         {data && data.items.length === 0 && (
           <CatalogueEmptyState className="col-span-full" filtered={data.total > 0} onChangeFilters={() => setEditing(true)} />
         )}
