@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, stepCountIs, streamText, tool, type UIMessage } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayRunIdFetch, createLovableResponsesProvider, getLovableAiGatewayRunId, withLovableAiGatewayRunIdHeader } from "@/lib/ai-gateway.server";
+import { classifyConciergeError, logConciergeError } from "@/lib/concierge-errors";
 import { createPublicClient } from "@/lib/public-db.server";
 import { fetchCityItems, getCityId, scoreItems } from "@/lib/recommend.server";
 import { DEFAULT_CITY_SLUG } from "@/lib/scene-constants";
@@ -30,17 +31,40 @@ export const Route = createFileRoute("/api/chat")({
     handlers: {
       POST: async ({ request }) => {
         const apiKey = process.env["LOVABLE_API_KEY"];
-        if (!apiKey) return Response.json({ error: "AI is not configured yet." }, { status: 500 });
+        if (!apiKey) {
+          const info = classifyConciergeError(new Error("Missing LOVABLE_API_KEY"));
+          logConciergeError(info, "config");
+          return Response.json({ error: info.userMessage, kind: info.kind }, { status: 500 });
+        }
 
-        const body = (await request.json()) as { messages: UIMessage[]; context?: Record<string, unknown> };
-        const messages = body.messages ?? [];
-        const ctx = body.context ?? {};
+        let messages: UIMessage[] = [];
+        let ctx: Record<string, unknown> = {};
+        try {
+          const body = (await request.json()) as { messages?: UIMessage[]; context?: Record<string, unknown> };
+          if (!Array.isArray(body.messages)) throw new Error("validation: messages must be an array");
+          messages = body.messages;
+          ctx = body.context ?? {};
+        } catch (err) {
+          const info = classifyConciergeError(err);
+          logConciergeError(info, "request_body");
+          return Response.json({ error: info.userMessage, kind: info.kind }, { status: 400 });
+        }
 
         const runIdFetch = createLovableAiGatewayRunIdFetch(getLovableAiGatewayRunId(request));
         const lovable = createLovableResponsesProvider(apiKey, runIdFetch);
 
-        const db = createPublicClient();
-        const cityId = await getCityId(db, (ctx["city"] as string) ?? DEFAULT_CITY_SLUG);
+        // The catalogue connection must never break the stream: tools degrade instead.
+        let db: ReturnType<typeof createPublicClient> | null = null;
+        let cityId: string | null = null;
+        try {
+          db = createPublicClient();
+          cityId = await getCityId(db, (ctx["city"] as string) ?? DEFAULT_CITY_SLUG);
+        } catch (err) {
+          const info = classifyConciergeError(err);
+          logConciergeError(info, "catalogue_init", runIdFetch.getRunId());
+          db = null;
+          cityId = null;
+        }
 
         const searchListings = tool({
           description: "Search vybz's active Mumbai listings (venues, events, experiences) ranked by mood, budget, timing, area and group. Results mix editor-verified and unverified listings: each item carries a `verified` flag and an optional `sourceUrl`. Verified items rank higher; unverified items must be flagged when mentioned. Always call this before recommending anything.",
@@ -54,28 +78,35 @@ export const Route = createFileRoute("/api/chat")({
             limit: z.number().nullable(),
           }),
           execute: async (input) => {
-            if (!cityId) return { items: [], note: "City not configured" };
-            const items = await fetchCityItems(db, cityId);
-            const ranked = scoreItems(items, {
-              mood: input.mood ?? undefined,
-              group: input.group ?? undefined,
-              budget: input.budget ?? undefined,
-              timing: input.timing ?? undefined,
-              area: input.area ?? undefined,
-              category: input.category ?? undefined,
-              limit: input.limit ?? 8,
-            });
-            return {
-              items: ranked.map((r) => ({
-                id: r.id, type: r.type, slug: r.slug, name: r.name, category: r.categoryName, area: r.areaName,
-                priceMin: r.priceMin, priceMax: r.priceMax, startsAt: r.startsAt, scheduleNote: r.scheduleNote,
-                description: r.description?.slice(0, 160), moods: r.moods, bookingUrl: r.bookingUrl,
-                sponsored: r.isSponsored, verified: r.isVerified, sourceUrl: r.sourceUrl, lastUpdatedAt: r.updatedAt,
-                why: r.reasons, imageUrl: r.imageUrl,
-              })),
-              totalCandidates: items.length,
-              verifiedCount: ranked.filter((r) => r.isVerified).length,
-            };
+            if (!db || !cityId) return { items: [], unavailable: true, note: "The vybz catalogue is unavailable right now. Tell the user you cannot list places at the moment and do not invent any." };
+            try {
+              const items = await fetchCityItems(db, cityId);
+              const ranked = scoreItems(items, {
+                mood: input.mood ?? undefined,
+                group: input.group ?? undefined,
+                budget: input.budget ?? undefined,
+                timing: input.timing ?? undefined,
+                area: input.area ?? undefined,
+                category: input.category ?? undefined,
+                limit: input.limit ?? 8,
+              });
+              return {
+                items: ranked.map((r) => ({
+                  id: r.id, type: r.type, slug: r.slug, name: r.name, category: r.categoryName, area: r.areaName,
+                  priceMin: r.priceMin, priceMax: r.priceMax, startsAt: r.startsAt, scheduleNote: r.scheduleNote,
+                  description: r.description?.slice(0, 160), moods: r.moods, bookingUrl: r.bookingUrl,
+                  sponsored: r.isSponsored, verified: r.isVerified, sourceUrl: r.sourceUrl, lastUpdatedAt: r.updatedAt,
+                  why: r.reasons, imageUrl: r.imageUrl,
+                })),
+                totalCandidates: items.length,
+                verifiedCount: ranked.filter((r) => r.isVerified).length,
+              };
+            } catch (err) {
+              // Controlled tool result — a catalogue fault must not kill the AI stream.
+              const info = classifyConciergeError(err);
+              logConciergeError(info, "tool:search_listings", runIdFetch.getRunId());
+              return { items: [], unavailable: true, note: "The vybz catalogue could not be read for this search. Tell the user listings are temporarily unavailable and suggest trying again shortly. Do not invent listings." };
+            }
           },
         });
 
@@ -83,9 +114,16 @@ export const Route = createFileRoute("/api/chat")({
           description: "List Mumbai neighbourhoods vybz covers, with slugs.",
           inputSchema: z.object({}),
           execute: async () => {
-            if (!cityId) return { areas: [] };
-            const { data } = await db.from("areas").select("slug,name,zone").eq("city_id", cityId).eq("is_active", true);
-            return { areas: data ?? [] };
+            if (!db || !cityId) return { areas: [], unavailable: true };
+            try {
+              const { data, error } = await db.from("areas").select("slug,name,zone").eq("city_id", cityId).eq("is_active", true);
+              if (error) throw new Error(error.message);
+              return { areas: data ?? [] };
+            } catch (err) {
+              const info = classifyConciergeError(err);
+              logConciergeError(info, "tool:list_areas", runIdFetch.getRunId());
+              return { areas: [], unavailable: true };
+            }
           },
         });
 
@@ -101,7 +139,9 @@ export const Route = createFileRoute("/api/chat")({
             });
             const { data } = await authClient.auth.getClaims(bearer);
             swiggyUserId = (data?.claims?.sub as string | undefined) ?? null;
-          } catch {
+          } catch (err) {
+            // A bad/expired session never blocks catalogue answers — Swiggy tools just report not-connected.
+            logConciergeError(classifyConciergeError(err), "auth:session", runIdFetch.getRunId());
             swiggyUserId = null;
           }
         }
@@ -143,9 +183,12 @@ export const Route = createFileRoute("/api/chat")({
                 fetchedAt: new Date().toISOString(),
               };
             } catch (err) {
+              // Swiggy is strictly optional: always return a controlled result so the
+              // concierge can keep answering from the vybz catalogue.
               const cls = err && typeof err === "object" && "errorClass" in err ? String((err as { errorClass: unknown }).errorClass) : "UNKNOWN";
-              if (cls === "NOT_CONNECTED" || cls === "SESSION_EXPIRED" || cls === "UNAUTHORIZED") return { notConnected: true, reason: cls };
-              return { error: cls };
+              logConciergeError({ ...classifyConciergeError(err), kind: "tool_swiggy" }, `tool:search_food_delivery:${cls}`, runIdFetch.getRunId());
+              if (cls === "NOT_CONNECTED" || cls === "SESSION_EXPIRED" || cls === "UNAUTHORIZED") return { notConnected: true, reason: cls, note: "Live Swiggy data is unavailable. Say so briefly and answer from the vybz catalogue instead." };
+              return { unavailable: true, error: cls, note: "Live Swiggy data is unavailable right now. Say so briefly and answer from the vybz catalogue instead." };
             }
           },
         });
@@ -175,17 +218,19 @@ export const Route = createFileRoute("/api/chat")({
               originalMessages: messages,
               sendReasoning: true,
               onError: (err) => {
-                const msg = err instanceof Error ? err.message : String(err);
-                if (/402|credits/i.test(msg)) return "vybz's AI credits are exhausted. Please add credits to continue.";
-                if (/429|rate/i.test(msg)) return "The concierge is busy — try again in a moment.";
-                return "The concierge hit a snag. Please try again.";
+                const info = classifyConciergeError(err);
+                logConciergeError(info, "stream", runIdFetch.getRunId());
+                return info.userMessage;
               },
             }),
             runIdFetch,
           );
         } catch (err) {
-          if (err instanceof Error && err.name === "AbortError") return new Response(null, { status: 499 });
-          throw err;
+          const info = classifyConciergeError(err);
+          if (info.kind === "aborted") return new Response(null, { status: 499 });
+          logConciergeError(info, "handler", runIdFetch.getRunId());
+          const status = info.kind === "credits" || info.kind === "ai_denied" ? 403 : info.kind === "rate_limit" ? 429 : 500;
+          return Response.json({ error: info.userMessage, kind: info.kind }, { status });
         }
       },
     },
