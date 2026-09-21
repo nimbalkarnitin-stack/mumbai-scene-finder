@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, stepCountIs, streamText, tool, type UIMessage } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayRunIdFetch, createLovableResponsesProvider, getLovableAiGatewayRunId, withLovableAiGatewayRunIdHeader } from "@/lib/ai-gateway.server";
+import { classifyConciergeError, logConciergeError } from "@/lib/concierge-errors";
 import { createPublicClient } from "@/lib/public-db.server";
 import { fetchCityItems, getCityId, scoreItems } from "@/lib/recommend.server";
 import { DEFAULT_CITY_SLUG } from "@/lib/scene-constants";
