@@ -97,7 +97,7 @@ function ScenePage() {
       <div className="mt-6 grid gap-4 px-4 sm:grid-cols-2 md:px-6 lg:grid-cols-3">
         {isLoading && Array.from({ length: 6 }).map((_, i) => <SceneCardSkeleton key={i} />)}
         {isError && <p className="col-span-full text-sm text-destructive">Couldn't load recommendations. Please try again.</p>}
-        {data?.items.map((item, i) => <SceneCard key={item.id} item={item} index={i} />)}
+        {data?.items.map((item, i) => <SceneCard key={item.id} item={item} index={i} live={live[item.id] ?? null} />)}
         {data && data.items.length === 0 && (
           <CatalogueEmptyState className="col-span-full" filtered={data.total > 0} onChangeFilters={() => setEditing(true)} />
         )}
