@@ -183,9 +183,12 @@ export const Route = createFileRoute("/api/chat")({
                 fetchedAt: new Date().toISOString(),
               };
             } catch (err) {
+              // Swiggy is strictly optional: always return a controlled result so the
+              // concierge can keep answering from the vybz catalogue.
               const cls = err && typeof err === "object" && "errorClass" in err ? String((err as { errorClass: unknown }).errorClass) : "UNKNOWN";
-              if (cls === "NOT_CONNECTED" || cls === "SESSION_EXPIRED" || cls === "UNAUTHORIZED") return { notConnected: true, reason: cls };
-              return { error: cls };
+              logConciergeError({ ...classifyConciergeError(err), kind: "tool_swiggy" }, `tool:search_food_delivery:${cls}`, runIdFetch.getRunId());
+              if (cls === "NOT_CONNECTED" || cls === "SESSION_EXPIRED" || cls === "UNAUTHORIZED") return { notConnected: true, reason: cls, note: "Live Swiggy data is unavailable. Say so briefly and answer from the vybz catalogue instead." };
+              return { unavailable: true, error: cls, note: "Live Swiggy data is unavailable right now. Say so briefly and answer from the vybz catalogue instead." };
             }
           },
         });
