@@ -13,7 +13,14 @@ import { useSaved } from "@/hooks/useSaved";
 
 type Item = SceneItem | Recommendation;
 
-export function SceneCard({ item, index = 0, compact = false, monetisation }: { item: Item; index?: number; compact?: boolean; monetisation?: MonetisedClickOptions }) {
+/** Session-only live delivery context from the signed-in user's own Swiggy account. */
+export interface SceneCardLive {
+  deliveryTime: string | null;
+  costForTwo: string | null;
+}
+
+export function SceneCard({ item, index = 0, compact = false, monetisation, live }: { item: Item; index?: number; compact?: boolean; monetisation?: MonetisedClickOptions; live?: SceneCardLive | null }) {
+
   const reasons = "reasons" in item ? item.reasons : [];
   const { isSaved, toggle } = useSaved();
   const saved = isSaved(item.type, item.id);
