@@ -52,6 +52,14 @@ function ScenePage() {
     queryFn: () => getRecommendations({ data: { ...search, ...(history ? { history } : {}), limit: 10 } }),
   });
 
+  // Secondary, session-only signal: live delivery context for food venues, when the user's own
+  // Swiggy account is connected. Recommendations are unchanged when it isn't.
+  const foodVenues = (data?.items ?? [])
+    .filter((i) => i.type === "venue" && ["restaurants", "cafes", "nightlife"].includes(i.categorySlug ?? ""))
+    .map((i) => ({ id: i.id, name: i.name }));
+  const { live } = useSwiggyLiveVenues(foodVenues);
+
+
   useEffect(() => {
     if (!data) return;
     track("recommendation_view", { metadata: { ...search, count: data.items.length, candidates: data.total, personalised: !!history } });
