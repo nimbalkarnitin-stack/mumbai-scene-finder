@@ -218,17 +218,19 @@ export const Route = createFileRoute("/api/chat")({
               originalMessages: messages,
               sendReasoning: true,
               onError: (err) => {
-                const msg = err instanceof Error ? err.message : String(err);
-                if (/402|credits/i.test(msg)) return "vybz's AI credits are exhausted. Please add credits to continue.";
-                if (/429|rate/i.test(msg)) return "The concierge is busy — try again in a moment.";
-                return "The concierge hit a snag. Please try again.";
+                const info = classifyConciergeError(err);
+                logConciergeError(info, "stream", runIdFetch.getRunId());
+                return info.userMessage;
               },
             }),
             runIdFetch,
           );
         } catch (err) {
-          if (err instanceof Error && err.name === "AbortError") return new Response(null, { status: 499 });
-          throw err;
+          const info = classifyConciergeError(err);
+          if (info.kind === "aborted") return new Response(null, { status: 499 });
+          logConciergeError(info, "handler", runIdFetch.getRunId());
+          const status = info.kind === "credits" || info.kind === "ai_denied" ? 403 : info.kind === "rate_limit" ? 429 : 500;
+          return Response.json({ error: info.userMessage, kind: info.kind }, { status });
         }
       },
     },
