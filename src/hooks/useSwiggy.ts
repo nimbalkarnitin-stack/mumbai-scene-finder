@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
-import { disconnectSwiggy, getSwiggyStatus, listSwiggyAddresses, startSwiggyConnect } from "@/lib/swiggy/swiggy.functions";
+import { disconnectSwiggy, enrichVenuesWithSwiggy, getSwiggyStatus, listSwiggyAddresses, startSwiggyConnect } from "@/lib/swiggy/swiggy.functions";
 import { useAuth } from "./useAuth";
+
 
 /**
  * Swiggy delivery address for the current browsing session only.
