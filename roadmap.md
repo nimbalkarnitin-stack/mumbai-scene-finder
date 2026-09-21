@@ -34,3 +34,12 @@ Open (blocked on external input):
 - Hard rule kept: no Swiggy response is written to venues/events/source_records/discovery tables,
   and no Swiggy data is used for analytics or ranking learning.
 - [ ] External step: each user must authorise Swiggy; v1.0 issues no refresh token (reconnect after 5 days).
+
+## Concierge reliability (error classification)
+- src/lib/concierge-errors.ts classifies every /api/chat failure (credits, rate limit, auth,
+  provider denial, bad request, unavailable, catalogue tool, Swiggy tool, abort, validation,
+  config, unknown) into a distinct user message + secret-free structured log line.
+- search_listings / list_areas return controlled "unavailable" tool results instead of throwing;
+  Swiggy failures are non-blocking and only mentioned when the user asked about food/delivery.
+- [ ] External step: workspace monthly AI spending limit (4 credits, block usage) is currently
+  reached — a workspace admin must raise it or top up before the concierge can answer.
