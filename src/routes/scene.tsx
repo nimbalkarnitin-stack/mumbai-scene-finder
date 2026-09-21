@@ -14,6 +14,8 @@ import { getRecommendations } from "@/lib/scene.functions";
 import { BUDGETS, GROUPS, MOODS, TIMINGS } from "@/lib/scene-constants";
 import { getHistorySignal, recordHistory } from "@/lib/history";
 import { track } from "@/lib/track";
+import { useSwiggyLiveVenues } from "@/hooks/useSwiggy";
+
 
 const searchSchema = z.object({
   mood: z.string().optional(),
