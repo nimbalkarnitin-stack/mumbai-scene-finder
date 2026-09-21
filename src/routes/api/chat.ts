@@ -139,7 +139,9 @@ export const Route = createFileRoute("/api/chat")({
             });
             const { data } = await authClient.auth.getClaims(bearer);
             swiggyUserId = (data?.claims?.sub as string | undefined) ?? null;
-          } catch {
+          } catch (err) {
+            // A bad/expired session never blocks catalogue answers — Swiggy tools just report not-connected.
+            logConciergeError(classifyConciergeError(err), "auth:session", runIdFetch.getRunId());
             swiggyUserId = null;
           }
         }
