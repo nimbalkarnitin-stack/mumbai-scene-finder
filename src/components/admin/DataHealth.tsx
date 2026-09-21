@@ -85,7 +85,9 @@ function DiscoveryPipelineHealth() {
   const q = useQuery({
     queryKey: ["admin-discovery-pipeline-health"],
     queryFn: async () => {
-      const candidateCount = async (status?: string) => {
+      type CandidateStatus = "DISCOVERED" | "SOURCE_FOUND" | "VALIDATED" | "INGESTED" | "REJECTED";
+      const candidateCount = async (status?: CandidateStatus) => {
+
         const base = supabase.from("discovery_candidates").select("id", { count: "exact", head: true });
         const { count } = await (status ? base.eq("status", status) : base);
         return count ?? 0;
