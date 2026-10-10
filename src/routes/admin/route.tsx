@@ -3,7 +3,7 @@ import { AppShell } from "@/components/scene/AppShell";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 
-export const Route = createFileRoute("/admin")({
+export const Route = createFileRoute("/admin")({ staticData: { sitemap: "exclude-subtree" },
   head: () => ({ meta: [{ title: "Admin — vybz" }, { name: "description", content: "vybz operations dashboard." }, { property: "og:title", content: "Admin — vybz" }, { property: "og:description", content: "vybz operations dashboard." }, { name: "robots", content: "noindex" }] }),
   component: AdminGate,
 });

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/admin/analytics")({ component: AnalyticsPage });
+export const Route = createFileRoute("/admin/analytics")({ staticData: { sitemap: false }, component: AnalyticsPage });
 
 const EVENTS = ["search", "recommendation_view", "item_view", "save", "share", "booking_click", "conversion", "itinerary_generated", "concierge_message", "preference_set"];
 

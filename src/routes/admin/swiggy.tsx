@@ -4,7 +4,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { getSwiggyHealth } from "@/lib/swiggy/admin.functions";
 import { formatIst } from "@/lib/ingestion/timezone";
 
-export const Route = createFileRoute("/admin/swiggy")({ component: SwiggyHealthPage });
+export const Route = createFileRoute("/admin/swiggy")({ staticData: { sitemap: false }, component: SwiggyHealthPage });
 
 function Stat({ label, value, tone }: { label: string; value: string | number; tone?: string }) {
   return (

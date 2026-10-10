@@ -26,7 +26,7 @@ FOOD DELIVERY
 - If that tool reports notConnected, do not guess: say live delivery needs their Swiggy account connected, point them to the /food page, and answer from the vybz catalogue instead.
 - Label live Swiggy results as "live from Swiggy" and never invent a delivery time, price, dish or availability. Swiggy live data is for this answer only — never present it as a vybz verified listing.`;
 
-export const Route = createFileRoute("/api/chat")({
+export const Route = createFileRoute("/api/chat")({ staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

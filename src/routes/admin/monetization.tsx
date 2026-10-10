@@ -16,7 +16,7 @@ import {
 } from "@/lib/monetisation/admin.functions";
 import { COMMISSION_MODEL_LABEL, CONVERSION_STATUS_LABEL, PARTNER_STATUS_LABEL, type ConversionStatus } from "@/lib/monetisation/types";
 
-export const Route = createFileRoute("/admin/monetization")({ component: MonetizationPage });
+export const Route = createFileRoute("/admin/monetization")({ staticData: { sitemap: false }, component: MonetizationPage });
 
 const money = (n: number, currency = "INR") => `${currency === "INR" ? "₹" : `${currency} `}${Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 const pct = (n: number) => `${(Number(n || 0) * 100).toFixed(1)}%`;

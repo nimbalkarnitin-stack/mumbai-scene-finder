@@ -6,7 +6,7 @@ import { Concierge } from "@/components/scene/Concierge";
 const TITLE = "AI Concierge — vybz Mumbai";
 const DESC = "Chat with vybz's Mumbai concierge: ask for tonight's plan, a date spot, live music near you, or tweak your itinerary in plain English.";
 
-export const Route = createFileRoute("/concierge")({
+export const Route = createFileRoute("/concierge")({ staticData: { sitemap: true },
   validateSearch: z.object({ q: z.string().optional() }),
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }] }),
   component: ConciergePage,

@@ -5,7 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
  * short-lived `state` row, which carries the My Mood user id and the PKCE verifier —
  * route placement never authenticates anyone. No token is ever placed in the URL.
  */
-export const Route = createFileRoute("/api/public/swiggy/callback")({
+export const Route = createFileRoute("/api/public/swiggy/callback")({ staticData: { sitemap: false },
   server: {
     handlers: {
       GET: async ({ request }) => {

@@ -4,7 +4,7 @@ import { AppShell } from "@/components/scene/AppShell";
 import { SwiggyFoodSearch } from "@/components/scene/SwiggyLive";
 import { SwiggyPrivacyNote } from "@/components/scene/SwiggyConnect";
 
-export const Route = createFileRoute("/food")({
+export const Route = createFileRoute("/food")({ staticData: { sitemap: false },
   validateSearch: z.object({ swiggy: z.string().optional(), reason: z.string().optional() }),
   head: () => ({
     meta: [

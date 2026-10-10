@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ItemPage, makeItemRoute } from "@/lib/item-route";
 
-export const Route = createFileRoute("/x/$slug")({
+export const Route = createFileRoute("/x/$slug")({ staticData: { sitemap: false },
   ...makeItemRoute("experience"),
   component: Page,
 });

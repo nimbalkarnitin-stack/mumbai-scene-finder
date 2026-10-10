@@ -25,7 +25,7 @@ const searchSchema = z.object({
   area: z.string().optional(),
 });
 
-export const Route = createFileRoute("/scene")({
+export const Route = createFileRoute("/scene")({ staticData: { sitemap: false },
   validateSearch: searchSchema,
   head: ({ match }) => {
     const s = match.search;

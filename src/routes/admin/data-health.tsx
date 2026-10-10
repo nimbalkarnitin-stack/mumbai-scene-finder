@@ -4,7 +4,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { getIngestionHealth } from "@/lib/ingestion/admin.functions";
 import { formatIst } from "@/lib/ingestion/timezone";
 
-export const Route = createFileRoute("/admin/data-health")({ component: DataHealthPage });
+export const Route = createFileRoute("/admin/data-health")({ staticData: { sitemap: false }, component: DataHealthPage });
 
 const pct = (n: number, total: number) => (total === 0 ? "—" : `${Math.round((n / total) * 100)}%`);
 

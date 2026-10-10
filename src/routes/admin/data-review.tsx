@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { actOnSourceRecord, listReviewQueue, mergeDuplicate, setEventLifecycle, type ReviewQueue } from "@/lib/ingestion/admin.functions";
 import { formatIst } from "@/lib/ingestion/timezone";
 
-export const Route = createFileRoute("/admin/data-review")({ component: DataReview });
+export const Route = createFileRoute("/admin/data-review")({ staticData: { sitemap: false }, component: DataReview });
 
 const QUEUES: { key: ReviewQueue; label: string }[] = [
   { key: "new", label: "New" },

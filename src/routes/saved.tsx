@@ -10,7 +10,7 @@ import { getItemsByKeys } from "@/lib/scene.functions";
 const TITLE = "Saved scenes — vybz";
 const DESC = "Your saved venues, events and experiences in Mumbai.";
 
-export const Route = createFileRoute("/saved")({
+export const Route = createFileRoute("/saved")({ staticData: { sitemap: false },
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }, { name: "robots", content: "noindex" }] }),
   component: SavedPage,
 });
