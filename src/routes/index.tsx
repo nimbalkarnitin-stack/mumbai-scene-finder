@@ -11,8 +11,8 @@ import { CATEGORY_NAV, CONCIERGE_SUGGESTIONS } from "@/lib/scene-constants";
 import { CATEGORY_IMAGES, HERO_IMAGE } from "@/lib/scene-images";
 import { getTrending } from "@/lib/scene.functions";
 
-const TITLE = "vybz — What's your scene tonight in Mumbai?";
-const DESC = "AI-powered discovery for Mumbai. Tell vybz your mood, crew, budget and timing — get personalised picks and a full weekend plan.";
+const TITLE = "vybz — What's On in Mumbai Tonight: Events & Bars";
+const DESC = "Find what's on in Mumbai tonight and this weekend — events, live music, comedy, cafes and clubs. vybz matches picks to your mood, crew and budget, free.";
 
 export const Route = createFileRoute("/")({ staticData: { sitemap: true },
   head: () => ({
