@@ -28,6 +28,7 @@ import { Route as PlusRouteImport } from './routes/plus'
 import { Route as RestaurantsRouteImport } from './routes/restaurants'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as SceneRouteImport } from './routes/scene'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TrendingRouteImport } from './routes/trending'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminEntityRouteImport } from './routes/admin/$entity'
@@ -142,6 +143,11 @@ const SavedRoute = SavedRouteImport.update({
 const SceneRoute = SceneRouteImport.update({
   id: '/scene',
   path: '/scene',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TrendingRoute = TrendingRouteImport.update({
@@ -266,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/restaurants': typeof RestaurantsRoute
   '/saved': typeof SavedRoute
   '/scene': typeof SceneRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trending': typeof TrendingRoute
   '/admin/$entity': typeof AdminEntityRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -306,6 +313,7 @@ export interface FileRoutesByTo {
   '/restaurants': typeof RestaurantsRoute
   '/saved': typeof SavedRoute
   '/scene': typeof SceneRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trending': typeof TrendingRoute
   '/admin/$entity': typeof AdminEntityRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -348,6 +356,7 @@ export interface FileRoutesById {
   '/restaurants': typeof RestaurantsRoute
   '/saved': typeof SavedRoute
   '/scene': typeof SceneRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trending': typeof TrendingRoute
   '/admin/$entity': typeof AdminEntityRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -391,6 +400,7 @@ export interface FileRouteTypes {
     | '/restaurants'
     | '/saved'
     | '/scene'
+    | '/sitemap.xml'
     | '/trending'
     | '/admin/$entity'
     | '/admin/analytics'
@@ -431,6 +441,7 @@ export interface FileRouteTypes {
     | '/restaurants'
     | '/saved'
     | '/scene'
+    | '/sitemap.xml'
     | '/trending'
     | '/admin/$entity'
     | '/admin/analytics'
@@ -472,6 +483,7 @@ export interface FileRouteTypes {
     | '/restaurants'
     | '/saved'
     | '/scene'
+    | '/sitemap.xml'
     | '/trending'
     | '/admin/$entity'
     | '/admin/analytics'
@@ -514,6 +526,7 @@ export interface RootRouteChildren {
   RestaurantsRoute: typeof RestaurantsRoute
   SavedRoute: typeof SavedRoute
   SceneRoute: typeof SceneRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrendingRoute: typeof TrendingRoute
   ApiChatRoute: typeof ApiChatRoute
   ESlugRoute: typeof ESlugRoute
@@ -658,6 +671,13 @@ declare module '@tanstack/react-router' {
       path: '/scene'
       fullPath: '/scene'
       preLoaderRoute: typeof SceneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trending': {
@@ -864,6 +884,7 @@ const rootRouteChildren: RootRouteChildren = {
   RestaurantsRoute: RestaurantsRoute,
   SavedRoute: SavedRoute,
   SceneRoute: SceneRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrendingRoute: TrendingRoute,
   ApiChatRoute: ApiChatRoute,
   ESlugRoute: ESlugRoute,
