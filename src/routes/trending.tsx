@@ -7,7 +7,7 @@ import { getTrending } from "@/lib/scene.functions";
 const TITLE = "Trending in Mumbai — vybz";
 const DESC = "What Mumbai is saving, sharing and booking right now, ranked by vybz.";
 
-export const Route = createFileRoute("/trending")({
+export const Route = createFileRoute("/trending")({ staticData: { sitemap: true },
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }] }),
   component: () => {
     const { data, isLoading } = useQuery({ queryKey: ["trending"], queryFn: () => getTrending({ data: {} }), staleTime: 60_000 });

@@ -10,7 +10,7 @@ import { createFileRoute } from "@tanstack/react-router";
  *
  * Idempotent on (partner, external conversion id).
  */
-export const Route = createFileRoute("/api/public/affiliate/$partner/postback")({
+export const Route = createFileRoute("/api/public/affiliate/$partner/postback")({ staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request, params }) => {

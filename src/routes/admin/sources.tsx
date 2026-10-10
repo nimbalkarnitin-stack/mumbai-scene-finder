@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { discoveryAction, googleDiscoveryStatus, googleTestConnection, listSources, runIngestionNow, setGoogleQueries, updateSource } from "@/lib/ingestion/admin.functions";
 import { formatIst } from "@/lib/ingestion/timezone";
 
-export const Route = createFileRoute("/admin/sources")({ component: Sources });
+export const Route = createFileRoute("/admin/sources")({ staticData: { sitemap: false }, component: Sources });
 
 function Sources() {
   const qc = useQueryClient();

@@ -5,7 +5,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/admin/users")({ component: UsersPage });
+export const Route = createFileRoute("/admin/users")({ staticData: { sitemap: false }, component: UsersPage });
 
 function UsersPage() {
   const qc = useQueryClient();

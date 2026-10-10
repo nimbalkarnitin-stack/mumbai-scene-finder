@@ -8,7 +8,7 @@ type Task = (typeof TASKS)[number];
  * /admin/sources. Caller is verified against the stored scheduler token hash or the
  * Lovable cron secret — route placement never authenticates anyone.
  */
-export const Route = createFileRoute("/api/public/ingestion/$task")({
+export const Route = createFileRoute("/api/public/ingestion/$task")({ staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request, params }) => {

@@ -10,7 +10,7 @@ import { track } from "@/lib/track";
 const TITLE = "vybz+ — Mumbai's concierge, upgraded";
 const DESC = "Unlimited AI itineraries, members-only deals, early access to events and curated city guides.";
 
-export const Route = createFileRoute("/plus")({
+export const Route = createFileRoute("/plus")({ staticData: { sitemap: true },
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }] }),
   component: PlusPage,
 });

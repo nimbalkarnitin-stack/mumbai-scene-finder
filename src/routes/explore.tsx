@@ -12,7 +12,7 @@ import { getCityMeta, listItems } from "@/lib/scene.functions";
 const TITLE = "Explore Mumbai — vybz";
 const DESC = "Browse every venue, event and experience listed on vybz by neighbourhood and category — editor-verified entries are badged.";
 
-export const Route = createFileRoute("/explore")({
+export const Route = createFileRoute("/explore")({ staticData: { sitemap: true },
   validateSearch: z.object({ area: z.string().optional(), sort: z.enum(["popular", "newest", "soonest"]).optional(), category: z.string().optional() }),
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }] }),
   component: ExplorePage,

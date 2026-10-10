@@ -8,7 +8,7 @@ import { listGuides } from "@/lib/scene.functions";
 const TITLE = "Mumbai Guides — vybz";
 const DESC = "Editorial guides to Mumbai: neighbourhood walks, date ideas, late-night eats and weekend plans.";
 
-export const Route = createFileRoute("/guides")({
+export const Route = createFileRoute("/guides")({ staticData: { sitemap: true },
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }] }),
   component: GuidesLayout,
 });

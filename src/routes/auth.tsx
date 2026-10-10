@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 const TITLE = "Sign in — vybz";
 const DESC = "Sign in to vybz to sync saved places, keep itineraries across devices and unlock vybz+.";
 
-export const Route = createFileRoute("/auth")({
+export const Route = createFileRoute("/auth")({ staticData: { sitemap: false },
   validateSearch: z.object({ next: z.string().optional() }),
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }] }),
   component: AuthPage,

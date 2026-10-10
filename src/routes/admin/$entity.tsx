@@ -3,7 +3,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { EntityTable } from "@/components/admin/EntityTable";
 import { ENTITIES } from "@/lib/admin-entities";
 
-export const Route = createFileRoute("/admin/$entity")({
+export const Route = createFileRoute("/admin/$entity")({ staticData: { sitemap: false },
   loader: ({ params }) => { if (!ENTITIES[params.entity]) throw notFound(); },
   notFoundComponent: () => <AdminShell title="Not found"><p className="text-sm text-muted-foreground">Unknown section.</p></AdminShell>,
   component: () => {

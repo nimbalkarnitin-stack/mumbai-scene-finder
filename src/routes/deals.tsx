@@ -11,7 +11,7 @@ import { track } from "@/lib/track";
 const TITLE = "Mumbai Deals & Offers — vybz";
 const DESC = "Verified offers, promo codes and members-only perks at Mumbai venues and events.";
 
-export const Route = createFileRoute("/deals")({
+export const Route = createFileRoute("/deals")({ staticData: { sitemap: true },
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }] }),
   component: DealsPage,
 });

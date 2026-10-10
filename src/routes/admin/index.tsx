@@ -5,7 +5,7 @@ import { DataHealth } from "@/components/admin/DataHealth";
 import { ENTITIES } from "@/lib/admin-entities";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/admin/")({ component: Overview });
+export const Route = createFileRoute("/admin/")({ staticData: { sitemap: false }, component: Overview });
 
 function Overview() {
   const q = useQuery({

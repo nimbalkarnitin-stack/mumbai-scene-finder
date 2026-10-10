@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { discoveryAction, listDiscovery, runDiscoveryNow } from "@/lib/ingestion/admin.functions";
 import { formatIst } from "@/lib/ingestion/timezone";
 
-export const Route = createFileRoute("/admin/discovery")({
+export const Route = createFileRoute("/admin/discovery")({ staticData: { sitemap: false },
   component: Discovery,
   head: () => ({
     meta: [

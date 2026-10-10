@@ -14,7 +14,7 @@ import { getTrending } from "@/lib/scene.functions";
 const TITLE = "vybz — What's your scene tonight in Mumbai?";
 const DESC = "AI-powered discovery for Mumbai. Tell vybz your mood, crew, budget and timing — get personalised picks and a full weekend plan.";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/")({ staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: TITLE },

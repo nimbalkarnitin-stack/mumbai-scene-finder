@@ -10,7 +10,7 @@ import { BUDGETS, GROUPS, MOODS, TIMINGS } from "@/lib/scene-constants";
 const TITLE = "Plan My Weekend — vybz Mumbai";
 const DESC = "Generate a complete Mumbai itinerary in seconds, then edit it conversationally: make it cheaper, replace dinner, add live music, keep it near Bandra.";
 
-export const Route = createFileRoute("/plan")({
+export const Route = createFileRoute("/plan")({ staticData: { sitemap: true },
   validateSearch: z.object({
     mood: z.string().optional(), group: z.string().optional(), budget: z.coerce.number().optional(), timing: z.string().optional(), area: z.string().optional(),
   }),

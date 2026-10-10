@@ -46,7 +46,7 @@ const pageQuery = (slug: string) =>
     staleTime: 120_000,
   });
 
-export const Route = createFileRoute("/mumbai/$slug")({
+export const Route = createFileRoute("/mumbai/$slug")({ staticData: { sitemap: false },
   loader: async ({ params, context }) => {
     const data = await context.queryClient.ensureQueryData(pageQuery(params.slug));
     if (!data) throw notFound();

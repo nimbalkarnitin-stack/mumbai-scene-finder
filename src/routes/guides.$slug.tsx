@@ -7,7 +7,7 @@ import { listGuides } from "@/lib/scene.functions";
 const guideQuery = (slug: string) =>
   queryOptions({ queryKey: ["guide", slug], queryFn: async () => (await listGuides({ data: { slug } }))[0] ?? null, staleTime: 300_000 });
 
-export const Route = createFileRoute("/guides/$slug")({
+export const Route = createFileRoute("/guides/$slug")({ staticData: { sitemap: false },
   loader: async ({ params, context }) => {
     const g = await context.queryClient.ensureQueryData(guideQuery(params.slug));
     if (!g) throw notFound();
