@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep existing storage, attribution and route identifiers compatible when changing visible brand text, to preserve saved data and links.
+- Category-page canonical URLs belong in the existing category head helper with an explicit route path, never in the shared root.
