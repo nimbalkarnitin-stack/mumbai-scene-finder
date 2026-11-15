@@ -5,6 +5,6 @@ const TITLE = "Mumbai Nightlife";
 const DESC = "Rooftops, basements, clubs and late bars from Bandra to Lower Parel.";
 
 export const Route = createFileRoute("/nightlife")({ staticData: { sitemap: true },
-  head: categoryHead(TITLE, DESC),
+  head: categoryHead(TITLE, DESC, "/nightlife"),
   component: () => <CategoryPage slug="nightlife" title={TITLE} description={DESC} category="nightlife" />,
 });

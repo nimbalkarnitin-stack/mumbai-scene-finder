@@ -5,6 +5,6 @@ const TITLE = "Comedy in Mumbai";
 const DESC = "Stand-up, open mics and comedy clubs worth the ticket.";
 
 export const Route = createFileRoute("/comedy")({ staticData: { sitemap: true },
-  head: categoryHead(TITLE, DESC),
+  head: categoryHead(TITLE, DESC, "/comedy"),
   component: () => <CategoryPage slug="comedy" title={TITLE} description={DESC} category="comedy" />,
 });

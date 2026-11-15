@@ -5,7 +5,7 @@ import { SceneCard, SceneCardSkeleton } from "@/components/scene/SceneCard";
 import { getTrending } from "@/lib/scene.functions";
 
 const TITLE = "Trending in Mumbai — Vybz";
-const DESC = "What Mumbai is saving, sharing and booking right now, ranked by vybz.";
+const DESC = "What Mumbai is saving, sharing and booking right now, ranked by Vybz.";
 
 export const Route = createFileRoute("/trending")({ staticData: { sitemap: true },
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }] }),

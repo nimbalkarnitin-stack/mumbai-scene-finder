@@ -102,7 +102,7 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
             {supportsLiveReservation && link.kind !== "booking" && !item.venue?.reservationUrl ? <CalendarCheck className="size-4" /> : <ExternalLink className="size-4" />}
           </Button>
           {supportsLiveReservation && link.kind !== "booking" && !item.venue?.reservationUrl ? (
-            <p className="text-[11px] text-muted-foreground">Choose a live Swiggy Dineout time below and confirm your reservation without leaving vybz.</p>
+            <p className="text-[11px] text-muted-foreground">Choose a live Swiggy Dineout time below and confirm your reservation without leaving Vybz.</p>
           ) : link.kind !== "booking" ? (
             <p className="text-[11px] text-muted-foreground">No direct booking provider is connected; available options open from the source.</p>
           ) : null}

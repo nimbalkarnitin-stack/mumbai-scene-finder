@@ -21,7 +21,7 @@ function DealsPage() {
   const copy = async (code: string) => { await navigator.clipboard.writeText(code); toast.success(`Copied ${code}`); };
   return (
     <AppShell>
-      <PageHeader eyebrow="Deals" title="Offers worth the detour" description="Every deal here is submitted by the venue or partner and reviewed by vybz. Sponsored offers are labelled." />
+      <PageHeader eyebrow="Deals" title="Offers worth the detour" description="Every deal here is submitted by the venue or partner and reviewed by Vybz. Sponsored offers are labelled." />
       <div className="grid gap-4 px-4 sm:grid-cols-2 md:px-6 lg:grid-cols-3">
         {isLoading && Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-44 animate-pulse rounded-3xl bg-card" />)}
         {data?.map((o) => (

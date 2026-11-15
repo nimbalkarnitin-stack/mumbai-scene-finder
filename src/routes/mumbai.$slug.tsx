@@ -21,7 +21,7 @@ async function resolvePage(slug: string): Promise<PageDef | null> {
   const title = `Things to do in ${area.name}${budget ? ` under ₹${budget.toLocaleString("en-IN")}` : ""}`;
   return {
     title, h1: title,
-    description: `${title}, Mumbai — bars, cafés, gigs and experiences in ${area.name}${budget ? ` that fit a ₹${budget.toLocaleString("en-IN")} budget` : ""}, ranked by vybz.`,
+    description: `${title}, Mumbai — bars, cafés, gigs and experiences in ${area.name}${budget ? ` that fit a ₹${budget.toLocaleString("en-IN")} budget` : ""}, ranked by Vybz.`,
     filters: { area: area.slug, ...(budget ? { budget: String(budget) } : {}) },
   };
 }
