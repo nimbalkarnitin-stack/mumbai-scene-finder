@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSaved } from "@/hooks/useSaved";
 import { getItemsByKeys } from "@/lib/scene.functions";
 
-const TITLE = "Saved scenes — vybz";
+const TITLE = "Saved on vybz";
 const DESC = "Your saved venues, events and experiences in Mumbai.";
 
 export const Route = createFileRoute("/saved")({ staticData: { sitemap: false },
@@ -21,7 +21,7 @@ function SavedPage() {
   const { data, isLoading } = useQuery({ queryKey: ["saved-items", keys], queryFn: () => getItemsByKeys({ data: { keys } }), enabled: keys.length > 0 });
   return (
     <AppShell>
-      <PageHeader eyebrow="Saved" title="Your scenes" description={user ? "Synced to your account." : "Saved on this device — sign in to keep them everywhere."}
+      <PageHeader eyebrow="Saved" title="Your vybz" description={user ? "Synced to your account." : "Saved on this device — sign in to keep them everywhere."}
         action={!user ? <Button asChild variant="glass" size="sm"><Link to="/auth" search={{ next: "/saved" }}>Sign in</Link></Button> : undefined} />
       <div className="grid gap-4 px-4 sm:grid-cols-2 md:px-6 lg:grid-cols-3">
         {isLoading && Array.from({ length: 3 }).map((_, i) => <SceneCardSkeleton key={i} />)}
@@ -29,7 +29,7 @@ function SavedPage() {
         {keys.length === 0 && (
           <div className="col-span-full rounded-3xl border border-dashed border-border p-10 text-center">
             <p className="text-sm text-muted-foreground">Nothing saved yet. Tap the bookmark on any card.</p>
-            <Button asChild className="mt-4" variant="ember"><Link to="/">What's your scene?</Link></Button>
+            <Button asChild className="mt-4" variant="ember"><Link to="/">What's your vybz?</Link></Button>
           </div>
         )}
       </div>
