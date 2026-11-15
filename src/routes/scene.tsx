@@ -81,7 +81,7 @@ function ScenePage() {
   return (
     <AppShell>
       <div className="px-4 pt-6 md:px-6 md:pt-10">
-        <p className="eyebrow text-primary-glow">Your scene</p>
+        <p className="eyebrow text-primary-glow">Your vybz</p>
         <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
           <h1 className="text-3xl font-semibold leading-tight md:text-5xl">
             {summary.length ? summary.join(" · ") : "Tonight in Mumbai"}
