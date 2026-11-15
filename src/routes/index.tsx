@@ -38,7 +38,7 @@ function Index() {
         <div className="relative px-4 pb-8 pt-[38vh] md:px-10 md:pb-12 md:pt-[30vh]">
           <p className="eyebrow mb-3 text-saffron">Mumbai · Tonight &amp; this weekend</p>
           <h1 className="max-w-[12ch] text-[44px] font-medium leading-[0.98] md:text-7xl">
-            What's your <em className="text-gradient-ember not-italic">scene?</em>
+            What's your <em className="text-gradient-ember not-italic">vybz?</em>
           </h1>
           <p className="mt-4 max-w-md text-[15px] text-foreground/80">
             Tell us the mood. vybz reads the city back to you — bars, gigs, comedy, dinners and things you've never tried.

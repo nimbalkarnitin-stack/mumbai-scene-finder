@@ -21,7 +21,7 @@ export function ScenePicker({ initial = {}, compact = false, className }: { init
     <div className={cn("space-y-5", className)}>
       <ScenePickerFields sel={sel} setSel={setSel} />
       <Button variant="ember" size={compact ? "lg" : "xl"} className="w-full sm:w-auto" onClick={go}>
-        What's your scene? <ArrowRight className="size-4" />
+        What's your vybz? <ArrowRight className="size-4" />
       </Button>
     </div>
   );

@@ -20,7 +20,7 @@ function NotFoundComponent() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <p className="eyebrow text-primary-glow">404</p>
-        <h1 className="mt-3 text-4xl font-semibold">That scene doesn't exist</h1>
+        <h1 className="mt-3 text-4xl font-semibold">That vybz doesn't exist</h1>
         <p className="mt-2 text-sm text-muted-foreground">The page you're looking for has moved or never existed.</p>
         <div className="mt-6">
           <Link to="/" className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground">

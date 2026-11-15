@@ -20,7 +20,7 @@ const PERKS = [
   "Members-only deals and promo codes across Mumbai",
   "Early access and priority alerts for gigs and comedy nights",
   "Curated neighbourhood guides, refreshed weekly",
-  "Saved scenes synced across devices",
+  "Saved vybz synced across devices",
   "No sponsored listings in your recommendations",
 ];
 
