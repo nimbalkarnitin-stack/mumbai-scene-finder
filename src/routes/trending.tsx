@@ -4,7 +4,7 @@ import { AppShell, PageHeader } from "@/components/scene/AppShell";
 import { SceneCard, SceneCardSkeleton } from "@/components/scene/SceneCard";
 import { getTrending } from "@/lib/scene.functions";
 
-const TITLE = "Trending in Mumbai — vybz";
+const TITLE = "Trending in Mumbai — Vybz";
 const DESC = "What Mumbai is saving, sharing and booking right now, ranked by vybz.";
 
 export const Route = createFileRoute("/trending")({ staticData: { sitemap: true },

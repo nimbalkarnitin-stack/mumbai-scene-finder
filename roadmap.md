@@ -1,4 +1,4 @@
-# vybz ingestion engine — roadmap
+# Vybz ingestion engine — roadmap
 
 - [x] Ingestion schema: source_records, ingestion_sources, ingestion_jobs, duplicate_candidates, ingestion_settings, cron tokens, provenance/freshness columns, event lifecycle + timezone, indexes, RLS
 - [x] Shared ingestion libs: types, Asia/Kolkata timezone, URL/SSRF guard, quality scoring, dedupe, safe fetch with retry + rate limit
@@ -43,3 +43,8 @@ Open (blocked on external input):
   Swiggy failures are non-blocking and only mentioned when the user asked about food/delivery.
 - [ ] External step: workspace monthly AI spending limit (4 credits, block usage) is currently
   reached — a workspace admin must raise it or top up before the concierge can answer.
+
+## Vybz naming, SEO and owner briefing
+- [x] Standardise visible brand and page metadata as Vybz; preserve URLs and storage namespaces.
+- [x] Homepage canonical identity and WebSite structured data.
+- [ ] Daily 08:00 Asia/Kolkata owner AI briefing: blocked on sender-domain setup, workspace AI spending limit, and confirmed sales/booking/task data sources; do not activate sending until these are ready.

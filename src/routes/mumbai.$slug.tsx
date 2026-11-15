@@ -53,8 +53,8 @@ export const Route = createFileRoute("/mumbai/$slug")({ staticData: { sitemap: f
     return { title: data.page.title, description: data.page.description };
   },
   head: ({ loaderData }) => {
-    if (!loaderData) return { meta: [{ title: "Not found — vybz" }, { name: "robots", content: "noindex" }] };
-    const t = `${loaderData.title} — vybz`;
+    if (!loaderData) return { meta: [{ title: "Not found — Vybz" }, { name: "robots", content: "noindex" }] };
+    const t = `${loaderData.title} — Vybz`;
     return { meta: [{ title: t }, { name: "description", content: loaderData.description }, { property: "og:title", content: t }, { property: "og:description", content: loaderData.description }] };
   },
   notFoundComponent: () => (

@@ -34,7 +34,7 @@ export interface ConciergeErrorInfo {
 
 const MESSAGES: Record<ConciergeErrorKind, string> = {
   validation: "That request couldn't be read. Please rephrase and send it again.",
-  config: "The concierge isn't configured yet. Please contact vybz support.",
+  config: "The concierge isn't configured yet. Please contact Vybz support.",
   auth: "Your session expired. Please sign in again to keep chatting.",
   credits:
     "The concierge is out of AI credits for this workspace. A workspace admin needs to raise the limit or top up before it can answer again.",
@@ -43,7 +43,7 @@ const MESSAGES: Record<ConciergeErrorKind, string> = {
   ai_bad_request: "The concierge couldn't process that message. Try a shorter or simpler question.",
   ai_unavailable: "The concierge is temporarily unavailable. Please try again in a moment.",
   tool_catalogue: "The Mumbai catalogue is unreachable right now, so the concierge can't suggest places. Please try again shortly.",
-  tool_swiggy: "Live Swiggy data isn't available right now — the concierge will use the vybz catalogue instead.",
+  tool_swiggy: "Live Swiggy data isn't available right now — the concierge will use the Vybz catalogue instead.",
   aborted: "Response stopped.",
   unknown: "The concierge hit a snag. Please try again.",
 };

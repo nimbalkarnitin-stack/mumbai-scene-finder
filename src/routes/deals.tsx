@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { listOffers } from "@/lib/scene.functions";
 import { track } from "@/lib/track";
 
-const TITLE = "Mumbai Deals & Offers — vybz";
+const TITLE = "Mumbai Deals & Offers — Vybz";
 const DESC = "Verified offers, promo codes and members-only perks at Mumbai venues and events.";
 
 export const Route = createFileRoute("/deals")({ staticData: { sitemap: true },
@@ -28,7 +28,7 @@ function DealsPage() {
           <div key={o.id} className="flex flex-col rounded-3xl border border-border bg-card p-5">
             <div className="flex flex-wrap gap-1.5">
               {o.discount_text && <Tag tone="ember">{o.discount_text}</Tag>}
-              {o.is_members_only && <Tag tone="saffron"><Lock className="mr-1 size-3" />vybz+</Tag>}
+              {o.is_members_only && <Tag tone="saffron"><Lock className="mr-1 size-3" />Vybz+</Tag>}
               {o.is_sponsored && <Tag tone="sponsored">Sponsored{o.sponsors?.name ? ` · ${o.sponsors.name}` : ""}</Tag>}
             </div>
             <h2 className="mt-3 font-display text-xl font-semibold">{o.title}</h2>
@@ -36,13 +36,13 @@ function DealsPage() {
             {o.valid_until && <p className="mt-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Valid until {new Date(o.valid_until).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</p>}
             <div className="mt-auto flex gap-2 pt-4">
               {o.promo_code && !o.is_members_only && <Button variant="glass" size="sm" onClick={() => copy(o.promo_code!)}><Copy className="size-3.5" />{o.promo_code}</Button>}
-              {o.is_members_only && <Button asChild variant="glass" size="sm"><Link to="/plus">Unlock with vybz+</Link></Button>}
+              {o.is_members_only && <Button asChild variant="glass" size="sm"><Link to="/plus">Unlock with Vybz+</Link></Button>}
               {o.url && <Button size="sm" variant="ember" onClick={() => { track("booking_click", { metadata: { offerId: o.id } }); window.open(o.url!, "_blank", "noopener,noreferrer"); }}>Redeem <ExternalLink className="size-3.5" /></Button>}
             </div>
           </div>
         ))}
         {data && data.length === 0 && (
-          <div className="col-span-full rounded-3xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">No live offers right now. vybz only lists offers confirmed by the venue or partner.</div>
+          <div className="col-span-full rounded-3xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">No live offers right now. Vybz only lists offers confirmed by the venue or partner.</div>
         )}
       </div>
     </AppShell>

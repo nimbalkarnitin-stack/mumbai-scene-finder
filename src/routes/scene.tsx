@@ -30,8 +30,8 @@ export const Route = createFileRoute("/scene")({ staticData: { sitemap: false },
   head: ({ match }) => {
     const s = match.search;
     const mood = MOODS.find((m) => m.id === s.mood)?.label;
-    const title = `${mood ? `${mood} picks` : "Your picks"} in Mumbai${s.timing ? ` · ${TIMINGS.find((t) => t.id === s.timing)?.label}` : ""} — vybz`;
-    const desc = "Personalised Mumbai recommendations from vybz based on your mood, crew, budget, timing and area.";
+    const title = `${mood ? `${mood} picks` : "Your picks"} in Mumbai${s.timing ? ` · ${TIMINGS.find((t) => t.id === s.timing)?.label}` : ""} — Vybz`;
+    const desc = "Personalised Mumbai recommendations from Vybz based on your mood, crew, budget, timing and area.";
     return { meta: [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }] };
   },
   component: ScenePage,
@@ -81,7 +81,7 @@ function ScenePage() {
   return (
     <AppShell>
       <div className="px-4 pt-6 md:px-6 md:pt-10">
-        <p className="eyebrow text-primary-glow">Your vybz</p>
+        <p className="eyebrow text-primary-glow">Your Vybz</p>
         <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
           <h1 className="text-3xl font-semibold leading-tight md:text-5xl">
             {summary.length ? summary.join(" · ") : "Tonight in Mumbai"}
