@@ -47,6 +47,6 @@ export function CategoryPage({ slug, title, description, category, type, sort = 
   );
 }
 
-export function categoryHead(title: string, desc: string) {
-  return () => ({ meta: [{ title: `${title} — vybz` }, { name: "description", content: desc }, { property: "og:title", content: `${title} — vybz` }, { property: "og:description", content: desc }] });
+export function categoryHead(title: string, desc: string, path: string) {
+  return () => ({ meta: [{ title: `${title} — Vybz` }, { name: "description", content: desc }, { property: "og:title", content: `${title} — Vybz` }, { property: "og:description", content: desc }, { property: "og:url", content: `https://vybz.co.in${path}` }], links: [{ rel: "canonical", href: `https://vybz.co.in${path}` }] });
 }

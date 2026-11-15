@@ -5,6 +5,6 @@ const TITLE = "Events in Mumbai";
 const DESC = "Gigs, comedy nights, pop-ups and one-off happenings across Mumbai — soonest first.";
 
 export const Route = createFileRoute("/events")({ staticData: { sitemap: true },
-  head: categoryHead(TITLE, DESC),
+  head: categoryHead(TITLE, DESC, "/events"),
   component: () => <CategoryPage slug="events" title={TITLE} description={DESC} type="event" sort="soonest" />,
 });

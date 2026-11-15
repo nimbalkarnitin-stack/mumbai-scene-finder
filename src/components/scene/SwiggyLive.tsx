@@ -247,8 +247,8 @@ export function SwiggyFoodSearch() {
 }
 
 /**
- * Live Swiggy delivery for a venue already in My Mood's catalogue.
- * My Mood's verified facts stay canonical above; this section is clearly labelled as live Swiggy data.
+ * Live Swiggy delivery for a venue already in Vybz's catalogue.
+ * Vybz's verified facts stay canonical above; this section is clearly labelled as live Swiggy data.
  */
 export function SwiggyVenueLive({ venueName }: { venueName: string }) {
   const { signedIn, status } = useSwiggyConnection();
@@ -282,7 +282,7 @@ export function SwiggyVenueLive({ venueName }: { venueName: string }) {
         <>
           {!match.data.match.isOpen && <p className="text-xs text-muted-foreground">Currently closed for delivery on Swiggy.</p>}
           <RestaurantCard r={match.data.match} addressId={addressId} />
-          <p className="text-[11px] text-muted-foreground">Delivery details, menu and prices come live from Swiggy. My Mood's verified venue information above is unchanged.</p>
+          <p className="text-[11px] text-muted-foreground">Delivery details, menu and prices come live from Swiggy. Vybz's verified venue information above is unchanged.</p>
         </>
       ) : (
         <p className="text-xs text-muted-foreground">No matching Swiggy restaurant found for this venue.</p>
@@ -443,7 +443,7 @@ export function DineoutVenueLive({ itemId, venueName, area, latitude, longitude 
             setShowSlots((value) => !value);
           }}>{showSlots ? "Hide times" : "Choose date & time"}</Button>
           {showSlots && <DineoutSlots itemId={itemId} restaurantId={match.data.match.id} latitude={match.data.latitude} longitude={match.data.longitude} />}
-          <p className="text-[11px] text-muted-foreground">Restaurant details, offers and availability are live from Swiggy Dineout and are not stored in the vybz catalogue.</p>
+          <p className="text-[11px] text-muted-foreground">Restaurant details, offers and availability are live from Swiggy Dineout and are not stored in the Vybz catalogue.</p>
         </>
       ) : (
         <p className="text-xs text-muted-foreground">No confident Swiggy Dineout match was found for this venue.</p>

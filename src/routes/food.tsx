@@ -8,10 +8,10 @@ export const Route = createFileRoute("/food")({ staticData: { sitemap: false },
   validateSearch: z.object({ swiggy: z.string().optional(), reason: z.string().optional() }),
   head: () => ({
     meta: [
-      { title: "Food delivery in Mumbai — live on Swiggy | vybz" },
-      { name: "description", content: "Search restaurants and menus that are open for delivery in Mumbai right now, live from your own Swiggy account, alongside vybz's verified venue guide." },
+      { title: "Food delivery in Mumbai — live on Swiggy | Vybz" },
+      { name: "description", content: "Search restaurants and menus that are open for delivery in Mumbai right now, live from your own Swiggy account, alongside Vybz's verified venue guide." },
       { property: "og:title", content: "Food delivery in Mumbai — live on Swiggy" },
-      { property: "og:description", content: "Live Swiggy restaurants, menus and dish prices for Mumbai, inside vybz." },
+      { property: "og:description", content: "Live Swiggy restaurants, menus and dish prices for Mumbai, inside Vybz." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -30,7 +30,7 @@ function FoodPage() {
           <h1 className="mt-1 text-4xl font-medium leading-[1.05] md:text-5xl">Food delivery, right now</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Connect your Swiggy account to search restaurants that are actually open for delivery to your saved address,
-            with live menus and prices. vybz's own verified venue and event guide stays separate.
+            with live menus and prices. Vybz's own verified venue and event guide stays separate.
           </p>
         </header>
 

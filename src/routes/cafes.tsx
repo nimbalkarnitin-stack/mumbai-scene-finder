@@ -5,6 +5,6 @@ const TITLE = "Cafés in Mumbai";
 const DESC = "Irani classics, specialty coffee and slow afternoons across the city.";
 
 export const Route = createFileRoute("/cafes")({ staticData: { sitemap: true },
-  head: categoryHead(TITLE, DESC),
+  head: categoryHead(TITLE, DESC, "/cafes"),
   component: () => <CategoryPage slug="cafes" title={TITLE} description={DESC} category="cafes" />,
 });

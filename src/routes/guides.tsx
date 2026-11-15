@@ -5,7 +5,7 @@ import { SEO_PAGES } from "@/lib/scene-constants";
 import { CATEGORY_IMAGES } from "@/lib/scene-images";
 import { listGuides } from "@/lib/scene.functions";
 
-const TITLE = "Mumbai Guides — vybz";
+const TITLE = "Mumbai Guides — Vybz";
 const DESC = "Editorial guides to Mumbai: neighbourhood walks, date ideas, late-night eats and weekend plans.";
 
 export const Route = createFileRoute("/guides")({ staticData: { sitemap: true },

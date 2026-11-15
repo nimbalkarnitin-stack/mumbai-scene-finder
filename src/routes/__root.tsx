@@ -20,7 +20,7 @@ function NotFoundComponent() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <p className="eyebrow text-primary-glow">404</p>
-        <h1 className="mt-3 text-4xl font-semibold">That vybz doesn't exist</h1>
+        <h1 className="mt-3 text-4xl font-semibold">That Vybz doesn't exist</h1>
         <p className="mt-2 text-sm text-muted-foreground">The page you're looking for has moved or never existed.</p>
         <div className="mt-6">
           <Link to="/" className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground">
@@ -61,11 +61,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#1a1613" },
-      { name: "author", content: "vybz" },
+      { name: "author", content: "Vybz" },
       { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "vybz" },
+      { property: "og:site_name", content: "Vybz" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
+    scripts: [{ type: "application/ld+json", children: JSON.stringify({ "@context": "https://schema.org", "@type": "WebSite", name: "Vybz", url: "https://vybz.co.in/", description: "Mumbai events, restaurants, nightlife and personalised city plans." }) }],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },

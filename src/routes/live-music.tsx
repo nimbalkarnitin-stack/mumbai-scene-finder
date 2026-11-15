@@ -5,6 +5,6 @@ const TITLE = "Live Music in Mumbai";
 const DESC = "Indie rooms, jazz cellars and stages with something on tonight.";
 
 export const Route = createFileRoute("/live-music")({ staticData: { sitemap: true },
-  head: categoryHead(TITLE, DESC),
+  head: categoryHead(TITLE, DESC, "/live-music"),
   component: () => <CategoryPage slug="live-music" title={TITLE} description={DESC} category="live-music" />,
 });

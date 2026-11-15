@@ -74,7 +74,7 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
         <div className="space-y-6">
           {!item.isVerified && (
             <p className="rounded-2xl border border-saffron/30 bg-saffron/10 px-4 py-3 text-sm text-saffron">
-              Details unverified — vybz hasn't confirmed hours, prices or availability with this venue yet. Please check before you go.
+              Details unverified — Vybz hasn't confirmed hours, prices or availability with this venue yet. Please check before you go.
             </p>
           )}
           {item.description && <p className="text-[15.5px] leading-relaxed text-foreground/90">{stripHtml(item.description)}</p>}
@@ -102,7 +102,7 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
             {supportsLiveReservation && link.kind !== "booking" && !item.venue?.reservationUrl ? <CalendarCheck className="size-4" /> : <ExternalLink className="size-4" />}
           </Button>
           {supportsLiveReservation && link.kind !== "booking" && !item.venue?.reservationUrl ? (
-            <p className="text-[11px] text-muted-foreground">Choose a live Swiggy Dineout time below and confirm your reservation without leaving vybz.</p>
+            <p className="text-[11px] text-muted-foreground">Choose a live Swiggy Dineout time below and confirm your reservation without leaving Vybz.</p>
           ) : link.kind !== "booking" ? (
             <p className="text-[11px] text-muted-foreground">No direct booking provider is connected; available options open from the source.</p>
           ) : null}
@@ -112,7 +112,7 @@ export function ItemDetail({ item, related }: { item: SceneItem; related: SceneI
           </div>
           {link.kind !== "map" && <AffiliateDisclosure className="mt-2" />}
           <div className="space-y-1 border-t border-border pt-3 text-[11px] text-muted-foreground">
-            <p>{item.isVerified ? "Checked by a vybz editor" : "Not yet checked by a vybz editor"}</p>
+            <p>{item.isVerified ? "Checked by a Vybz editor" : "Not yet checked by a Vybz editor"}</p>
             {item.updatedAt && <p>Record last updated {new Date(item.updatedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })}</p>}
             {item.venue?.lastVerifiedAt && (
               <p>Details last checked against the source {new Date(item.venue.lastVerifiedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" })}</p>

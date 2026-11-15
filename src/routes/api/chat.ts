@@ -7,7 +7,7 @@ import { createPublicClient } from "@/lib/public-db.server";
 import { fetchCityItems, getCityId, scoreItems } from "@/lib/recommend.server";
 import { DEFAULT_CITY_SLUG } from "@/lib/scene-constants";
 
-const SYSTEM = `You are vybz's concierge for Mumbai — a sharp, warm local friend who knows the city's bars, cafés, gigs, comedy rooms, restaurants and experiences.
+const SYSTEM = `You are Vybz's concierge for Mumbai — a sharp, warm local friend who knows the city's bars, cafés, gigs, comedy rooms, restaurants and experiences.
 
 HARD RULES
 - Only recommend places, events and experiences returned by the search_listings tool. Never invent venues, event dates, showtimes, prices or availability. If the tool returns nothing suitable, say so plainly and suggest loosening a filter.
@@ -18,13 +18,13 @@ HARD RULES
 - When the user asks to modify a plan ("make it cheaper", "replace dinner", "add live music", "keep everything near Bandra", "make it more romantic"), re-run search_listings with adjusted filters and return the full updated itinerary, keeping stops that still fit.
 - Link each recommendation as [Name](/v/slug) for venues, [Name](/e/slug) for events, [Name](/x/slug) for experiences.
 - For restaurant, café and nightlife reservations, send the user to the recommended venue page and tell them to use its Reserve action. The venue page checks live Swiggy Dineout availability, lets them choose guests/date/time, asks for confirmation, and returns the booking reference. Never claim a reservation is complete until Swiggy returns a confirmation.
-- When no connected booking provider exists, say booking is unavailable in vybz and offer the source's booking options; never describe a generic website or map link as a reservation.
+- When no connected booking provider exists, say booking is unavailable in Vybz and offer the source's booking options; never describe a generic website or map link as a reservation.
 - Currency is INR (₹). Keep answers under ~250 words unless building a full itinerary.
 
 FOOD DELIVERY
 - For food delivery, dish, menu or "what can I order right now" questions, call search_food_delivery. It reads the user's own connected Swiggy session and only ever returns restaurants Swiggy reports as OPEN.
-- If that tool reports notConnected, do not guess: say live delivery needs their Swiggy account connected, point them to the /food page, and answer from the vybz catalogue instead.
-- Label live Swiggy results as "live from Swiggy" and never invent a delivery time, price, dish or availability. Swiggy live data is for this answer only — never present it as a vybz verified listing.`;
+- If that tool reports notConnected, do not guess: say live delivery needs their Swiggy account connected, point them to the /food page, and answer from the Vybz catalogue instead.
+- Label live Swiggy results as "live from Swiggy" and never invent a delivery time, price, dish or availability. Swiggy live data is for this answer only — never present it as a Vybz verified listing.`;
 
 export const Route = createFileRoute("/api/chat")({ staticData: { sitemap: false },
   server: {
@@ -67,7 +67,7 @@ export const Route = createFileRoute("/api/chat")({ staticData: { sitemap: false
         }
 
         const searchListings = tool({
-          description: "Search vybz's active Mumbai listings (venues, events, experiences) ranked by mood, budget, timing, area and group. Results mix editor-verified and unverified listings: each item carries a `verified` flag and an optional `sourceUrl`. Verified items rank higher; unverified items must be flagged when mentioned. Always call this before recommending anything.",
+          description: "Search Vybz's active Mumbai listings (venues, events, experiences) ranked by mood, budget, timing, area and group. Results mix editor-verified and unverified listings: each item carries a `verified` flag and an optional `sourceUrl`. Verified items rank higher; unverified items must be flagged when mentioned. Always call this before recommending anything.",
           inputSchema: z.object({
             mood: z.enum(["party", "romantic", "live-music", "comedy", "food", "outdoors", "chill", "something-new"]).nullable().describe("Primary mood"),
             group: z.enum(["solo", "couple", "friends", "family"]).nullable(),
@@ -78,7 +78,7 @@ export const Route = createFileRoute("/api/chat")({ staticData: { sitemap: false
             limit: z.number().nullable(),
           }),
           execute: async (input) => {
-            if (!db || !cityId) return { items: [], unavailable: true, note: "The vybz catalogue is unavailable right now. Tell the user you cannot list places at the moment and do not invent any." };
+            if (!db || !cityId) return { items: [], unavailable: true, note: "The Vybz catalogue is unavailable right now. Tell the user you cannot list places at the moment and do not invent any." };
             try {
               const items = await fetchCityItems(db, cityId);
               const ranked = scoreItems(items, {
@@ -105,13 +105,13 @@ export const Route = createFileRoute("/api/chat")({ staticData: { sitemap: false
               // Controlled tool result — a catalogue fault must not kill the AI stream.
               const info = classifyConciergeError(err);
               logConciergeError(info, "tool:search_listings", runIdFetch.getRunId());
-              return { items: [], unavailable: true, note: "The vybz catalogue could not be read for this search. Tell the user listings are temporarily unavailable and suggest trying again shortly. Do not invent listings." };
+              return { items: [], unavailable: true, note: "The Vybz catalogue could not be read for this search. Tell the user listings are temporarily unavailable and suggest trying again shortly. Do not invent listings." };
             }
           },
         });
 
         const listAreas = tool({
-          description: "List Mumbai neighbourhoods vybz covers, with slugs.",
+          description: "List Mumbai neighbourhoods Vybz covers, with slugs.",
           inputSchema: z.object({}),
           execute: async () => {
             if (!db || !cityId) return { areas: [], unavailable: true };
@@ -148,7 +148,7 @@ export const Route = createFileRoute("/api/chat")({ staticData: { sitemap: false
 
         const searchFoodDelivery = tool({
           description:
-            "Search live Mumbai food-delivery restaurants and dishes from the signed-in user's own connected Swiggy account. Returns only restaurants Swiggy reports as OPEN right now, with whatever delivery time, distance and cost Swiggy supplies. Use for delivery, dish, menu and 'order now' questions. Never store or restate these results as vybz catalogue listings.",
+            "Search live Mumbai food-delivery restaurants and dishes from the signed-in user's own connected Swiggy account. Returns only restaurants Swiggy reports as OPEN right now, with whatever delivery time, distance and cost Swiggy supplies. Use for delivery, dish, menu and 'order now' questions. Never store or restate these results as Vybz catalogue listings.",
           inputSchema: z.object({
             query: z.string().describe("What to search for, e.g. biryani, pizza, South Indian"),
             dish: z.boolean().nullable().describe("True to search dishes across restaurants instead of restaurants"),
@@ -184,11 +184,11 @@ export const Route = createFileRoute("/api/chat")({ staticData: { sitemap: false
               };
             } catch (err) {
               // Swiggy is strictly optional: always return a controlled result so the
-              // concierge can keep answering from the vybz catalogue.
+              // concierge can keep answering from the Vybz catalogue.
               const cls = err && typeof err === "object" && "errorClass" in err ? String((err as { errorClass: unknown }).errorClass) : "UNKNOWN";
               logConciergeError({ ...classifyConciergeError(err), kind: "tool_swiggy" }, `tool:search_food_delivery:${cls}`, runIdFetch.getRunId());
-              if (cls === "NOT_CONNECTED" || cls === "SESSION_EXPIRED" || cls === "UNAUTHORIZED") return { notConnected: true, reason: cls, note: "Live Swiggy data is unavailable. Say so briefly and answer from the vybz catalogue instead." };
-              return { unavailable: true, error: cls, note: "Live Swiggy data is unavailable right now. Say so briefly and answer from the vybz catalogue instead." };
+              if (cls === "NOT_CONNECTED" || cls === "SESSION_EXPIRED" || cls === "UNAUTHORIZED") return { notConnected: true, reason: cls, note: "Live Swiggy data is unavailable. Say so briefly and answer from the Vybz catalogue instead." };
+              return { unavailable: true, error: cls, note: "Live Swiggy data is unavailable right now. Say so briefly and answer from the Vybz catalogue instead." };
             }
           },
         });

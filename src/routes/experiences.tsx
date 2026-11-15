@@ -5,6 +5,6 @@ const TITLE = "Experiences in Mumbai";
 const DESC = "Walks, workshops, tours and things to try this weekend.";
 
 export const Route = createFileRoute("/experiences")({ staticData: { sitemap: true },
-  head: categoryHead(TITLE, DESC),
+  head: categoryHead(TITLE, DESC, "/experiences"),
   component: () => <CategoryPage slug="experiences" title={TITLE} description={DESC} type="experience" />,
 });

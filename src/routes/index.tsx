@@ -11,8 +11,8 @@ import { CATEGORY_NAV, CONCIERGE_SUGGESTIONS } from "@/lib/scene-constants";
 import { CATEGORY_IMAGES, HERO_IMAGE } from "@/lib/scene-images";
 import { getTrending } from "@/lib/scene.functions";
 
-const TITLE = "vybz — What's On in Mumbai Tonight: Events & Bars";
-const DESC = "Find what's on in Mumbai tonight and this weekend — events, live music, comedy, cafes and clubs. vybz matches picks to your mood, crew and budget, free.";
+const TITLE = "Vybz — What's On in Mumbai Tonight: Events & Bars";
+const DESC = "Find what's on in Mumbai tonight and this weekend — events, live music, comedy, cafes and clubs. Vybz matches picks to your mood, crew and budget, free.";
 
 export const Route = createFileRoute("/")({ staticData: { sitemap: true },
   head: () => ({
@@ -21,7 +21,9 @@ export const Route = createFileRoute("/")({ staticData: { sitemap: true },
       { name: "description", content: DESC },
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESC },
+      { property: "og:url", content: "https://vybz.co.in/" },
     ],
+    links: [{ rel: "canonical", href: "https://vybz.co.in/" }],
   }),
   component: Index,
 });
@@ -38,10 +40,10 @@ function Index() {
         <div className="relative px-4 pb-8 pt-[38vh] md:px-10 md:pb-12 md:pt-[30vh]">
           <p className="eyebrow mb-3 text-saffron">Mumbai · Tonight &amp; this weekend</p>
           <h1 className="max-w-[12ch] text-[44px] font-medium leading-[0.98] md:text-7xl">
-            What's your <em className="text-gradient-ember not-italic">vybz?</em>
+            What's your <em className="text-gradient-ember not-italic">Vybz?</em>
           </h1>
           <p className="mt-4 max-w-md text-[15px] text-foreground/80">
-            Tell us the mood. vybz reads the city back to you — bars, gigs, comedy, dinners and things you've never tried.
+            Tell us the mood. Vybz reads the city back to you — bars, gigs, comedy, dinners and things you've never tried.
           </p>
         </div>
       </section>
@@ -152,7 +154,7 @@ function Index() {
           ))}
         </div>
         <div className="mt-6">
-          <Button asChild variant="glass" size="sm"><Link to="/plus">Join vybz+ →</Link></Button>
+          <Button asChild variant="glass" size="sm"><Link to="/plus">Join Vybz+ →</Link></Button>
         </div>
       </section>
     </AppShell>

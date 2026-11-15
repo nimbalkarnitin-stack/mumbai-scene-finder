@@ -1,12 +1,12 @@
-# MyMood
+# Vybz
 
-Build a production-ready MVP called SceneAI, an AI-powered urban discovery platform initially focused on Mumbai, India.
+Build a production-ready MVP called Vybz, an AI-powered urban discovery platform initially focused on Mumbai, India.
 
 CORE PRODUCT:
-SceneAI helps users discover things to do based on mood, budget, group type, time and location.
+Vybz helps users discover things to do based on mood, budget, group type, time and location.
 
 PRIMARY CTA:
-“What’s your scene?”
+“What’s your Vybz?”
 
 SECONDARY CTA:
 “Plan My Weekend”
@@ -46,7 +46,7 @@ Date/time
 
 Short description
 
-“Why SceneAI picked this”
+“Why Vybz picked this”
 
 Booking button
 
@@ -78,7 +78,7 @@ AI Concierge
 Trending
 Guides
 Deals
-SceneAI+
+Vybz+
 
 ADMIN:
 Create an admin dashboard for:
@@ -146,7 +146,7 @@ Affiliate tracking
 
 Sponsored listings
 
-SceneAI+ membership
+Vybz+ membership
 
 Digital products
 
