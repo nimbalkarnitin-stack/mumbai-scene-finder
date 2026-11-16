@@ -11,3 +11,4 @@
 
 - Keep existing storage, attribution and route identifiers compatible when changing visible brand text, to preserve saved data and links.
 - Category-page canonical URLs belong in the existing category head helper with an explicit route path, never in the shared root.
+- Swiggy OAuth uses a fixed canonical live callback, not request host headers; dynamic registrations are reused by exact callback URL and existing in-flight states retain their original exchange URI.

@@ -42,16 +42,11 @@ export async function codeChallengeS256(verifier: string): Promise<string> {
 /* ------------------------------------------------------------------ redirect URI */
 
 /**
- * The callback must be an exact HTTPS URL in production. http is tolerated only for localhost
- * during local development, as the Swiggy docs require.
+ * Use the canonical live origin for every new authorization. Preview or forwarded host
+ * headers must not create a different registration or redirect real users off the live site.
  */
-export function resolveRedirectUri(origin: string): string {
-  const url = new URL(origin);
-  const isLocal = url.hostname === "localhost" || url.hostname === "127.0.0.1";
-  if (url.protocol !== "https:" && !isLocal) {
-    throw new SwiggyError("INVALID_REQUEST", "Swiggy requires an HTTPS callback URL.");
-  }
-  return `${url.origin}/api/public/swiggy/callback`;
+export function resolveRedirectUri(): string {
+  return "https://vybz.co.in/api/public/swiggy/callback";
 }
 
 /* ------------------------------------------------------------------ metadata discovery */
@@ -182,8 +177,8 @@ export function safeReturnPath(path: string | null | undefined): string {
   return path;
 }
 
-export async function beginAuthorization(input: { userId: string; origin: string; returnPath?: string | null }): Promise<{ authorizeUrl: string }> {
-  const redirectUri = resolveRedirectUri(input.origin);
+export async function beginAuthorization(input: { userId: string; returnPath?: string | null }): Promise<{ authorizeUrl: string }> {
+  const redirectUri = resolveRedirectUri();
   const client = await ensureRegisteredClient(redirectUri);
   const db = await admin();
 
