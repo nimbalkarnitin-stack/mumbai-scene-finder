@@ -6,7 +6,6 @@
  * catalogue, analytics or recommendation-learning data.
  */
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
@@ -32,14 +31,6 @@ import {
   type SwiggyRestaurant,
 } from "./protocol";
 
-function requestOrigin(): string {
-  const request = getRequest();
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const proto = request.headers.get("x-forwarded-proto");
-  if (forwardedHost) return `${proto ?? "https"}://${forwardedHost}`;
-  return new URL(request.url).origin;
-}
-
 /** Turn any failure into a message a user can act on, keeping the class for the UI. */
 function fail(err: unknown): never {
   if (err instanceof SwiggyError) throw new Error(`${err.errorClass}: ${err.message}`);
@@ -59,7 +50,7 @@ export const startSwiggyConnect = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { beginAuthorization } = await import("./oauth.server");
     try {
-      return await beginAuthorization({ userId: context.userId, origin: requestOrigin(), returnPath: data.returnPath ?? null });
+      return await beginAuthorization({ userId: context.userId, returnPath: data.returnPath ?? null });
     } catch (err) {
       return fail(err);
     }

@@ -127,10 +127,8 @@ describe("PKCE and callback safety", () => {
     expect(challenge).not.toContain("=");
   });
 
-  it("requires HTTPS except on localhost", () => {
-    expect(resolveRedirectUri("https://app.example.com")).toBe("https://app.example.com/api/public/swiggy/callback");
-    expect(resolveRedirectUri("http://localhost:8080")).toBe("http://localhost:8080/api/public/swiggy/callback");
-    expect(() => resolveRedirectUri("http://app.example.com")).toThrow(SwiggyError);
+  it("uses the exact live Vybz callback for new authorizations", () => {
+    expect(resolveRedirectUri()).toBe("https://vybz.co.in/api/public/swiggy/callback");
   });
 
   it("only accepts same-origin relative return paths", () => {
